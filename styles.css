@@ -102,6 +102,10 @@ body {
   overflow-x: hidden;
 }
 
+body.no-scroll {
+  overflow: hidden !important;
+}
+
 /* --- Custom Scrollbar --- */
 ::-webkit-scrollbar {
   width: 6px;
@@ -1240,7 +1244,7 @@ header {
   aside {
     position: fixed;
     top: 0;
-    left: -var(--sidebar-width);
+    left: calc(-1 * var(--sidebar-width));
     width: var(--sidebar-width);
     height: 100vh;
     z-index: 10000;
@@ -1254,6 +1258,7 @@ header {
     padding: 24px 16px;
     transition: left var(--transition-normal);
     display: flex !important;
+    overflow-y: auto; /* Allow scrolling menu items on small screen heights */
   }
 
   aside.active {

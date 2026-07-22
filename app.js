@@ -2084,11 +2084,13 @@
   function openMobileSidebar() {
     if (elements.appSidebar) elements.appSidebar.classList.add('active');
     if (elements.sidebarBackdrop) elements.sidebarBackdrop.classList.add('active');
+    document.body.classList.add('no-scroll');
   }
 
   function closeMobileSidebar() {
     if (elements.appSidebar) elements.appSidebar.classList.remove('active');
     if (elements.sidebarBackdrop) elements.sidebarBackdrop.classList.remove('active');
+    document.body.classList.remove('no-scroll');
   }
 
   // --- Bind Form Events & UI Event Listeners ---
