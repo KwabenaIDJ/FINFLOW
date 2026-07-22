@@ -1,0 +1,1346 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="Premium personal financial dashboard with offline local storage, budgets tracker, savings goals progress, mock investments ticker, and CSV data export/import.">
+  <title>FinFlow - Premium Financial Dashboard</title>
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+
+  <!-- ==================== SVG ICON REGISTRY ==================== -->
+  <svg style="display: none;">
+    <!-- Dashboard Icon -->
+    <symbol id="icon-dashboard" viewBox="0 0 24 24">
+      <rect x="3" y="3" width="7" height="9" rx="1" />
+      <rect x="14" y="3" width="7" height="5" rx="1" />
+      <rect x="14" y="12" width="7" height="9" rx="1" />
+      <rect x="3" y="16" width="7" height="5" rx="1" />
+    </symbol>
+    <!-- Budget/Wallet Icon -->
+    <symbol id="icon-wallet" viewBox="0 0 24 24">
+      <path d="M21 12V7H5a2 2 0 0 1 0-4h14v2" />
+      <path d="M3 5v14a2 2 0 0 0 2 2h16v-5" />
+      <path d="M16 12h6v4h-6z" />
+    </symbol>
+    <!-- Target/Savings Icon -->
+    <symbol id="icon-target" viewBox="0 0 24 24">
+      <circle cx="12" cy="12" r="10" />
+      <circle cx="12" cy="12" r="6" />
+      <circle cx="12" cy="12" r="2" />
+    </symbol>
+    <!-- Trending/Portfolio Icon -->
+    <symbol id="icon-trending" viewBox="0 0 24 24">
+      <polyline points="22 7 13.5 15.5 8.5 10.5 2 17" />
+      <polyline points="16 7 22 7 22 13" />
+    </symbol>
+    <!-- Settings Icon -->
+    <symbol id="icon-settings" viewBox="0 0 24 24">
+      <circle cx="12" cy="12" r="3" />
+      <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z" />
+    </symbol>
+    <!-- Help Icon -->
+    <symbol id="icon-help" viewBox="0 0 24 24">
+      <circle cx="12" cy="12" r="10" />
+      <path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3" />
+      <line x1="12" y1="17" x2="12.01" y2="17" />
+    </symbol>
+    <!-- Book/Guide Icon -->
+    <symbol id="icon-book" viewBox="0 0 24 24">
+      <path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"></path>
+      <path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"></path>
+    </symbol>
+    <!-- Checklist / Todo Icon -->
+    <symbol id="icon-todo" viewBox="0 0 24 24">
+      <polyline points="9 11 12 14 22 4" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" fill="none" />
+      <path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" fill="none" />
+    </symbol>
+    <!-- Sun Icon (Light Theme) -->
+    <symbol id="icon-sun" viewBox="0 0 24 24">
+      <circle cx="12" cy="12" r="5" />
+      <line x1="12" y1="1" x2="12" y2="3" />
+      <line x1="12" y1="21" x2="12" y2="23" />
+      <line x1="4.22" y1="4.22" x2="5.64" y2="5.64" />
+      <line x1="18.36" y1="18.36" x2="19.78" y2="19.78" />
+      <line x1="1" y1="12" x2="3" y2="12" />
+      <line x1="21" y1="12" x2="23" y2="12" />
+      <line x1="4.22" y1="19.78" x2="5.64" y2="18.36" />
+      <line x1="18.36" y1="5.64" x2="19.78" y2="4.22" />
+    </symbol>
+    <!-- Moon Icon (Dark Theme) -->
+    <symbol id="icon-moon" viewBox="0 0 24 24">
+      <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z" />
+    </symbol>
+    <!-- Trash Icon -->
+    <symbol id="icon-trash" viewBox="0 0 24 24">
+      <polyline points="3 6 5 6 21 6" />
+      <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2" />
+      <line x1="10" y1="11" x2="10" y2="17" />
+      <line x1="14" y1="11" x2="14" y2="17" />
+    </symbol>
+    <!-- Plus Icon -->
+    <symbol id="icon-plus" viewBox="0 0 24 24">
+      <line x1="12" y1="5" x2="12" y2="19" />
+      <line x1="5" y1="12" x2="19" y2="12" />
+    </symbol>
+    <!-- Undo Icon -->
+    <symbol id="icon-undo" viewBox="0 0 24 24">
+      <path d="M3 7v6h6" stroke-linecap="round" stroke-linejoin="round"></path>
+      <path d="M21 17a9 9 0 0 0-9-9 9 9 0 0 0-6 2.3L3 13" stroke-linecap="round" stroke-linejoin="round"></path>
+    </symbol>
+    <!-- Redo Icon -->
+    <symbol id="icon-redo" viewBox="0 0 24 24">
+      <path d="M21 7v6h-6" stroke-linecap="round" stroke-linejoin="round"></path>
+      <path d="M3 17a9 9 0 0 1 9-9 9 9 0 0 1 6 2.3l3 2.7" stroke-linecap="round" stroke-linejoin="round"></path>
+    </symbol>
+    <!-- Logout Icon -->
+    <symbol id="icon-logout" viewBox="0 0 24 24">
+      <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4" stroke-linecap="round" stroke-linejoin="round"></path>
+      <polyline points="16 17 21 12 16 7" stroke-linecap="round" stroke-linejoin="round"></polyline>
+      <line x1="21" y1="12" x2="9" y2="12" stroke-linecap="round" stroke-linejoin="round"></line>
+    </symbol>
+    <!-- Crown Icon -->
+    <symbol id="icon-crown" viewBox="0 0 24 24">
+      <path d="M2 4l3 12h14l3-12-6 7-4-7-4 7-6-7zm3 16h14a1 1 0 0 0 0-2H5a1 1 0 0 0 0 2z" stroke="none" stroke-width="2" fill="currentColor"></path>
+    </symbol>
+    <!-- Arrow Down Left (Income) -->
+    <symbol id="icon-arrow-down-left" viewBox="0 0 24 24">
+      <line x1="17" y1="7" x2="7" y2="17" />
+      <polyline points="17 17 7 17 7 7" />
+    </symbol>
+    <!-- Arrow Up Right (Expense) -->
+    <symbol id="icon-arrow-up-right" viewBox="0 0 24 24">
+      <line x1="7" y1="17" x2="17" y2="7" />
+      <polyline points="7 7 17 7 17 17" />
+    </symbol>
+    <!-- Download Icon -->
+    <symbol id="icon-download" viewBox="0 0 24 24">
+      <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
+      <polyline points="7 10 12 15 17 10" />
+      <line x1="12" y1="15" x2="12" y2="3" />
+    </symbol>
+    <!-- Upload Icon -->
+    <symbol id="icon-upload" viewBox="0 0 24 24">
+      <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
+      <polyline points="17 8 12 3 7 8" />
+      <line x1="12" y1="3" x2="12" y2="15" />
+    </symbol>
+    <!-- Share Icon -->
+    <symbol id="icon-share" viewBox="0 0 24 24">
+      <circle cx="18" cy="5" r="3"></circle>
+      <circle cx="6" cy="12" r="3"></circle>
+      <circle cx="18" cy="19" r="3"></circle>
+      <line x1="8.59" y1="13.51" x2="15.42" y2="17.49" stroke-linecap="round" stroke-linejoin="round"></line>
+      <line x1="15.41" y1="6.51" x2="8.59" y2="10.49" stroke-linecap="round" stroke-linejoin="round"></line>
+    </symbol>
+    <!-- Print Icon -->
+    <symbol id="icon-print" viewBox="0 0 24 24">
+      <path d="M6 9V2h12v7M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2m-12 0v4h8v-4" stroke-linecap="round" stroke-linejoin="round"></path>
+    </symbol>
+    <!-- Close/Cross Icon -->
+    <symbol id="icon-close" viewBox="0 0 24 24">
+      <line x1="18" y1="6" x2="6" y2="18" />
+      <line x1="6" y1="6" x2="18" y2="18" />
+    </symbol>
+  </svg>
+
+  <!-- ==================== SIDEBAR ==================== -->
+  <aside id="appSidebar">
+    <div class="logo-container">
+      <div class="logo-icon">
+        <svg><use href="#icon-target"></use></svg>
+      </div>
+      <div class="logo-text">FinFlow</div>
+    </div>
+
+    <nav id="appNavigation">
+      <a class="nav-item active" data-target="dashboard">
+        <svg><use href="#icon-dashboard"></use></svg>
+        <span>Overview</span>
+      </a>
+      <a class="nav-item" data-target="budgets">
+        <svg><use href="#icon-wallet"></use></svg>
+        <span>Budgets</span>
+      </a>
+      <a class="nav-item" data-target="goals">
+        <svg><use href="#icon-target"></use></svg>
+        <span>Savings Goals</span>
+      </a>
+      <a class="nav-item" data-target="todos">
+        <svg><use href="#icon-todo"></use></svg>
+        <span>Tasks Checklist</span>
+      </a>
+      <a class="nav-item" data-target="guide">
+        <svg><use href="#icon-book"></use></svg>
+        <span>Financial Guide</span>
+      </a>
+      <a class="nav-item" data-target="settings">
+        <svg><use href="#icon-settings"></use></svg>
+        <span>Settings</span>
+      </a>
+      <a class="nav-item upgrade-nav-item" id="sidebarUpgradeBtn" style="cursor: pointer; background: linear-gradient(135deg, rgba(241, 196, 15, 0.15), rgba(243, 156, 18, 0.15)); border: 1px solid rgba(243, 156, 18, 0.3); color: #f1c40f; border-radius: var(--border-radius-sm); margin: 6px 12px; padding: 10px 14px; font-weight: 700; display: flex; align-items: center; gap: 10px; box-shadow: 0 4px 12px rgba(243, 156, 18, 0.1);">
+        <svg style="width: 16px; height: 16px; fill: #f1c40f;"><use href="#icon-crown"></use></svg>
+        <span>Go Premium</span>
+      </a>
+      <a class="nav-item" id="sidebarHelpBtn" style="cursor: pointer;">
+        <svg><use href="#icon-help"></use></svg>
+        <span>Help Tour</span>
+      </a>
+    </nav>
+
+    <div class="sidebar-footer">
+      <button class="theme-toggle-btn" id="themeToggleBtn">
+        <svg id="themeIcon"><use href="#icon-sun"></use></svg>
+        <span id="themeText">Light Mode</span>
+      </button>
+
+      <div class="profile-card" style="display: flex; align-items: center; justify-content: space-between; width: 100%;">
+        <div style="display: flex; align-items: center; gap: 12px;">
+          <div class="profile-avatar">U</div>
+          <div class="profile-info">
+            <span class="profile-name">User</span>
+            <span class="profile-role">Standard Member</span>
+          </div>
+        </div>
+        <button class="btn btn-secondary btn-icon" id="logoutBtn" title="Log Out" style="padding: 6px; min-width: 32px; height: 32px; display: flex; align-items: center; justify-content: center; border: none; background: transparent; color: var(--text-muted); cursor: pointer;">
+          <svg style="width: 16px; height: 16px; fill: none; stroke: currentColor; stroke-width: 2;"><use href="#icon-logout"></use></svg>
+        </button>
+      </div>
+    </div>
+  </aside>
+
+  <!-- ==================== MAIN CONTENT CONTAINER ==================== -->
+  <main id="appMainContent">
+    
+    <!-- HEADER BAR -->
+    <header>
+      <div class="header-title">
+        <h1 id="headerGreeting">Greetings!</h1>
+        <p>Keep track of your transactions, goals, budgets, and investments.</p>
+      </div>
+      <div class="header-actions">
+        <!-- Timeframe Selector -->
+        <select id="timeframeSelector" style="background: var(--bg-card); border: 1px solid var(--color-border); color: var(--text-main); border-radius: var(--border-radius-sm); padding: 10px 14px; font-family: inherit; font-size: 0.88rem; outline: none; cursor: pointer; transition: all var(--transition-fast); margin-right: 6px;">
+          <!-- Populated in JS -->
+        </select>
+        <!-- Add transaction trigger -->
+        <button class="btn btn-primary" id="addTxBtn">
+          <svg style="width: 18px; height: 18px; fill: none; stroke: currentColor; stroke-width: 2.5;"><use href="#icon-plus"></use></svg>
+          Add Transaction
+        </button>
+        <!-- Undo / Redo Actions -->
+        <button class="btn btn-secondary btn-icon" id="undoBtn" title="Undo change" disabled style="padding: 10px 12px; display: flex; align-items: center; justify-content: center; opacity: 0.5; cursor: not-allowed; min-width: 42px;">
+          <svg style="width: 16px; height: 16px; fill: none; stroke: currentColor; stroke-width: 2.5;"><use href="#icon-undo"></use></svg>
+        </button>
+        <button class="btn btn-secondary btn-icon" id="redoBtn" title="Redo change" disabled style="padding: 10px 12px; display: flex; align-items: center; justify-content: center; opacity: 0.5; cursor: not-allowed; min-width: 42px;">
+          <svg style="width: 16px; height: 16px; fill: none; stroke: currentColor; stroke-width: 2.5;"><use href="#icon-redo"></use></svg>
+        </button>
+        <!-- CSV Actions -->
+        <button class="btn btn-secondary btn-icon" id="exportCsvBtn" title="Export transactions to CSV" style="padding: 10px 12px; display: flex; align-items: center; justify-content: center; min-width: 42px;">
+          <svg style="width: 16px; height: 16px; fill: none; stroke: currentColor; stroke-width: 2;"><use href="#icon-download"></use></svg>
+        </button>
+        <button class="btn btn-secondary btn-icon" id="importCsvBtn" title="Import transactions from CSV" style="padding: 10px 12px; display: flex; align-items: center; justify-content: center; min-width: 42px;">
+          <svg style="width: 16px; height: 16px; fill: none; stroke: currentColor; stroke-width: 2;"><use href="#icon-upload"></use></svg>
+        </button>
+        <button class="btn btn-secondary btn-icon" id="shareBtn" title="Share dashboard summary" style="padding: 10px 12px; display: flex; align-items: center; justify-content: center; min-width: 42px;">
+          <svg style="width: 16px; height: 16px; fill: none; stroke: currentColor; stroke-width: 2;"><use href="#icon-share"></use></svg>
+        </button>
+        <button class="btn btn-secondary btn-icon" id="printBtn" title="Print dashboard report" style="padding: 10px 12px; display: flex; align-items: center; justify-content: center; min-width: 42px;">
+          <svg style="width: 16px; height: 16px; fill: none; stroke: currentColor; stroke-width: 2;"><use href="#icon-print"></use></svg>
+        </button>
+        <input type="file" id="csvFileInput" accept=".csv" style="display: none;">
+      </div>
+    </header>
+
+    <!-- ==================== PANEL: OVERVIEW / DASHBOARD ==================== -->
+    <div class="view-panel active" id="dashboard-panel">
+      
+      <!-- KPI GRID -->
+      <section class="kpi-grid" aria-label="Financial Summary Totals">
+        <div class="card kpi-card cash">
+          <div class="kpi-header">
+            <span class="kpi-title">Net Worth</span>
+            <div class="kpi-icon">
+              <svg><use href="#icon-wallet"></use></svg>
+            </div>
+          </div>
+          <div class="kpi-value" id="netWorthValue">$0.00</div>
+          <div class="kpi-footer">Total Wealth</div>
+        </div>
+
+        <div class="card kpi-card savings">
+          <div class="kpi-header">
+            <span class="kpi-title">Cash Balance</span>
+            <div class="kpi-icon">
+              <svg><use href="#icon-target"></use></svg>
+            </div>
+          </div>
+          <div class="kpi-value" id="cashBalanceValue">$0.00</div>
+          <div class="kpi-footer">Liquid savings</div>
+        </div>
+
+        <div class="card kpi-card income">
+          <div class="kpi-header">
+            <span class="kpi-title">Monthly Income</span>
+            <div class="kpi-icon">
+              <svg><use href="#icon-arrow-down-left"></use></svg>
+            </div>
+          </div>
+          <div class="kpi-value" id="monthlyIncomeValue">$0.00</div>
+          <div class="kpi-footer" id="incomeTrend">Calculating...</div>
+        </div>
+
+        <div class="card kpi-card expense">
+          <div class="kpi-header">
+            <span class="kpi-title">Monthly Expenses</span>
+            <div class="kpi-icon">
+              <svg><use href="#icon-arrow-up-right"></use></svg>
+            </div>
+          </div>
+          <div class="kpi-value" id="monthlyExpensesValue">$0.00</div>
+          <div class="kpi-footer" id="expenseTrend">Calculating...</div>
+        </div>
+      </section>
+
+      <!-- FINANCIAL DIAGNOSTICS & INSIGHTS -->
+      <section class="diagnostics-grid" style="display: grid; grid-template-columns: 1.1fr 1.6fr 1.3fr; gap: 20px; margin-bottom: 30px;">
+        <!-- Health Score Card -->
+        <div class="card" style="display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 20px; text-align: center;">
+          <h3 style="font-size: 1.05rem; font-weight: 700; margin-bottom: 12px; width: 100%;">Financial Health Score</h3>
+          <!-- Semi-circular arc gauge container -->
+          <div class="health-gauge-container" style="position: relative; width: 130px; height: 130px; display: flex; align-items: center; justify-content: center; margin-bottom: 8px;">
+            <!-- SVG circular rings -->
+            <svg style="width: 130px; height: 130px; transform: rotate(-90deg);">
+              <circle cx="65" cy="65" r="52" style="fill: none; stroke: var(--color-border); stroke-width: 10;"></circle>
+              <circle id="healthScoreCircle" cx="65" cy="65" r="52" style="fill: none; stroke: var(--color-success); stroke-width: 10; stroke-linecap: round; stroke-dasharray: 327; stroke-dashoffset: 327; transition: stroke-dashoffset 0.8s cubic-bezier(0.4, 0, 0.2, 1), stroke 0.8s ease;"></circle>
+            </svg>
+            <div style="position: absolute; display: flex; flex-direction: column; align-items: center;">
+              <span id="healthScoreNum" style="font-size: 1.9rem; font-weight: 800; color: var(--text-main); line-height: 1.1;">85</span>
+              <span id="healthScoreGrade" style="font-size: 0.8rem; font-weight: 700; color: var(--color-success); margin-top: 1px;">Good (A)</span>
+            </div>
+          </div>
+          <p id="healthScoreCaption" style="font-size: 0.74rem; color: var(--text-muted); line-height: 1.4; padding: 0 5px;">Score matches savings rate, budget limits, and liquidity.</p>
+        </div>
+
+        <!-- Smart Insights Card -->
+        <div class="card" style="display: flex; flex-direction: column; padding: 20px; position: relative;">
+          <h3 style="font-size: 1.05rem; font-weight: 700; margin-bottom: 12px; border-bottom: 1px solid var(--color-border); padding-bottom: 8px; width: 100%;">Smart Insights & Alerts</h3>
+          <div style="position: relative; flex-grow: 1;">
+            <ul id="smartInsightsList" style="list-style: none; padding: 0; margin: 0; display: flex; flex-direction: column; gap: 10px; font-size: 0.82rem; color: var(--text-main); line-height: 1.4; overflow-y: auto; max-height: 160px; text-align: left;">
+              <!-- Generated dynamically in JS -->
+            </ul>
+            <!-- Locked Overlay -->
+            <div id="diagnosticsLockOverlay" style="display: none; position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: rgba(15, 23, 42, 0.45); backdrop-filter: blur(4px); -webkit-backdrop-filter: blur(4px); border-radius: var(--border-radius-sm); align-items: center; justify-content: center; flex-direction: column; gap: 10px; z-index: 10;">
+              <span style="font-size: 1.4rem;">🔒</span>
+              <span style="font-size: 0.76rem; font-weight: 700; color: #fff; text-shadow: 0 1px 3px rgba(0,0,0,0.6); text-align: center;">Unlock Detailed Smart Insights with Premium</span>
+              <button type="button" class="btn btn-primary btn-sm upgrade-trigger-btn" style="font-size: 0.72rem; padding: 6px 12px; background: #f1c40f; border-color: #f1c40f; color: #0b0f19; font-weight: 700; cursor: pointer; border-radius: 4px;">Upgrade ($0.99)</button>
+            </div>
+          </div>
+        </div>
+
+        <!-- Daily Financial Advice Card -->
+        <div class="card" style="display: flex; flex-direction: column; padding: 20px; align-items: flex-start; justify-content: flex-start; text-align: left;">
+          <h3 style="font-size: 1.05rem; font-weight: 700; margin-bottom: 12px; border-bottom: 1px solid var(--color-border); padding-bottom: 8px; width: 100%; display: flex; align-items: center; gap: 6px;">
+            <svg style="width: 18px; height: 18px; stroke: #eab308; fill: none; stroke-width: 2.5;"><use href="#icon-help"></use></svg>
+            Daily Advice
+          </h3>
+          <span id="dailyAdviceSession" style="font-size: 0.7rem; font-weight: 700; text-transform: uppercase; background: var(--color-primary-glow); color: var(--color-primary); padding: 2px 8px; border-radius: 4px; margin-bottom: 12px;">Morning Briefing</span>
+          <p id="dailyAdviceQuote" style="font-size: 0.85rem; font-style: italic; color: var(--text-main); line-height: 1.5; margin: 0; font-weight: 500;">
+            "Loading your daily advisory..."
+          </p>
+        </div>
+      </section>
+
+      <!-- CHARTS AREA -->
+      <div class="charts-row">
+        <div class="card">
+          <div class="chart-header">
+            <h2 class="chart-title">Cash Flow Trend (Past 6 Months)</h2>
+          </div>
+          <div class="chart-container">
+            <canvas id="cashFlowChartCanvas"></canvas>
+          </div>
+        </div>
+
+        <div class="card">
+          <div class="chart-header">
+            <h2 class="chart-title">Expenses Breakdown (Current Month)</h2>
+          </div>
+          <div class="chart-container">
+            <canvas id="categoryChartCanvas"></canvas>
+          </div>
+        </div>
+      </div>
+
+      <!-- RECENT TRANSACTIONS BOARD -->
+      <div class="dashboard-bottom">
+        <section class="card" style="grid-column: 1 / -1;">
+          <div class="tx-header">
+            <h2 class="chart-title">Recent Transactions</h2>
+            <div class="tx-filters">
+              <input type="text" class="tx-search" id="txSearch" placeholder="Search description or category...">
+              <button class="tx-filter-btn active" data-filter="all">All</button>
+              <button class="tx-filter-btn" data-filter="income">Income</button>
+              <button class="tx-filter-btn" data-filter="expense">Expenses</button>
+            </div>
+          </div>
+          <div class="tx-list" id="txList">
+            <!-- Dynamically populated -->
+          </div>
+        </section>
+      </div>
+
+      <!-- MOCK ADVERTISEMENT BANNER (HIDDEN FOR PREMIUM MEMBERS) -->
+      <div id="mockAdBanner" class="card" style="margin-top: 30px; display: flex; align-items: center; justify-content: space-between; padding: 18px 24px; background: linear-gradient(135deg, rgba(99, 102, 241, 0.08), rgba(168, 85, 247, 0.08)); border: 1.5px dashed rgba(99, 102, 241, 0.25); border-radius: var(--border-radius-md); box-shadow: 0 4px 15px rgba(99, 102, 241, 0.05); position: relative; overflow: hidden;">
+        <div style="position: absolute; top: 0; left: 0; background: var(--color-primary); color: #fff; font-size: 0.6rem; font-weight: 700; text-transform: uppercase; padding: 2px 8px; border-bottom-right-radius: var(--border-radius-sm);">Sponsored</div>
+        <div style="display: flex; align-items: center; gap: 16px; text-align: left;">
+          <div style="font-size: 1.8rem; background: var(--bg-secondary); width: 48px; height: 48px; display: flex; align-items: center; justify-content: center; border-radius: var(--border-radius-sm); border: 1px solid var(--color-border);">📈</div>
+          <div>
+            <h4 style="font-size: 0.95rem; font-weight: 700; color: var(--text-main); margin-bottom: 3px;">Achieve High-Yield Savings Account</h4>
+            <p style="font-size: 0.8rem; color: var(--text-muted); margin: 0;">Start earning up to 15.5% annual returns on MoMo directly! Secure and regulated.</p>
+          </div>
+        </div>
+        <a href="https://achieve.app" target="_blank" class="btn btn-secondary btn-sm" style="font-size: 0.78rem; font-weight: 700; padding: 8px 16px; border-color: rgba(99, 102, 241, 0.3); color: var(--color-primary); text-decoration: none;">Learn More</a>
+      </div>
+
+    </div>
+
+    <!-- ==================== PANEL: BUDGETS ==================== -->
+    <div class="view-panel" id="budgets-panel">
+      <div class="header-title" style="margin-bottom: 10px;">
+        <h2>Category Budgets</h2>
+        <p>Set custom expenditure limits per category. Progress bars update instantly with your transactions.</p>
+      </div>
+      <div class="budget-grid" id="budgetGrid">
+        <!-- Dynamically populated -->
+      </div>
+    </div>
+
+    <!-- ==================== PANEL: SAVINGS GOALS ==================== -->
+    <div class="view-panel" id="goals-panel">
+      <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
+        <div class="header-title">
+          <h2>Savings Goals</h2>
+          <p>Define targets and fund them directly from your cash balances.</p>
+        </div>
+        <button class="btn btn-primary" id="addGoalBtn">
+          <svg style="width: 16px; height: 16px; fill: none; stroke: currentColor; stroke-width: 2.5;"><use href="#icon-plus"></use></svg>
+          Create New Goal
+        </button>
+      </div>
+      <div class="goals-grid" id="goalsGrid">
+        <!-- Dynamically populated -->
+      </div>
+    </div>
+
+    <!-- ==================== PANEL: TODOS ==================== -->
+    <div class="view-panel" id="todos-panel">
+      <div class="header-title" style="margin-bottom: 20px;">
+        <h2>Financial Tasks Checklist</h2>
+        <p>Track your financial chores, billing tasks, budget reviews, and goal planning.</p>
+      </div>
+
+      <!-- Add Todo Box -->
+      <div class="card" style="margin-bottom: 24px; padding: 20px;">
+        <form id="addTodoForm" style="display: flex; gap: 12px; align-items: center;">
+          <input type="text" id="newTodoText" placeholder="e.g. Pay monthly rent, review grocery budget, fund emergency goal..." required style="flex: 1; padding: 12px 16px; border-radius: var(--border-radius-sm); border: 1px solid var(--color-border); background: var(--bg-primary); color: var(--text-main); font-family: inherit; font-size: 0.9rem; outline: none;">
+          <button type="submit" class="btn btn-primary" style="padding: 12px 20px; font-weight: 700; font-family: inherit; display: flex; align-items: center; gap: 8px;">
+            <svg style="width: 16px; height: 16px; fill: none; stroke: currentColor; stroke-width: 2.5;"><use href="#icon-plus"></use></svg>
+            Add Task
+          </button>
+        </form>
+      </div>
+
+      <!-- Todo Filters & List -->
+      <div class="card" style="padding: 20px;">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; flex-wrap: wrap; gap: 12px;">
+          <!-- Filter Buttons -->
+          <div style="display: flex; gap: 8px;">
+            <button type="button" class="btn btn-secondary btn-sm btn-todo-filter active" data-filter="all" style="font-size: 0.78rem; padding: 6px 12px; font-family: inherit;">All</button>
+            <button type="button" class="btn btn-secondary btn-sm btn-todo-filter" data-filter="pending" style="font-size: 0.78rem; padding: 6px 12px; font-family: inherit;">Pending</button>
+            <button type="button" class="btn btn-secondary btn-sm btn-todo-filter" data-filter="completed" style="font-size: 0.78rem; padding: 6px 12px; font-family: inherit;">Completed</button>
+          </div>
+          <!-- Progress Stats -->
+          <span id="todoProgressStats" style="font-size: 0.82rem; color: var(--text-muted); font-weight: 600;">0 of 0 tasks completed (0%)</span>
+        </div>
+
+        <!-- Scrollable Task List -->
+        <ul id="todoList" style="list-style: none; padding: 0; margin: 0; display: flex; flex-direction: column; gap: 10px; max-height: 450px; overflow-y: auto;">
+          <!-- Dynamically populated in JS -->
+        </ul>
+      </div>
+    </div>
+
+    <!-- ==================== PANEL: FINANCIAL GUIDE ==================== -->
+    <div class="view-panel" id="guide-panel">
+      <div class="header-title" style="margin-bottom: 20px;">
+        <h2>Financial Literacy Guide & Library</h2>
+        <p>Master financial literacy, complete budgeting lessons, and read key summaries of personal finance bestsellers.</p>
+      </div>
+
+      <!-- Learning Progress Tracker -->
+      <div class="card" style="margin-bottom: 25px; display: flex; align-items: center; justify-content: space-between; gap: 20px; padding: 20px;">
+        <div>
+          <h4 style="font-size: 1rem; font-weight: 700; margin-bottom: 4px;">Your Literacy Progress</h4>
+          <p style="font-size: 0.8rem; color: var(--text-muted);">Complete lessons and read recommended books to unlock financial badges.</p>
+        </div>
+        <div style="display: flex; align-items: center; gap: 15px; width: 45%; justify-content: flex-end;">
+          <div style="width: 100%; height: 8px; background: var(--bg-secondary); border-radius: 4px; overflow: hidden; border: 1px solid var(--color-border);">
+            <div id="guideProgressBar" style="width: 0%; height: 100%; background: var(--color-success); border-radius: 4px; transition: width 0.5s ease;"></div>
+          </div>
+          <span id="guideProgressPercent" style="font-size: 0.9rem; font-weight: 700; color: var(--color-success); white-space: nowrap;">0% Done</span>
+        </div>
+      </div>
+
+      <!-- Guide Subtabs Navigation -->
+      <div style="display: flex; gap: 12px; margin-bottom: 20px; border-bottom: 1px solid var(--color-border); padding-bottom: 10px;">
+        <button class="btn btn-primary" id="guideTabLessonsBtn" style="font-size: 0.88rem; font-weight: 600;">Literacy Lessons</button>
+        <button class="btn btn-secondary" id="guideTabBooksBtn" style="font-size: 0.88rem; font-weight: 600;">Recommended Book Library</button>
+      </div>
+
+      <!-- SECTION: LITERACY LESSONS -->
+      <div id="guideLessonsSection" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 20px;">
+        <!-- Lesson 1 -->
+        <div class="card lesson-card" data-index="1" style="display: flex; flex-direction: column; justify-content: space-between; transition: all var(--transition-normal); border-color: var(--color-border);">
+          <div>
+            <span style="font-size: 0.7rem; font-weight: 700; color: var(--color-primary); text-transform: uppercase;">Lesson 1</span>
+            <h3 style="font-size: 1.05rem; font-weight: 700; margin: 6px 0 10px 0;">The 50/30/20 Budgeting Rule</h3>
+            <p style="font-size: 0.8rem; color: var(--text-muted); line-height: 1.5; margin-bottom: 16px;">
+              Learn how to split your income into Needs (50%), Wants (30%), and Savings (20%) to build automated wealth.
+            </p>
+          </div>
+          <div style="display: flex; justify-content: space-between; align-items: center; border-top: 1px solid var(--color-border); padding-top: 12px; margin-top: 10px;">
+            <button class="btn btn-secondary btn-sm read-lesson-btn" data-index="1" style="font-size: 0.76rem;">Read Lesson</button>
+            <label style="display: flex; align-items: center; gap: 6px; font-size: 0.78rem; cursor: pointer; color: var(--text-muted);">
+              <input type="checkbox" class="lesson-checkbox" data-index="1" style="cursor: pointer; width: 15px; height: 15px;">
+              Completed
+            </label>
+          </div>
+        </div>
+
+        <!-- Lesson 2 -->
+        <div class="card lesson-card" data-index="2" style="display: flex; flex-direction: column; justify-content: space-between; transition: all var(--transition-normal); border-color: var(--color-border);">
+          <div>
+            <span style="font-size: 0.7rem; font-weight: 700; color: var(--color-primary); text-transform: uppercase;">Lesson 2</span>
+            <h3 style="font-size: 1.05rem; font-weight: 700; margin: 6px 0 10px 0;">Compound Interest & Rule of 72</h3>
+            <p style="font-size: 0.8rem; color: var(--text-muted); line-height: 1.5; margin-bottom: 16px;">
+              Discover the math of compound growth and double your money timeline using a simple mental division rule.
+            </p>
+          </div>
+          <div style="display: flex; justify-content: space-between; align-items: center; border-top: 1px solid var(--color-border); padding-top: 12px; margin-top: 10px;">
+            <button class="btn btn-secondary btn-sm read-lesson-btn" data-index="2" style="font-size: 0.76rem;">Read Lesson</button>
+            <label style="display: flex; align-items: center; gap: 6px; font-size: 0.78rem; cursor: pointer; color: var(--text-muted);">
+              <input type="checkbox" class="lesson-checkbox" data-index="2" style="cursor: pointer; width: 15px; height: 15px;">
+              Completed
+            </label>
+          </div>
+        </div>
+
+        <!-- Lesson 3 -->
+        <div class="card lesson-card" data-index="3" style="display: flex; flex-direction: column; justify-content: space-between; transition: all var(--transition-normal); border-color: var(--color-border);">
+          <div>
+            <span style="font-size: 0.7rem; font-weight: 700; color: var(--color-primary); text-transform: uppercase;">Lesson 3</span>
+            <h3 style="font-size: 1.05rem; font-weight: 700; margin: 6px 0 10px 0;">Debt Snowball vs Avalanche</h3>
+            <p style="font-size: 0.8rem; color: var(--text-muted); line-height: 1.5; margin-bottom: 16px;">
+              Compare strategies to tackle liabilities: focus on smallest balances first for momentum or highest interest rates first.
+            </p>
+          </div>
+          <div style="display: flex; justify-content: space-between; align-items: center; border-top: 1px solid var(--color-border); padding-top: 12px; margin-top: 10px;">
+            <button class="btn btn-secondary btn-sm read-lesson-btn" data-index="3" style="font-size: 0.76rem;">Read Lesson</button>
+            <label style="display: flex; align-items: center; gap: 6px; font-size: 0.78rem; cursor: pointer; color: var(--text-muted);">
+              <input type="checkbox" class="lesson-checkbox" data-index="3" style="cursor: pointer; width: 15px; height: 15px;">
+              Completed
+            </label>
+          </div>
+        </div>
+
+        <!-- Lesson 4 -->
+        <div class="card lesson-card" data-index="4" style="display: flex; flex-direction: column; justify-content: space-between; transition: all var(--transition-normal); border-color: var(--color-border);">
+          <div>
+            <span style="font-size: 0.7rem; font-weight: 700; color: var(--color-primary); text-transform: uppercase;">Lesson 4</span>
+            <h3 style="font-size: 1.05rem; font-weight: 700; margin: 6px 0 10px 0;">Building an Emergency Cushion</h3>
+            <p style="font-size: 0.8rem; color: var(--text-muted); line-height: 1.5; margin-bottom: 16px;">
+              Understand the baseline calculations to secure 3 to 6 months of expenses, guarding against unforeseen risks.
+            </p>
+          </div>
+          <div style="display: flex; justify-content: space-between; align-items: center; border-top: 1px solid var(--color-border); padding-top: 12px; margin-top: 10px;">
+            <button class="btn btn-secondary btn-sm read-lesson-btn" data-index="4" style="font-size: 0.76rem;">Read Lesson</button>
+            <label style="display: flex; align-items: center; gap: 6px; font-size: 0.78rem; cursor: pointer; color: var(--text-muted);">
+              <input type="checkbox" class="lesson-checkbox" data-index="4" style="cursor: pointer; width: 15px; height: 15px;">
+              Completed
+            </label>
+          </div>
+        </div>
+
+        <!-- Lesson 5 -->
+        <div class="card lesson-card" data-index="5" style="display: flex; flex-direction: column; justify-content: space-between; transition: all var(--transition-normal); border-color: var(--color-border);">
+          <div>
+            <span style="font-size: 0.7rem; font-weight: 700; color: var(--color-primary); text-transform: uppercase;">Lesson 5</span>
+            <h3 style="font-size: 1.05rem; font-weight: 700; margin: 6px 0 10px 0;">Inflation & Purchasing Power</h3>
+            <p style="font-size: 0.8rem; color: var(--text-muted); line-height: 1.5; margin-bottom: 16px;">
+              Discover how prices rise over time, eroding the real value of uninvested cash under the mattress.
+            </p>
+          </div>
+          <div style="display: flex; justify-content: space-between; align-items: center; border-top: 1px solid var(--color-border); padding-top: 12px; margin-top: 10px;">
+            <button class="btn btn-secondary btn-sm read-lesson-btn" data-index="5" style="font-size: 0.76rem;">Read Lesson</button>
+            <label style="display: flex; align-items: center; gap: 6px; font-size: 0.78rem; cursor: pointer; color: var(--text-muted);">
+              <input type="checkbox" class="lesson-checkbox" data-index="5" style="cursor: pointer; width: 15px; height: 15px;">
+              Completed
+            </label>
+          </div>
+        </div>
+
+        <!-- Lesson 6 -->
+        <div class="card lesson-card" data-index="6" style="display: flex; flex-direction: column; justify-content: space-between; transition: all var(--transition-normal); border-color: var(--color-border);">
+          <div>
+            <span style="font-size: 0.7rem; font-weight: 700; color: var(--color-primary); text-transform: uppercase;">Lesson 6</span>
+            <h3 style="font-size: 1.05rem; font-weight: 700; margin: 6px 0 10px 0;">Understanding Credit Scores</h3>
+            <p style="font-size: 0.8rem; color: var(--text-muted); line-height: 1.5; margin-bottom: 16px;">
+              Learn how credit bureaus rate creditworthiness and how scores dictate mortgage and loan rates.
+            </p>
+          </div>
+          <div style="display: flex; justify-content: space-between; align-items: center; border-top: 1px solid var(--color-border); padding-top: 12px; margin-top: 10px;">
+            <button class="btn btn-secondary btn-sm read-lesson-btn" data-index="6" style="font-size: 0.76rem;">Read Lesson</button>
+            <label style="display: flex; align-items: center; gap: 6px; font-size: 0.78rem; cursor: pointer; color: var(--text-muted);">
+              <input type="checkbox" class="lesson-checkbox" data-index="6" style="cursor: pointer; width: 15px; height: 15px;">
+              Completed
+            </label>
+          </div>
+        </div>
+
+        <!-- Lesson 7 -->
+        <div class="card lesson-card" data-index="7" style="display: flex; flex-direction: column; justify-content: space-between; transition: all var(--transition-normal); border-color: var(--color-border);">
+          <div>
+            <span style="font-size: 0.7rem; font-weight: 700; color: var(--color-primary); text-transform: uppercase;">Lesson 7</span>
+            <h3 style="font-size: 1.05rem; font-weight: 700; margin: 6px 0 10px 0;">Asset Classes & Diversification</h3>
+            <p style="font-size: 0.8rem; color: var(--text-muted); line-height: 1.5; margin-bottom: 16px;">
+              Explore cash, equities, bonds, and real estate, and see why distributing assets mitigates market risks.
+            </p>
+          </div>
+          <div style="display: flex; justify-content: space-between; align-items: center; border-top: 1px solid var(--color-border); padding-top: 12px; margin-top: 10px;">
+            <button class="btn btn-secondary btn-sm read-lesson-btn" data-index="7" style="font-size: 0.76rem;">Read Lesson</button>
+            <label style="display: flex; align-items: center; gap: 6px; font-size: 0.78rem; cursor: pointer; color: var(--text-muted);">
+              <input type="checkbox" class="lesson-checkbox" data-index="7" style="cursor: pointer; width: 15px; height: 15px;">
+              Completed
+            </label>
+          </div>
+        </div>
+
+        <!-- Lesson 8 -->
+        <div class="card lesson-card" data-index="8" style="display: flex; flex-direction: column; justify-content: space-between; transition: all var(--transition-normal); border-color: var(--color-border);">
+          <div>
+            <span style="font-size: 0.7rem; font-weight: 700; color: var(--color-primary); text-transform: uppercase;">Lesson 8</span>
+            <h3 style="font-size: 1.05rem; font-weight: 700; margin: 6px 0 10px 0;">The True Cost of Debt</h3>
+            <p style="font-size: 0.8rem; color: var(--text-muted); line-height: 1.5; margin-bottom: 16px;">
+              Evaluate the math of compounding interest on consumer loans vs long-term investment leverage.
+            </p>
+          </div>
+          <div style="display: flex; justify-content: space-between; align-items: center; border-top: 1px solid var(--color-border); padding-top: 12px; margin-top: 10px;">
+            <button class="btn btn-secondary btn-sm read-lesson-btn" data-index="8" style="font-size: 0.76rem;">Read Lesson</button>
+            <label style="display: flex; align-items: center; gap: 6px; font-size: 0.78rem; cursor: pointer; color: var(--text-muted);">
+              <input type="checkbox" class="lesson-checkbox" data-index="8" style="cursor: pointer; width: 15px; height: 15px;">
+              Completed
+            </label>
+          </div>
+        </div>
+
+        <!-- Lesson 9 -->
+        <div class="card lesson-card" data-index="9" style="display: flex; flex-direction: column; justify-content: space-between; transition: all var(--transition-normal); border-color: var(--color-border);">
+          <div>
+            <span style="font-size: 0.7rem; font-weight: 700; color: var(--color-primary); text-transform: uppercase;">Lesson 9</span>
+            <h3 style="font-size: 1.05rem; font-weight: 700; margin: 6px 0 10px 0;">Retirement Accounts & Pensions</h3>
+            <p style="font-size: 0.8rem; color: var(--text-muted); line-height: 1.5; margin-bottom: 16px;">
+              Understand tax shields, pension pots, and retirement funds that lower your current taxable income.
+            </p>
+          </div>
+          <div style="display: flex; justify-content: space-between; align-items: center; border-top: 1px solid var(--color-border); padding-top: 12px; margin-top: 10px;">
+            <button class="btn btn-secondary btn-sm read-lesson-btn" data-index="9" style="font-size: 0.76rem;">Read Lesson</button>
+            <label style="display: flex; align-items: center; gap: 6px; font-size: 0.78rem; cursor: pointer; color: var(--text-muted);">
+              <input type="checkbox" class="lesson-checkbox" data-index="9" style="cursor: pointer; width: 15px; height: 15px;">
+              Completed
+            </label>
+          </div>
+        </div>
+
+        <!-- Lesson 10 -->
+        <div class="card lesson-card" data-index="10" style="display: flex; flex-direction: column; justify-content: space-between; transition: all var(--transition-normal); border-color: var(--color-border);">
+          <div>
+            <span style="font-size: 0.7rem; font-weight: 700; color: var(--color-primary); text-transform: uppercase;">Lesson 10</span>
+            <h3 style="font-size: 1.05rem; font-weight: 700; margin: 6px 0 10px 0;">Psychology of Spend & Ads</h3>
+            <p style="font-size: 0.8rem; color: var(--text-muted); line-height: 1.5; margin-bottom: 16px;">
+              Combat impulse purchases, shopping therapy habits, and learn how pricing tricks manipulate shoppers.
+            </p>
+          </div>
+          <div style="display: flex; justify-content: space-between; align-items: center; border-top: 1px solid var(--color-border); padding-top: 12px; margin-top: 10px;">
+            <button class="btn btn-secondary btn-sm read-lesson-btn" data-index="10" style="font-size: 0.76rem;">Read Lesson</button>
+            <label style="display: flex; align-items: center; gap: 6px; font-size: 0.78rem; cursor: pointer; color: var(--text-muted);">
+              <input type="checkbox" class="lesson-checkbox" data-index="10" style="cursor: pointer; width: 15px; height: 15px;">
+              Completed
+            </label>
+          </div>
+        </div>
+      </div>
+
+      <!-- SECTION: RECOMMENDED BOOKS -->
+      <div id="guideBooksSection" style="display: none; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 20px;">
+        <!-- Book 1 -->
+        <div class="card book-card" data-index="1" style="display: flex; flex-direction: column; justify-content: space-between; transition: all var(--transition-normal); border-color: var(--color-border);">
+          <div>
+            <span style="font-size: 0.7rem; font-weight: 700; color: #eab308; text-transform: uppercase;">Bestseller 1</span>
+            <h3 style="font-size: 1.05rem; font-weight: 700; margin: 6px 0 4px 0;">Rich Dad Poor Dad</h3>
+            <p style="font-size: 0.76rem; color: var(--text-muted); margin-bottom: 12px;">by Robert T. Kiyosaki</p>
+            <p style="font-size: 0.8rem; color: var(--text-muted); line-height: 1.5; margin-bottom: 16px;">
+              Teaches the distinction between assets and liabilities, and explains why the wealthy focus on acquiring assets.
+            </p>
+          </div>
+          <div style="display: flex; justify-content: space-between; align-items: center; border-top: 1px solid var(--color-border); padding-top: 12px; margin-top: 10px;">
+            <button class="btn btn-secondary btn-sm read-book-btn" data-index="1" style="font-size: 0.76rem;">View Summary</button>
+            <label style="display: flex; align-items: center; gap: 6px; font-size: 0.78rem; cursor: pointer; color: var(--text-muted);">
+              <input type="checkbox" class="book-checkbox" data-index="1" style="cursor: pointer; width: 15px; height: 15px;">
+              Read
+            </label>
+          </div>
+        </div>
+
+        <!-- Book 2 -->
+        <div class="card book-card" data-index="2" style="display: flex; flex-direction: column; justify-content: space-between; transition: all var(--transition-normal); border-color: var(--color-border);">
+          <div>
+            <span style="font-size: 0.7rem; font-weight: 700; color: #eab308; text-transform: uppercase;">Bestseller 2</span>
+            <h3 style="font-size: 1.05rem; font-weight: 700; margin: 6px 0 4px 0;">The Psychology of Money</h3>
+            <p style="font-size: 0.76rem; color: var(--text-muted); margin-bottom: 12px;">by Morgan Housel</p>
+            <p style="font-size: 0.8rem; color: var(--text-muted); line-height: 1.5; margin-bottom: 16px;">
+              Explores how personal emotions, history, and ego impact financial behaviors, proving that doing well with money is about behavior.
+            </p>
+          </div>
+          <div style="display: flex; justify-content: space-between; align-items: center; border-top: 1px solid var(--color-border); padding-top: 12px; margin-top: 10px;">
+            <button class="btn btn-secondary btn-sm read-book-btn" data-index="2" style="font-size: 0.76rem;">View Summary</button>
+            <label style="display: flex; align-items: center; gap: 6px; font-size: 0.78rem; cursor: pointer; color: var(--text-muted);">
+              <input type="checkbox" class="book-checkbox" data-index="2" style="cursor: pointer; width: 15px; height: 15px;">
+              Read
+            </label>
+          </div>
+        </div>
+
+        <!-- Book 3 -->
+        <div class="card book-card" data-index="3" style="display: flex; flex-direction: column; justify-content: space-between; transition: all var(--transition-normal); border-color: var(--color-border);">
+          <div>
+            <span style="font-size: 0.7rem; font-weight: 700; color: #eab308; text-transform: uppercase;">Bestseller 3</span>
+            <h3 style="font-size: 1.05rem; font-weight: 700; margin: 6px 0 4px 0;">The Richest Man in Babylon</h3>
+            <p style="font-size: 0.76rem; color: var(--text-muted); margin-bottom: 12px;">by George S. Clason</p>
+            <p style="font-size: 0.8rem; color: var(--text-muted); line-height: 1.5; margin-bottom: 16px;">
+              A timeless classic containing financial parables, explaining the primary laws of wealth including "Pay yourself first" (saving 10%).
+            </p>
+          </div>
+          <div style="display: flex; justify-content: space-between; align-items: center; border-top: 1px solid var(--color-border); padding-top: 12px; margin-top: 10px;">
+            <button class="btn btn-secondary btn-sm read-book-btn" data-index="3" style="font-size: 0.76rem;">View Summary</button>
+            <label style="display: flex; align-items: center; gap: 6px; font-size: 0.78rem; cursor: pointer; color: var(--text-muted);">
+              <input type="checkbox" class="book-checkbox" data-index="3" style="cursor: pointer; width: 15px; height: 15px;">
+              Read
+            </label>
+          </div>
+        </div>
+
+        <!-- Book 4 -->
+        <div class="card book-card" data-index="4" style="display: flex; flex-direction: column; justify-content: space-between; transition: all var(--transition-normal); border-color: var(--color-border);">
+          <div>
+            <span style="font-size: 0.7rem; font-weight: 700; color: #eab308; text-transform: uppercase;">Bestseller 4</span>
+            <h3 style="font-size: 1.05rem; font-weight: 700; margin: 6px 0 4px 0;">The Total Money Makeover</h3>
+            <p style="font-size: 0.76rem; color: var(--text-muted); margin-bottom: 12px;">by Dave Ramsey</p>
+            <p style="font-size: 0.8rem; color: var(--text-muted); line-height: 1.5; margin-bottom: 16px;">
+              A step-by-step practical guide outline to pay off debts, build intermediate cushions, and fully fund long-term portfolios.
+            </p>
+          </div>
+          <div style="display: flex; justify-content: space-between; align-items: center; border-top: 1px solid var(--color-border); padding-top: 12px; margin-top: 10px;">
+            <button class="btn btn-secondary btn-sm read-book-btn" data-index="4" style="font-size: 0.76rem;">View Summary</button>
+            <label style="display: flex; align-items: center; gap: 6px; font-size: 0.78rem; cursor: pointer; color: var(--text-muted);">
+              <input type="checkbox" class="book-checkbox" data-index="4" style="cursor: pointer; width: 15px; height: 15px;">
+              Read
+            </label>
+          </div>
+        </div>
+
+        <!-- Book 5 -->
+        <div class="card book-card" data-index="5" style="display: flex; flex-direction: column; justify-content: space-between; transition: all var(--transition-normal); border-color: var(--color-border);">
+          <div>
+            <span style="font-size: 0.7rem; font-weight: 700; color: #eab308; text-transform: uppercase;">Bestseller 5</span>
+            <h3 style="font-size: 1.05rem; font-weight: 700; margin: 6px 0 4px 0;">The Intelligent Investor</h3>
+            <p style="font-size: 0.76rem; color: var(--text-muted); margin-bottom: 12px;">by Benjamin Graham</p>
+            <p style="font-size: 0.8rem; color: var(--text-muted); line-height: 1.5; margin-bottom: 16px;">
+              The foundational Bible of value investing, detailing defensive strategies and warnings against market noise.
+            </p>
+          </div>
+          <div style="display: flex; justify-content: space-between; align-items: center; border-top: 1px solid var(--color-border); padding-top: 12px; margin-top: 10px;">
+            <button class="btn btn-secondary btn-sm read-book-btn" data-index="5" style="font-size: 0.76rem;">View Summary</button>
+            <label style="display: flex; align-items: center; gap: 6px; font-size: 0.78rem; cursor: pointer; color: var(--text-muted);">
+              <input type="checkbox" class="book-checkbox" data-index="5" style="cursor: pointer; width: 15px; height: 15px;">
+              Read
+            </label>
+          </div>
+        </div>
+
+        <!-- Book 6 -->
+        <div class="card book-card" data-index="6" style="display: flex; flex-direction: column; justify-content: space-between; transition: all var(--transition-normal); border-color: var(--color-border);">
+          <div>
+            <span style="font-size: 0.7rem; font-weight: 700; color: #eab308; text-transform: uppercase;">Bestseller 6</span>
+            <h3 style="font-size: 1.05rem; font-weight: 700; margin: 6px 0 4px 0;">Think and Grow Rich</h3>
+            <p style="font-size: 0.76rem; color: var(--text-muted); margin-bottom: 12px;">by Napoleon Hill</p>
+            <p style="font-size: 0.8rem; color: var(--text-muted); line-height: 1.5; margin-bottom: 16px;">
+              Explores how desire, persistent visualization, and mastermind partnerships create paths to personal wealth.
+            </p>
+          </div>
+          <div style="display: flex; justify-content: space-between; align-items: center; border-top: 1px solid var(--color-border); padding-top: 12px; margin-top: 10px;">
+            <button class="btn btn-secondary btn-sm read-book-btn" data-index="6" style="font-size: 0.76rem;">View Summary</button>
+            <label style="display: flex; align-items: center; gap: 6px; font-size: 0.78rem; cursor: pointer; color: var(--text-muted);">
+              <input type="checkbox" class="book-checkbox" data-index="6" style="cursor: pointer; width: 15px; height: 15px;">
+              Read
+            </label>
+          </div>
+        </div>
+
+        <!-- Book 7 -->
+        <div class="card book-card" data-index="7" style="display: flex; flex-direction: column; justify-content: space-between; transition: all var(--transition-normal); border-color: var(--color-border);">
+          <div>
+            <span style="font-size: 0.7rem; font-weight: 700; color: #eab308; text-transform: uppercase;">Bestseller 7</span>
+            <h3 style="font-size: 1.05rem; font-weight: 700; margin: 6px 0 4px 0;">Your Money or Your Life</h3>
+            <p style="font-size: 0.76rem; color: var(--text-muted); margin-bottom: 12px;">by Vicki Robin</p>
+            <p style="font-size: 0.8rem; color: var(--text-muted); line-height: 1.5; margin-bottom: 16px;">
+              Evaluates the trade-off of precious life hours against expenses, encouraging frugal and mindful living.
+            </p>
+          </div>
+          <div style="display: flex; justify-content: space-between; align-items: center; border-top: 1px solid var(--color-border); padding-top: 12px; margin-top: 10px;">
+            <button class="btn btn-secondary btn-sm read-book-btn" data-index="7" style="font-size: 0.76rem;">View Summary</button>
+            <label style="display: flex; align-items: center; gap: 6px; font-size: 0.78rem; cursor: pointer; color: var(--text-muted);">
+              <input type="checkbox" class="book-checkbox" data-index="7" style="cursor: pointer; width: 15px; height: 15px;">
+              Read
+            </label>
+          </div>
+        </div>
+
+        <!-- Book 8 -->
+        <div class="card book-card" data-index="8" style="display: flex; flex-direction: column; justify-content: space-between; transition: all var(--transition-normal); border-color: var(--color-border);">
+          <div>
+            <span style="font-size: 0.7rem; font-weight: 700; color: #eab308; text-transform: uppercase;">Bestseller 8</span>
+            <h3 style="font-size: 1.05rem; font-weight: 700; margin: 6px 0 4px 0;">The Millionaire Next Door</h3>
+            <p style="font-size: 0.76rem; color: var(--text-muted); margin-bottom: 12px;">by Thomas J. Stanley</p>
+            <p style="font-size: 0.8rem; color: var(--text-muted); line-height: 1.5; margin-bottom: 16px;">
+              Reveals that real self-made millionaires are frugal, live below their means, and avoid showy consumerism.
+            </p>
+          </div>
+          <div style="display: flex; justify-content: space-between; align-items: center; border-top: 1px solid var(--color-border); padding-top: 12px; margin-top: 10px;">
+            <button class="btn btn-secondary btn-sm read-book-btn" data-index="8" style="font-size: 0.76rem;">View Summary</button>
+            <label style="display: flex; align-items: center; gap: 6px; font-size: 0.78rem; cursor: pointer; color: var(--text-muted);">
+              <input type="checkbox" class="book-checkbox" data-index="8" style="cursor: pointer; width: 15px; height: 15px;">
+              Read
+            </label>
+          </div>
+        </div>
+
+        <!-- Book 9 -->
+        <div class="card book-card" data-index="9" style="display: flex; flex-direction: column; justify-content: space-between; transition: all var(--transition-normal); border-color: var(--color-border);">
+          <div>
+            <span style="font-size: 0.7rem; font-weight: 700; color: #eab308; text-transform: uppercase;">Bestseller 9</span>
+            <h3 style="font-size: 1.05rem; font-weight: 700; margin: 6px 0 4px 0;">I Will Teach You To Be Rich</h3>
+            <p style="font-size: 0.76rem; color: var(--text-muted); margin-bottom: 12px;">by Ramit Sethi</p>
+            <p style="font-size: 0.8rem; color: var(--text-muted); line-height: 1.5; margin-bottom: 16px;">
+              A modern, humorous guide to automating bank ledgers, negotiation, and spending guilt-free on what you love.
+            </p>
+          </div>
+          <div style="display: flex; justify-content: space-between; align-items: center; border-top: 1px solid var(--color-border); padding-top: 12px; margin-top: 10px;">
+            <button class="btn btn-secondary btn-sm read-book-btn" data-index="9" style="font-size: 0.76rem;">View Summary</button>
+            <label style="display: flex; align-items: center; gap: 6px; font-size: 0.78rem; cursor: pointer; color: var(--text-muted);">
+              <input type="checkbox" class="book-checkbox" data-index="9" style="cursor: pointer; width: 15px; height: 15px;">
+              Read
+            </label>
+          </div>
+        </div>
+
+        <!-- Book 10 -->
+        <div class="card book-card" data-index="10" style="display: flex; flex-direction: column; justify-content: space-between; transition: all var(--transition-normal); border-color: var(--color-border);">
+          <div>
+            <span style="font-size: 0.7rem; font-weight: 700; color: #eab308; text-transform: uppercase;">Bestseller 10</span>
+            <h3 style="font-size: 1.05rem; font-weight: 700; margin: 6px 0 4px 0;">Bogleheads' Guide to Invest</h3>
+            <p style="font-size: 0.76rem; color: var(--text-muted); margin-bottom: 12px;">by Taylor Larimore</p>
+            <p style="font-size: 0.8rem; color: var(--text-muted); line-height: 1.5; margin-bottom: 16px;">
+              Provides index-investing philosophies detailing low-cost passive index allocations for compounding wealth.
+            </p>
+          </div>
+          <div style="display: flex; justify-content: space-between; align-items: center; border-top: 1px solid var(--color-border); padding-top: 12px; margin-top: 10px;">
+            <button class="btn btn-secondary btn-sm read-book-btn" data-index="10" style="font-size: 0.76rem;">View Summary</button>
+            <label style="display: flex; align-items: center; gap: 6px; font-size: 0.78rem; cursor: pointer; color: var(--text-muted);">
+              <input type="checkbox" class="book-checkbox" data-index="10" style="cursor: pointer; width: 15px; height: 15px;">
+              Read
+            </label>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ==================== OVERLAY: LITERACY READ MODAL ==================== -->
+    <div class="modal-overlay" id="literacyReadModal">
+      <div class="modal-content" style="max-width: 520px;">
+        <div class="modal-header">
+          <h3 class="modal-title" id="literacyReadTitle">Lesson Reading Panel</h3>
+          <button class="modal-close-btn" aria-label="Close dialog"><svg><use href="#icon-close"></use></svg></button>
+        </div>
+        <div class="modal-body" id="literacyReadBody" style="padding-top: 15px; font-size: 0.88rem; line-height: 1.6; color: var(--text-muted); max-height: 380px; overflow-y: auto;">
+          <!-- Content populated dynamically -->
+        </div>
+        <div class="modal-footer" style="border-top: 1px solid var(--color-border); padding-top: 15px; margin-top: 15px;">
+          <button class="btn btn-primary" id="literacyReadCompleteBtn" style="width: 100%; font-weight: 700;">Mark as Read & Close</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- ==================== PANEL: SETTINGS ==================== -->
+    <div class="view-panel" id="settings-panel">
+      <div class="header-title" style="margin-bottom: 10px;">
+        <h2>Profile & Settings</h2>
+        <p>Manage your account name, preferred currency, and monthly budget aggregates.</p>
+      </div>
+
+      <div class="card settings-container">
+        <form id="settingsForm">
+          <!-- Profile Picture Picker -->
+          <div class="form-group" style="display: flex; align-items: center; gap: 16px; margin-bottom: 20px;">
+            <div id="settingsAvatarPreview" class="profile-avatar" style="width: 60px; height: 60px; font-size: 1.5rem; border-radius: 50%; background: var(--color-primary-glow); color: var(--color-primary); display: flex; align-items: center; justify-content: center; font-weight: 700; border: 2px solid var(--color-primary); overflow: hidden; background-size: cover; background-position: center; flex-shrink: 0;">U</div>
+            <div>
+              <label style="display: block; font-weight: 600; margin-bottom: 6px; font-size: 0.9rem; color: var(--text-main);">Profile Image</label>
+              <button type="button" class="btn btn-secondary" id="changeAvatarBtn" style="font-size: 0.8rem; padding: 6px 12px; font-family: inherit;">Choose Image</button>
+              <button type="button" class="btn btn-danger" id="removeAvatarBtn" style="font-size: 0.8rem; padding: 6px 12px; margin-left: 6px; display: none; font-family: inherit;">Remove</button>
+              <input type="file" id="settingsProfilePicInput" accept="image/*" style="display: none;">
+            </div>
+          </div>
+
+          <div class="form-group">
+            <label for="settingsUserName">Profile Display Name</label>
+            <input type="text" id="settingsUserName" required>
+          </div>
+
+          <div class="form-group">
+            <label for="settingsCurrency">Preferred Currency</label>
+            <select id="settingsCurrency">
+              <option value="$">USD ($)</option>
+              <option value="€">EUR (€)</option>
+              <option value="£">GBP (£)</option>
+              <option value="¥">JPY/CNY (¥)</option>
+              <option value="₹">INR (₹)</option>
+              <option value="C$">CAD (C$)</option>
+              <option value="A$">AUD (A$)</option>
+              <option value="Fr">CHF (Fr)</option>
+              <option value="kr">SEK/NOK/DKK (kr)</option>
+              <option value="zł">PLN (zł)</option>
+              <option value="R$">BRL (R$)</option>
+              <option value="₽">RUB (₽)</option>
+              <option value="R">ZAR (R)</option>
+              <option value="د.إ">AED (د.إ)</option>
+              <option value="ر.س">SAR (ر.س)</option>
+              <option value="₪">ILS (₪)</option>
+              <option value="₱">PHP (₱)</option>
+              <option value="Rp">IDR (Rp)</option>
+              <option value="RM">MYR (RM)</option>
+              <option value="฿">THB (฿)</option>
+              <option value="₫">VND (₫)</option>
+              <option value="₦">NGN (₦)</option>
+              <option value="KSh">KES (KSh)</option>
+              <option value="GH₵">GHS (GH₵)</option>
+              <option value="custom">Custom Symbol...</option>
+            </select>
+          </div>
+
+          <div class="form-group" id="customCurrencyGroup" style="display: none;">
+            <label for="settingsCustomCurrency">Custom Currency Symbol / Code</label>
+            <input type="text" id="settingsCustomCurrency" maxlength="8" placeholder="e.g. ₦, KSh, GH₵, or USD">
+          </div>
+
+          <div class="form-group">
+            <label for="settingsSavingsGoal">Monthly Savings Goal</label>
+            <input type="number" id="settingsSavingsGoal" required min="0">
+          </div>
+
+          <!-- Premium Theme Selection -->
+          <div class="form-group" style="margin-top: 15px;">
+            <label style="display: flex; align-items: center; justify-content: space-between; font-weight: 600; font-size: 0.9rem; color: var(--text-main);">
+              <span>Premium Dashboard Theme</span>
+              <span id="premiumThemeBadge" style="background: linear-gradient(135deg, #f1c40f, #f39c12); color: #0b0f19; font-size: 0.68rem; font-weight: 800; padding: 2px 6px; border-radius: 4px; display: flex; align-items: center; gap: 3px;">
+                👑 Premium
+              </span>
+            </label>
+            <div class="theme-options-grid" style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 10px; margin-top: 8px;">
+              <button type="button" class="btn-theme-select active" data-theme-val="default" style="padding: 10px; border-radius: 8px; border: 2px solid var(--color-primary); background: var(--bg-secondary); color: var(--text-main); font-size: 0.76rem; cursor: pointer; text-align: center; font-family: inherit;">
+                <div style="font-size: 1.1rem; margin-bottom: 4px;">🔵</div>
+                Default Indigo
+              </button>
+              <button type="button" class="btn-theme-select" data-theme-val="bumblebee" style="padding: 10px; border-radius: 8px; border: 2px solid var(--color-border); background: #000; color: #fff; font-size: 0.76rem; cursor: pointer; text-align: center; font-family: inherit;">
+                <div style="font-size: 1.1rem; margin-bottom: 4px;">🟡</div>
+                Bumblebee
+              </button>
+              <button type="button" class="btn-theme-select" data-theme-val="emerald" style="padding: 10px; border-radius: 8px; border: 2px solid var(--color-border); background: #07100b; color: #ecfdf5; font-size: 0.76rem; cursor: pointer; text-align: center; font-family: inherit;">
+                <div style="font-size: 1.1rem; margin-bottom: 4px;">🟢</div>
+                Emerald Luxury
+              </button>
+              <button type="button" class="btn-theme-select" data-theme-val="crimson" style="padding: 10px; border-radius: 8px; border: 2px solid var(--color-border); background: #0d0204; color: #fef2f2; font-size: 0.76rem; cursor: pointer; text-align: center; font-family: inherit;">
+                <div style="font-size: 1.1rem; margin-bottom: 4px;">🔴</div>
+                Crimson Neon
+              </button>
+            </div>
+            <div id="premiumThemeNotice" style="font-size: 0.72rem; color: var(--text-muted); margin-top: 6px; line-height: 1.4;">
+              Upgrade to Premium Membership to select custom colors and layout designs.
+            </div>
+          </div>
+
+          <button type="submit" class="btn btn-primary" style="margin-top: 10px;">Save Settings</button>
+          <button type="button" class="btn btn-danger" id="resetAppDataBtn" style="margin-top: 10px; margin-left: 10px;">Reset App Data</button>
+          
+          <div style="margin-top: 24px; border-top: 1px solid var(--color-border); padding-top: 20px;">
+            <label style="display: block; font-weight: 600; margin-bottom: 8px; font-size: 0.9rem; color: var(--text-main);">Load Shared Dashboard Backup (.json)</label>
+            <button type="button" class="btn btn-secondary" id="loadJsonBackupBtn" style="font-size: 0.82rem; padding: 8px 12px;">Choose JSON Backup File</button>
+            <input type="file" id="jsonBackupInput" accept=".json" style="display: none;">
+            <span style="display: block; font-size: 0.72rem; color: var(--text-muted); margin-top: 6px; line-height: 1.4;">
+              Upload a .json backup file shared by your friends or family to load their financial dashboard state on your screen.
+            </span>
+          </div>
+        </form>
+      </div>
+    </div>
+
+  </main>
+
+  <!-- ==================== OVERLAY: ADD TRANSACTION MODAL ==================== -->
+  <div class="modal-overlay" id="addTxModal">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h3 class="modal-title">Record Transaction</h3>
+        <button class="modal-close-btn" aria-label="Close dialog"><svg><use href="#icon-close"></use></svg></button>
+      </div>
+      <form id="addTxForm">
+        <div class="form-group">
+          <label for="addTxType">Type</label>
+          <select id="addTxType">
+            <option value="expense">Expense</option>
+            <option value="income">Income</option>
+          </select>
+        </div>
+
+        <div class="form-group">
+          <label for="addTxCategory">Category</label>
+          <select id="addTxCategory">
+            <!-- Populated dynamically -->
+          </select>
+        </div>
+
+        <div class="form-group" id="addTxCategoryOtherGroup" style="display: none; margin-top: 10px;">
+          <label for="addTxCategoryOther">Specify Other Category</label>
+          <input type="text" id="addTxCategoryOther" placeholder="Specify your transaction category" style="background: var(--bg-secondary); border: 1px solid var(--color-border); color: var(--text-main); border-radius: var(--border-radius-sm); padding: 10px; font-family: inherit; width: 100%;">
+        </div>
+
+        <div class="form-group">
+          <label for="addTxAmount">Amount</label>
+          <input type="number" id="addTxAmount" step="0.01" required min="0.01" placeholder="0.00">
+        </div>
+
+
+
+        <div class="form-group">
+          <label for="addTxDate">Date</label>
+          <input type="date" id="addTxDate" required>
+        </div>
+
+        <div class="form-group">
+          <label for="addTxDesc">Description</label>
+          <input type="text" id="addTxDesc" required placeholder="e.g. Weekly grocery run">
+        </div>
+
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary btn-cancel-modal">Cancel</button>
+          <button type="submit" class="btn btn-primary">Save Transaction</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- ==================== OVERLAY: EDIT BUDGET MODAL ==================== -->
+  <div class="modal-overlay" id="editBudgetModal">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h3 class="modal-title">Adjust Category Budget</h3>
+        <button class="modal-close-btn" aria-label="Close dialog"><svg><use href="#icon-close"></use></svg></button>
+      </div>
+      <form id="editBudgetForm">
+        <div class="form-group">
+          <label for="editBudgetCategory">Category</label>
+          <input type="text" id="editBudgetCategory" readonly style="opacity: 0.7;">
+        </div>
+
+        <div class="form-group">
+          <label for="editBudgetLimit">Monthly Limit</label>
+          <input type="number" id="editBudgetLimit" step="1" required min="0">
+        </div>
+
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary btn-cancel-modal">Cancel</button>
+          <button type="submit" class="btn btn-primary">Update Budget</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- ==================== OVERLAY: ADD SAVINGS GOAL MODAL ==================== -->
+  <div class="modal-overlay" id="addGoalModal">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h3 class="modal-title">Create Savings Goal</h3>
+        <button class="modal-close-btn" aria-label="Close dialog"><svg><use href="#icon-close"></use></svg></button>
+      </div>
+      <form id="addGoalForm">
+        <div class="form-group">
+          <label for="addGoalName">Goal Name</label>
+          <input type="text" id="addGoalName" required placeholder="e.g. Laptop, New Car">
+        </div>
+
+        <div class="form-group">
+          <label for="addGoalTarget">Target Amount</label>
+          <input type="number" id="addGoalTarget" step="1" required min="1" placeholder="e.g. 5000">
+        </div>
+
+        <div class="form-group">
+          <label for="addGoalCurrent">Starting Balance (Optional)</label>
+          <input type="number" id="addGoalCurrent" step="1" min="0" placeholder="0">
+        </div>
+
+        <div class="form-group">
+          <label for="addGoalDate">Target Date</label>
+          <input type="date" id="addGoalDate" required>
+        </div>
+
+        <div class="form-group">
+          <label for="addGoalDestination">Savings Destination (Where money is stored)</label>
+          <select id="addGoalDestination" style="background: var(--bg-secondary); border: 1px solid var(--color-border); color: var(--text-main); border-radius: var(--border-radius-sm); padding: 10px; font-family: inherit; width: 100%;">
+            <option value="Mobile Money (MoMo) Wallet">Mobile Money (MoMo) Wallet</option>
+            <option value="Achieve App">Achieve App</option>
+            <option value="Fido App">Fido App</option>
+            <option value="Other Savings App/Bank">Other Savings App / Bank</option>
+          </select>
+        </div>
+
+        <div class="form-group" id="addGoalDestinationOtherGroup" style="display: none; margin-top: 10px;">
+          <label for="addGoalDestinationOther">Specify Other Destination</label>
+          <input type="text" id="addGoalDestinationOther" placeholder="Specify your savings app or bank name" style="background: var(--bg-secondary); border: 1px solid var(--color-border); color: var(--text-main); border-radius: var(--border-radius-sm); padding: 10px; font-family: inherit; width: 100%;">
+        </div>
+
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary btn-cancel-modal">Cancel</button>
+          <button type="submit" class="btn btn-primary">Create Goal</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- ==================== OVERLAY: GOAL FUNDING MODAL ==================== -->
+  <div class="modal-overlay" id="goalFundModal">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h3 class="modal-title" id="goalFundTitle">Adjust Goal Funds</h3>
+        <button class="modal-close-btn" aria-label="Close dialog"><svg><use href="#icon-close"></use></svg></button>
+      </div>
+      <form id="goalFundForm">
+        <input type="hidden" id="goalFundType">
+        
+        <div class="form-group">
+          <label for="goalFundAmount">Amount</label>
+          <input type="number" id="goalFundAmount" step="1" required min="1" placeholder="0.00">
+          <span id="goalFundReminder" style="display: block; font-size: 0.75rem; color: #f39c12; margin-top: 8px; line-height: 1.4; font-weight: 600;"></span>
+        </div>
+
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary btn-cancel-modal">Cancel</button>
+          <button type="submit" class="btn btn-primary">Submit</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- ==================== OVERLAY: SHARE DASHBOARD MODAL ==================== -->
+  <div class="modal-overlay" id="shareModal">
+    <div class="modal-content" style="max-width: 480px;">
+      <div class="modal-header">
+        <h3 class="modal-title">Share Dashboard Summary</h3>
+        <button type="button" class="modal-close-btn">&times;</button>
+      </div>
+      <div class="modal-body" style="padding-top: 15px;">
+        <p style="color: var(--text-muted); font-size: 0.85rem; line-height: 1.5; margin-bottom: 20px;">
+          Send a quick status snapshot to friends or family. You can copy the text below, or download a portable data backup to share.
+        </p>
+
+        <div style="background: var(--bg-secondary); border-radius: var(--border-radius-md); padding: 18px; border: 1px solid var(--color-border); margin-bottom: 20px;">
+          <textarea id="shareTextSummary" readonly style="width: 100%; height: 130px; background: transparent; border: none; color: var(--text-main); font-family: monospace; font-size: 0.82rem; resize: none; outline: none; line-height: 1.5;"></textarea>
+        </div>
+
+        <div style="display: flex; gap: 10px; margin-bottom: 24px;">
+          <button class="btn btn-primary" id="copyShareBtn" style="flex: 1; font-weight: 600;">
+            Copy To Clipboard
+          </button>
+          <button class="btn btn-secondary" id="exportJsonShareBtn" style="flex: 1; font-weight: 600;" title="Download JSON file that family can load into their settings to view your dashboard">
+            Export Data File (JSON)
+          </button>
+        </div>
+
+        <div style="border-top: 1px solid var(--color-border); padding-top: 15px;">
+          <h4 style="font-size: 0.88rem; margin-bottom: 8px; font-weight: 600;">How to view a shared data file:</h4>
+          <p style="color: var(--text-muted); font-size: 0.78rem; line-height: 1.4;">
+            Your friends/family can load this `.json` backup file using the **Load Shared Dashboard Backup** option inside their Settings panel.
+          </p>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ==================== OVERLAY: PREMIUM UPGRADE MODAL ==================== -->
+  <div class="modal-overlay" id="premiumUpgradeModal">
+    <div class="modal-content" style="max-width: 440px; border: 2px solid #f1c40f; box-shadow: 0 0 30px rgba(241, 196, 15, 0.25);">
+      <div class="modal-header" style="border-bottom: 1px solid var(--color-border); padding-bottom: 15px;">
+        <h3 class="modal-title" style="color: #f1c40f; display: flex; align-items: center; gap: 8px;">
+          <svg style="width: 22px; height: 22px; fill: #f1c40f;"><use href="#icon-crown"></use></svg>
+          Unlock Premium Membership
+        </h3>
+        <button class="modal-close-btn" aria-label="Close dialog"><svg><use href="#icon-close"></use></svg></button>
+      </div>
+      <div class="modal-body" style="padding-top: 20px; text-align: center;">
+        <div style="font-size: 2.2rem; margin-bottom: 8px;">👑</div>
+        <h4 style="font-size: 1.15rem; font-weight: 800; color: var(--text-main); margin-bottom: 6px;">Go Premium for Lifetime Benefits</h4>
+        <p style="font-size: 0.84rem; color: var(--text-muted); line-height: 1.5; margin-bottom: 24px; padding: 0 10px;">
+          Take complete control of your finances. Upgrade today for a one-time purchase of just <strong style="color: var(--color-success); font-size: 1rem;">$0.99</strong>.
+        </p>
+
+        <!-- Premium Perks Checklist -->
+        <ul style="list-style: none; padding: 0; margin: 0 0 26px 0; display: flex; flex-direction: column; gap: 12px; text-align: left; font-size: 0.85rem; color: var(--text-main);">
+          <li style="display: flex; align-items: center; gap: 10px;">
+            <span style="color: var(--color-success); font-weight: 700;">✓</span>
+            <span><strong>Ad-Free Experience</strong>: Hides all sponsored banner ads.</span>
+          </li>
+          <li style="display: flex; align-items: center; gap: 10px;">
+            <span style="color: var(--color-success); font-weight: 700;">✓</span>
+            <span><strong>Deep Financial Insights</strong>: Fully unlock smart diagnostic details.</span>
+          </li>
+          <li style="display: flex; align-items: center; gap: 10px;">
+            <span style="color: var(--color-success); font-weight: 700;">✓</span>
+            <span><strong>Full Literacy Curriculum</strong>: Access all 10 lessons & book summaries.</span>
+          </li>
+          <li style="display: flex; align-items: center; gap: 10px;">
+            <span style="color: var(--color-success); font-weight: 700;">✓</span>
+            <span><strong>CSV Import / Export</strong>: Enable ledger downloads & json backups.</span>
+          </li>
+          <li style="display: flex; align-items: center; gap: 10px;">
+            <span style="color: var(--color-success); font-weight: 700;">✓</span>
+            <span><strong>Gold Crown Badge</strong>: Standout profile status styling.</span>
+          </li>
+        </ul>
+
+        <div style="border-top: 1px solid var(--color-border); padding-top: 20px; display: flex; flex-direction: column; gap: 10px;">
+          <button type="button" class="btn btn-primary" id="upgradeCheckoutBtn" style="width: 100%; padding: 12px; font-weight: 800; background: linear-gradient(135deg, #f1c40f, #f39c12); border-color: #f39c12; color: #0b0f19; font-size: 0.95rem; box-shadow: 0 4px 15px rgba(243, 156, 18, 0.2);">
+            Unlock Premium ($0.99)
+          </button>
+          <button type="button" class="btn btn-secondary btn-cancel-modal" style="width: 100%; padding: 10px;">Maybe Later</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ==================== ONBOARDING TOUR TOOLTIP ==================== -->
+  <div id="tourOverlay" style="display: none; position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; background: rgba(0,0,0,0.4); z-index: 10001; pointer-events: none; transition: all 0.3s ease;"></div>
+  
+  <div id="tourTooltip" style="display: none; position: absolute; width: 310px; background: var(--bg-card); border: 1.5px solid var(--color-primary); border-radius: var(--border-radius-md); box-shadow: 0 12px 30px rgba(0,0,0,0.5); padding: 18px; z-index: 10003; pointer-events: auto; font-family: inherit; transition: all 0.25s ease;">
+    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px;">
+      <span id="tourStepBadge" style="background: var(--color-primary-glow); color: var(--color-primary); font-size: 0.72rem; font-weight: 700; padding: 4px 10px; border-radius: 20px;">Step 1 of 5</span>
+      <button id="tourSkipBtn" style="background: none; border: none; color: var(--text-muted); font-size: 0.78rem; cursor: pointer; font-weight: 600;">Skip Tour</button>
+    </div>
+    <h4 id="tourTitle" style="font-size: 0.98rem; margin-bottom: 8px; font-weight: 700; color: var(--text-main);"></h4>
+    <p id="tourText" style="font-size: 0.82rem; color: var(--text-muted); line-height: 1.5; margin-bottom: 18px;"></p>
+    <div style="display: flex; justify-content: space-between; align-items: center;">
+      <button id="tourPrevBtn" class="btn btn-secondary btn-sm" style="font-size: 0.75rem; padding: 6px 14px;">Back</button>
+      <button id="tourNextBtn" class="btn btn-primary btn-sm" style="font-size: 0.75rem; padding: 6px 14px; background: var(--color-primary); color: #fff;">Next</button>
+    </div>
+  </div>
+
+  <!-- ==================== SIGN IN / SIGN UP AUTH PANEL ==================== -->
+  <div id="authPanel" style="position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; background: var(--bg-main); display: grid; place-items: center; overflow-y: auto; padding: 40px 16px; z-index: 10020; backdrop-filter: blur(20px); transition: all 0.4s ease;">
+    <div class="card auth-card" style="width: 100%; max-width: 420px; padding: 32px; border-radius: var(--border-radius-lg); box-shadow: var(--shadow-card); border: 1px solid var(--color-border); background: var(--bg-card); display: flex; flex-direction: column; gap: 20px; margin: auto;">
+      <div style="text-align: center;">
+        <h2 id="authTitle" style="font-size: 1.8rem; font-weight: 800; background: linear-gradient(135deg, var(--color-primary), #a855f7); -webkit-background-clip: text; -webkit-text-fill-color: transparent; margin: 0;">Sign In</h2>
+        <p id="authSubtitle" style="font-size: 0.88rem; color: var(--text-muted); margin-top: 6px; margin-bottom: 0;">Access your personal financial dashboard</p>
+      </div>
+
+      <form id="authForm" style="display: flex; flex-direction: column; gap: 16px;">
+        <div class="form-group" id="fullNameGroup" style="display: none;">
+          <label for="authFullName" style="font-weight: 600; font-size: 0.85rem; display: block; margin-bottom: 6px;">Full Name</label>
+          <input type="text" id="authFullName" placeholder="e.g. John Doe" style="width: 100%; padding: 11px 14px; background: var(--bg-secondary); border: 1px solid var(--color-border); color: var(--text-main); border-radius: var(--border-radius-sm); font-family: inherit; font-size: 0.9rem; outline: none;">
+        </div>
+
+        <div class="form-group" id="usernameGroup">
+          <label for="authUsername" style="font-weight: 600; font-size: 0.85rem; display: block; margin-bottom: 6px;">Username</label>
+          <input type="text" id="authUsername" required placeholder="Enter username" style="width: 100%; padding: 11px 14px; background: var(--bg-secondary); border: 1px solid var(--color-border); color: var(--text-main); border-radius: var(--border-radius-sm); font-family: inherit; font-size: 0.9rem; outline: none;">
+        </div>
+
+        <div class="form-group" id="passwordGroup">
+          <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px;">
+            <label for="authPassword" style="font-weight: 600; font-size: 0.85rem; margin: 0;">Password</label>
+            <a href="#" id="forgotPasswordLink" style="font-size: 0.78rem; color: var(--color-primary); text-decoration: none; font-weight: 600;">Forgot?</a>
+          </div>
+          <div style="position: relative; display: flex; align-items: center; width: 100%;">
+            <input type="password" id="authPassword" required placeholder="Enter password" style="width: 100%; padding: 11px 48px 11px 14px; background: var(--bg-secondary); border: 1px solid var(--color-border); color: var(--text-main); border-radius: var(--border-radius-sm); font-family: inherit; font-size: 0.9rem; outline: none;">
+            <button type="button" class="toggle-password-btn" data-target="authPassword" style="position: absolute; right: 12px; background: none; border: none; color: var(--text-muted); cursor: pointer; padding: 4px; display: flex; align-items: center; justify-content: center; font-size: 0.72rem; font-weight: 700; text-transform: uppercase; outline: none; transition: color 0.2s;">Show</button>
+          </div>
+        </div>
+
+        <div class="form-group" id="confirmPasswordGroup" style="display: none;">
+          <label for="authConfirmPassword" style="font-weight: 600; font-size: 0.85rem; display: block; margin-bottom: 6px;">Confirm Password</label>
+          <div style="position: relative; display: flex; align-items: center; width: 100%;">
+            <input type="password" id="authConfirmPassword" placeholder="Repeat password" style="width: 100%; padding: 11px 48px 11px 14px; background: var(--bg-secondary); border: 1px solid var(--color-border); color: var(--text-main); border-radius: var(--border-radius-sm); font-family: inherit; font-size: 0.9rem; outline: none;">
+            <button type="button" class="toggle-password-btn" data-target="authConfirmPassword" style="position: absolute; right: 12px; background: none; border: none; color: var(--text-muted); cursor: pointer; padding: 4px; display: flex; align-items: center; justify-content: center; font-size: 0.72rem; font-weight: 700; text-transform: uppercase; outline: none; transition: color 0.2s;">Show</button>
+          </div>
+        </div>
+
+        <div class="form-group" id="securityQuestionGroup" style="display: none;">
+          <label for="authSecurityQuestion" style="font-weight: 600; font-size: 0.85rem; display: block; margin-bottom: 6px;">Security Question (For password recovery)</label>
+          <select id="authSecurityQuestion" style="width: 100%; padding: 11px 14px; background: var(--bg-secondary); border: 1px solid var(--color-border); color: var(--text-main); border-radius: var(--border-radius-sm); font-family: inherit; font-size: 0.9rem; outline: none; cursor: pointer;">
+            <option value="What was the name of your first school?">What was the name of your first school?</option>
+            <option value="What is your mother's maiden name?">What is your mother's maiden name?</option>
+            <option value="In what city were you born?">In what city were you born?</option>
+          </select>
+        </div>
+
+        <div class="form-group" id="securityAnswerGroup" style="display: none;">
+          <label for="authSecurityAnswer" id="securityAnswerLabel" style="font-weight: 600; font-size: 0.85rem; display: block; margin-bottom: 6px;">Security Answer</label>
+          <input type="text" id="authSecurityAnswer" placeholder="Enter your answer" style="width: 100%; padding: 11px 14px; background: var(--bg-secondary); border: 1px solid var(--color-border); color: var(--text-main); border-radius: var(--border-radius-sm); font-family: inherit; font-size: 0.9rem; outline: none;">
+        </div>
+
+        <div class="form-group" id="currencyGroup" style="display: none;">
+          <label for="authCurrency" style="font-weight: 600; font-size: 0.85rem; display: block; margin-bottom: 6px;">Preferred Currency</label>
+          <select id="authCurrency" style="width: 100%; padding: 11px 14px; background: var(--bg-secondary); border: 1px solid var(--color-border); color: var(--text-main); border-radius: var(--border-radius-sm); font-family: inherit; font-size: 0.9rem; outline: none; cursor: pointer;">
+            <option value="GH₵">GHS (GH₵)</option>
+            <option value="$">USD ($)</option>
+            <option value="€">EUR (€)</option>
+            <option value="£">GBP (£)</option>
+          </select>
+        </div>
+
+        <button type="submit" class="btn btn-primary" id="authSubmitBtn" style="width: 100%; padding: 12px; font-weight: 700; margin-top: 8px;">Log In</button>
+      </form>
+
+      <div style="text-align: center; font-size: 0.85rem; color: var(--text-muted);">
+        <span id="authToggleText">Don't have an account?</span>
+        <a href="#" id="authToggleLink" style="color: var(--color-primary); font-weight: 700; text-decoration: none; margin-left: 4px;">Sign Up</a>
+      </div>
+    </div>
+  </div>
+
+  <!-- ==================== CHART JS, PAYSTACK SDK & SCRIPTS ==================== -->
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <script src="https://js.paystack.co/v1/inline.js"></script>
+  <script src="store.js"></script>
+  <script src="charts.js"></script>
+  <script src="app.js"></script>
+  <!-- CONFETTI CANVAS FOR SAVINGS CELEBRATIONS -->
+  <canvas id="confettiCanvas" style="position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; pointer-events: none; z-index: 10010; display: none;"></canvas>
+</body>
+</html>
