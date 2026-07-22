@@ -160,41 +160,41 @@
         </div>
         <div class="logo-text">FinFlow</div>
       </div>
-      <button id="sidebarCloseBtn" class="btn btn-secondary btn-icon" title="Close menu" style="display: none; padding: 6px; min-width: 32px; height: 32px; align-items: center; justify-content: center; border: none; background: transparent; color: var(--text-muted); cursor: pointer;">
+      <button id="sidebarCloseBtn" class="btn btn-secondary btn-icon" title="Close menu" onclick="document.getElementById('appSidebar').classList.remove('active'); document.getElementById('sidebarBackdrop').classList.remove('active');" style="display: none; padding: 6px; min-width: 32px; height: 32px; align-items: center; justify-content: center; border: none; background: transparent; color: var(--text-muted); cursor: pointer;">
         <svg style="width: 18px; height: 18px; fill: none; stroke: currentColor; stroke-width: 2.5;"><use href="#icon-close"></use></svg>
       </button>
     </div>
 
     <nav id="appNavigation">
-      <a class="nav-item active" data-target="dashboard">
+      <a class="nav-item active" data-target="dashboard" onclick="document.getElementById('appSidebar').classList.remove('active'); document.getElementById('sidebarBackdrop').classList.remove('active');">
         <svg><use href="#icon-dashboard"></use></svg>
         <span>Overview</span>
       </a>
-      <a class="nav-item" data-target="budgets">
+      <a class="nav-item" data-target="budgets" onclick="document.getElementById('appSidebar').classList.remove('active'); document.getElementById('sidebarBackdrop').classList.remove('active');">
         <svg><use href="#icon-wallet"></use></svg>
         <span>Budgets</span>
       </a>
-      <a class="nav-item" data-target="goals">
+      <a class="nav-item" data-target="goals" onclick="document.getElementById('appSidebar').classList.remove('active'); document.getElementById('sidebarBackdrop').classList.remove('active');">
         <svg><use href="#icon-target"></use></svg>
         <span>Savings Goals</span>
       </a>
-      <a class="nav-item" data-target="todos">
+      <a class="nav-item" data-target="todos" onclick="document.getElementById('appSidebar').classList.remove('active'); document.getElementById('sidebarBackdrop').classList.remove('active');">
         <svg><use href="#icon-todo"></use></svg>
         <span>Tasks Checklist</span>
       </a>
-      <a class="nav-item" data-target="guide">
+      <a class="nav-item" data-target="guide" onclick="document.getElementById('appSidebar').classList.remove('active'); document.getElementById('sidebarBackdrop').classList.remove('active');">
         <svg><use href="#icon-book"></use></svg>
         <span>Financial Guide</span>
       </a>
-      <a class="nav-item" data-target="settings">
+      <a class="nav-item" data-target="settings" onclick="document.getElementById('appSidebar').classList.remove('active'); document.getElementById('sidebarBackdrop').classList.remove('active');">
         <svg><use href="#icon-settings"></use></svg>
         <span>Settings</span>
       </a>
-      <a class="nav-item upgrade-nav-item" id="sidebarUpgradeBtn" style="cursor: pointer; background: linear-gradient(135deg, rgba(241, 196, 15, 0.15), rgba(243, 156, 18, 0.15)); border: 1px solid rgba(243, 156, 18, 0.3); color: #f1c40f; border-radius: var(--border-radius-sm); margin: 6px 12px; padding: 10px 14px; font-weight: 700; display: flex; align-items: center; gap: 10px; box-shadow: 0 4px 12px rgba(243, 156, 18, 0.1);">
+      <a class="nav-item upgrade-nav-item" id="sidebarUpgradeBtn" onclick="document.getElementById('appSidebar').classList.remove('active'); document.getElementById('sidebarBackdrop').classList.remove('active');" style="cursor: pointer; background: linear-gradient(135deg, rgba(241, 196, 15, 0.15), rgba(243, 156, 18, 0.15)); border: 1px solid rgba(243, 156, 18, 0.3); color: #f1c40f; border-radius: var(--border-radius-sm); margin: 6px 12px; padding: 10px 14px; font-weight: 700; display: flex; align-items: center; gap: 10px; box-shadow: 0 4px 12px rgba(243, 156, 18, 0.1);">
         <svg style="width: 16px; height: 16px; fill: #f1c40f;"><use href="#icon-crown"></use></svg>
         <span>Go Premium</span>
       </a>
-      <a class="nav-item" id="sidebarHelpBtn" style="cursor: pointer;">
+      <a class="nav-item" id="sidebarHelpBtn" onclick="document.getElementById('appSidebar').classList.remove('active'); document.getElementById('sidebarBackdrop').classList.remove('active');" style="cursor: pointer;">
         <svg><use href="#icon-help"></use></svg>
         <span>Help Tour</span>
       </a>
@@ -220,7 +220,7 @@
       </div>
     </div>
   </aside>
-  <div class="sidebar-backdrop" id="sidebarBackdrop"></div>
+  <div class="sidebar-backdrop" id="sidebarBackdrop" onclick="document.getElementById('appSidebar').classList.remove('active'); this.classList.remove('active');"></div>
 
   <!-- ==================== MAIN CONTENT CONTAINER ==================== -->
   <main id="appMainContent">
@@ -228,7 +228,7 @@
     <!-- HEADER BAR -->
     <header>
       <div style="display: flex; align-items: center; gap: 16px; width: 100%;">
-        <button id="menuToggleBtn" class="btn btn-secondary btn-icon" title="Open menu" style="display: none; padding: 10px 12px; align-items: center; justify-content: center; min-width: 42px;">
+        <button id="menuToggleBtn" class="btn btn-secondary btn-icon" title="Open menu" onclick="document.getElementById('appSidebar').classList.add('active'); document.getElementById('sidebarBackdrop').classList.add('active');" style="display: none; padding: 10px 12px; align-items: center; justify-content: center; min-width: 42px;">
           <svg style="width: 18px; height: 18px; fill: none; stroke: currentColor; stroke-width: 2.5;"><use href="#icon-menu"></use></svg>
         </button>
         <div class="header-title" style="flex-grow: 1;">
