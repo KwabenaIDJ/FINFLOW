@@ -137,6 +137,31 @@ aside {
   transition: background-color var(--transition-slow), border-color var(--transition-normal);
 }
 
+/* Sidebar Backdrop for Mobile */
+.sidebar-backdrop {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100vw;
+  height: 100vh;
+  background: rgba(0, 0, 0, 0.4);
+  backdrop-filter: blur(3px);
+  -webkit-backdrop-filter: blur(3px);
+  z-index: 9999;
+  opacity: 0;
+  visibility: hidden;
+  transition: opacity var(--transition-normal), visibility var(--transition-normal);
+}
+.sidebar-backdrop.active {
+  opacity: 1;
+  visibility: visible;
+}
+
+#menuToggleBtn,
+#sidebarCloseBtn {
+  display: none !important;
+}
+
 .logo-container {
   display: flex;
   align-items: center;
@@ -1207,46 +1232,37 @@ header {
     font-size: 1.42rem;
   }
 }
-
 @media (max-width: 1024px) {
   body {
     grid-template-columns: minmax(0, 1fr);
   }
   
   aside {
-    height: auto;
-    position: relative;
-    border-right: none;
-    border-bottom: 1px solid var(--color-border);
-    flex-direction: row;
-    align-items: center;
-    padding: 16px 24px;
+    position: fixed;
+    top: 0;
+    left: -var(--sidebar-width);
+    width: var(--sidebar-width);
+    height: 100vh;
+    z-index: 10000;
+    background: var(--bg-glass-sidebar);
+    backdrop-filter: var(--glass-blur);
+    -webkit-backdrop-filter: var(--glass-blur);
+    border-right: 1px solid var(--color-border);
+    border-bottom: none;
+    flex-direction: column;
+    justify-content: space-between;
+    padding: 24px 16px;
+    transition: left var(--transition-normal);
+    display: flex !important;
   }
 
-  .logo-container {
-    padding: 0;
+  aside.active {
+    left: 0;
   }
 
-  nav {
-    flex-direction: row;
-    margin-top: 0;
-    justify-content: center;
-    gap: 4px;
-  }
-
-  .nav-item span {
-    display: none; /* Hide nav text on tablet */
-  }
-
-  .sidebar-footer {
-    border-top: none;
-    padding-top: 0;
-    flex-direction: row;
-    align-items: center;
-  }
-
-  .profile-card {
-    display: none; /* Hide profile on menu bar */
+  #menuToggleBtn,
+  #sidebarCloseBtn {
+    display: flex !important;
   }
 
   main {
@@ -1267,20 +1283,6 @@ header {
 }
 
 @media (max-width: 640px) {
-  aside {
-    flex-direction: column;
-    gap: 16px;
-  }
-  
-  nav {
-    width: 100%;
-    justify-content: space-around;
-  }
-
-  .nav-item {
-    padding: 10px;
-  }
-
   header {
     flex-direction: column;
     align-items: flex-start;

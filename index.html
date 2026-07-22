@@ -134,6 +134,12 @@
       <line x1="8.59" y1="13.51" x2="15.42" y2="17.49"></line>
       <line x1="15.41" y1="6.51" x2="8.59" y2="10.49"></line>
     </symbol>
+    <!-- Menu / Hamburger Icon -->
+    <symbol id="icon-menu" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+      <line x1="3" y1="12" x2="21" y2="12"></line>
+      <line x1="3" y1="6" x2="21" y2="6"></line>
+      <line x1="3" y1="18" x2="21" y2="18"></line>
+    </symbol>
     <!-- Print Icon -->
     <symbol id="icon-print" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
       <path d="M6 9V2h12v7M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2m-12 0v4h8v-4"></path>
@@ -147,11 +153,16 @@
 
   <!-- ==================== SIDEBAR ==================== -->
   <aside id="appSidebar">
-    <div class="logo-container">
-      <div class="logo-icon">
-        <svg><use href="#icon-target"></use></svg>
+    <div class="logo-container" style="display: flex; align-items: center; justify-content: space-between; width: 100%;">
+      <div style="display: flex; align-items: center; gap: 12px;">
+        <div class="logo-icon">
+          <svg><use href="#icon-target"></use></svg>
+        </div>
+        <div class="logo-text">FinFlow</div>
       </div>
-      <div class="logo-text">FinFlow</div>
+      <button id="sidebarCloseBtn" class="btn btn-secondary btn-icon" title="Close menu" style="display: none; padding: 6px; min-width: 32px; height: 32px; align-items: center; justify-content: center; border: none; background: transparent; color: var(--text-muted); cursor: pointer;">
+        <svg style="width: 18px; height: 18px; fill: none; stroke: currentColor; stroke-width: 2.5;"><use href="#icon-close"></use></svg>
+      </button>
     </div>
 
     <nav id="appNavigation">
@@ -209,15 +220,21 @@
       </div>
     </div>
   </aside>
+  <div class="sidebar-backdrop" id="sidebarBackdrop"></div>
 
   <!-- ==================== MAIN CONTENT CONTAINER ==================== -->
   <main id="appMainContent">
     
     <!-- HEADER BAR -->
     <header>
-      <div class="header-title">
-        <h1 id="headerGreeting">Greetings!</h1>
-        <p>Keep track of your transactions, goals, budgets, and investments.</p>
+      <div style="display: flex; align-items: center; gap: 16px; width: 100%;">
+        <button id="menuToggleBtn" class="btn btn-secondary btn-icon" title="Open menu" style="display: none; padding: 10px 12px; align-items: center; justify-content: center; min-width: 42px;">
+          <svg style="width: 18px; height: 18px; fill: none; stroke: currentColor; stroke-width: 2.5;"><use href="#icon-menu"></use></svg>
+        </button>
+        <div class="header-title" style="flex-grow: 1;">
+          <h1 id="headerGreeting">Greetings!</h1>
+          <p>Keep track of your transactions, goals, budgets, and investments.</p>
+        </div>
       </div>
       <div class="header-actions">
         <!-- Multi-Currency Converter Dropdown -->

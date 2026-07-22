@@ -297,6 +297,12 @@
     elements.themeIcon = document.getElementById('themeIcon');
     elements.themeText = document.getElementById('themeText');
     
+    // Mobile Sidebar Drawer Elements
+    elements.appSidebar = document.getElementById('appSidebar');
+    elements.menuToggleBtn = document.getElementById('menuToggleBtn');
+    elements.sidebarCloseBtn = document.getElementById('sidebarCloseBtn');
+    elements.sidebarBackdrop = document.getElementById('sidebarBackdrop');
+    
     // KPI Cards
     elements.netWorthValue = document.getElementById('netWorthValue');
     elements.cashBalanceValue = document.getElementById('cashBalanceValue');
@@ -2075,6 +2081,16 @@
     });
   }
 
+  function openMobileSidebar() {
+    if (elements.appSidebar) elements.appSidebar.classList.add('active');
+    if (elements.sidebarBackdrop) elements.sidebarBackdrop.classList.add('active');
+  }
+
+  function closeMobileSidebar() {
+    if (elements.appSidebar) elements.appSidebar.classList.remove('active');
+    if (elements.sidebarBackdrop) elements.sidebarBackdrop.classList.remove('active');
+  }
+
   // --- Bind Form Events & UI Event Listeners ---
   function registerEvents() {
     // 1. Sidebar Nav click bindings
@@ -2082,9 +2098,23 @@
       item.addEventListener('click', (e) => {
         e.preventDefault();
         const targetTab = e.currentTarget.getAttribute('data-target');
-        switchTab(targetTab);
+        if (targetTab) {
+          switchTab(targetTab);
+          closeMobileSidebar();
+        }
       });
     });
+
+    // Mobile Sidebar Drawer Toggle Events
+    if (elements.menuToggleBtn) {
+      elements.menuToggleBtn.addEventListener('click', openMobileSidebar);
+    }
+    if (elements.sidebarCloseBtn) {
+      elements.sidebarCloseBtn.addEventListener('click', closeMobileSidebar);
+    }
+    if (elements.sidebarBackdrop) {
+      elements.sidebarBackdrop.addEventListener('click', closeMobileSidebar);
+    }
 
     // 2. Theme Toggle click binding
     elements.themeToggleBtn.addEventListener('click', toggleTheme);
