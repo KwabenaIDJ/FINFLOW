@@ -231,9 +231,12 @@
         <button id="menuToggleBtn" class="btn btn-secondary btn-icon" title="Open menu" onclick="document.getElementById('appSidebar').classList.add('active'); document.getElementById('sidebarBackdrop').classList.add('active');" style="display: none; padding: 10px 12px; align-items: center; justify-content: center; min-width: 42px;">
           <svg style="width: 18px; height: 18px; fill: none; stroke: currentColor; stroke-width: 2.5;"><use href="#icon-menu"></use></svg>
         </button>
-        <div class="header-title" style="flex-grow: 1;">
-          <h1 id="headerGreeting">Greetings!</h1>
-          <p>Keep track of your transactions, goals, budgets, and investments.</p>
+        <div style="display: flex; align-items: center; gap: 14px; flex-grow: 1;">
+          <div class="profile-avatar" style="width: 46px; height: 46px; font-size: 1.1rem; flex-shrink: 0; border: 2px solid var(--color-primary); box-shadow: 0 4px 12px var(--color-primary-glow);">U</div>
+          <div class="header-title">
+            <h1 id="headerGreeting">Greetings!</h1>
+            <p>Keep track of your transactions, goals, budgets, and investments.</p>
+          </div>
         </div>
       </div>
       <div class="header-actions">
@@ -450,9 +453,15 @@
 
     <!-- ==================== PANEL: BUDGETS ==================== -->
     <div class="view-panel" id="budgets-panel">
-      <div class="header-title" style="margin-bottom: 10px;">
-        <h2>Category Budgets</h2>
-        <p>Set custom expenditure limits per category. Progress bars update instantly with your transactions.</p>
+      <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; flex-wrap: wrap; gap: 12px;">
+        <div class="header-title" style="margin-bottom: 0;">
+          <h2>Category Budgets</h2>
+          <p>Set custom expenditure limits per category. Progress bars update instantly with your transactions.</p>
+        </div>
+        <button class="btn btn-primary" id="addBudgetBtn">
+          <svg style="width: 16px; height: 16px; fill: none; stroke: currentColor; stroke-width: 2.5;"><use href="#icon-plus"></use></svg>
+          Create Budget
+        </button>
       </div>
       <div class="budget-grid" id="budgetGrid">
         <!-- Dynamically populated -->
@@ -1110,6 +1119,32 @@
         <div class="modal-footer">
           <button type="button" class="btn btn-secondary btn-cancel-modal">Cancel</button>
           <button type="submit" class="btn btn-primary">Save Transaction</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- ==================== OVERLAY: ADD BUDGET MODAL ==================== -->
+  <div class="modal-overlay" id="addBudgetModal">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h3 class="modal-title">Create Category Budget</h3>
+        <button class="modal-close-btn" aria-label="Close dialog"><svg><use href="#icon-close"></use></svg></button>
+      </div>
+      <form id="addBudgetForm">
+        <div class="form-group">
+          <label for="addBudgetCategory">Category Name</label>
+          <input type="text" id="addBudgetCategory" placeholder="e.g., Groceries, Rent, Utilities" required>
+        </div>
+
+        <div class="form-group">
+          <label for="addBudgetLimit">Monthly Limit</label>
+          <input type="number" id="addBudgetLimit" placeholder="0.00" step="1" required min="0">
+        </div>
+
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary btn-cancel-modal">Cancel</button>
+          <button type="submit" class="btn btn-primary">Create Budget</button>
         </div>
       </form>
     </div>

@@ -363,6 +363,11 @@
     elements.editBudgetModal = document.getElementById('editBudgetModal');
     elements.editBudgetForm = document.getElementById('editBudgetForm');
     
+    // Add Budget Elements
+    elements.addBudgetBtn = document.getElementById('addBudgetBtn');
+    elements.addBudgetModal = document.getElementById('addBudgetModal');
+    elements.addBudgetForm = document.getElementById('addBudgetForm');
+    
     elements.addGoalModal = document.getElementById('addGoalModal');
     elements.addGoalForm = document.getElementById('addGoalForm');
     elements.addGoalDestinationOtherGroup = document.getElementById('addGoalDestinationOtherGroup');
@@ -629,7 +634,7 @@
 
       item.innerHTML = `
         <div style="display: flex; align-items: center; gap: 14px;">
-          <div class="tx-icon">${iconSvg}</div>
+          <div class="tx-icon-wrapper">${iconSvg}</div>
           <div>
             <div class="tx-title" style="font-weight: 700;">${tx.description || 'No description'}</div>
             <div style="display: flex; gap: 8px; align-items: center; margin-top: 4px;">
@@ -706,9 +711,14 @@
             : `Safe: ${(100 - percent).toFixed(0)}% remaining`
           }
         </div>
-        <button class="btn btn-secondary btn-sm budget-edit-btn" data-category="${category}">
-          Edit Budget
-        </button>
+        <div style="display: flex; gap: 8px; margin-top: 14px; width: 100%;">
+          <button class="btn btn-secondary btn-sm budget-edit-btn" data-category="${category}" style="flex: 1; margin-top: 0;">
+            Edit
+          </button>
+          <button class="btn btn-danger btn-sm budget-delete-btn" data-category="${category}" style="flex: 1; margin-top: 0;">
+            Delete
+          </button>
+        </div>
       `;
 
       // Bind adjust limits listener
@@ -717,6 +727,14 @@
         document.getElementById('editBudgetCategory').value = cat;
         document.getElementById('editBudgetLimit').value = budgets[cat];
         openModal(elements.editBudgetModal);
+      });
+
+      // Bind delete budget listener
+      card.querySelector('.budget-delete-btn').addEventListener('click', (e) => {
+        const cat = e.currentTarget.getAttribute('data-category');
+        if (confirm(`Are you sure you want to delete the budget limit for "${cat}"?`)) {
+          window.AppStore.deleteBudget(cat);
+        }
       });
 
       elements.budgetGrid.appendChild(card);
@@ -2326,6 +2344,47 @@
       window.AppStore.updateBudget(category, limit);
       closeModal(elements.editBudgetModal);
     });
+
+    // Open / Submit Create Budget Form
+    if (elements.addBudgetBtn) {
+      elements.addBudgetBtn.addEventListener('click', () => {
+        openModal(elements.addBudgetModal);
+      });
+    }
+
+    if (elements.addBudgetForm) {
+      elements.addBudgetForm.addEventListener('submit', (e) => {
+        e.preventDefault();
+        const categoryInput = document.getElementById('addBudgetCategory');
+        const limitInput = document.getElementById('addBudgetLimit');
+        const category = categoryInput.value.trim();
+        const limitRaw = parseFloat(limitInput.value);
+
+        if (!category) {
+          alert('Please enter a category name.');
+          return;
+        }
+        if (isNaN(limitRaw) || limitRaw < 0) {
+          alert('Please enter a valid positive budget amount.');
+          return;
+        }
+
+        const activeCurrency = window.AppStore.getSettings().currency;
+        const limit = convertCurrencyAmount(limitRaw, 'GH₵', activeCurrency);
+
+        // Check if category already has a budget
+        const budgets = window.AppStore.getBudgets();
+        if (budgets[category] !== undefined) {
+          if (!confirm(`A budget for "${category}" already exists. Do you want to overwrite it?`)) {
+            return;
+          }
+        }
+
+        window.AppStore.updateBudget(category, limit);
+        closeModal(elements.addBudgetModal);
+        elements.addBudgetForm.reset();
+      });
+    }
 
     // 8. Submit Add Goal Form
     elements.addGoalForm.addEventListener('submit', (e) => {

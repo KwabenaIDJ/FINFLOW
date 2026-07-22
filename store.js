@@ -558,6 +558,18 @@
       this.save();
     },
 
+    /**
+     * Removes a category budget limit completely.
+     */
+    deleteBudget(category) {
+      // Save state snapshot for Undo
+      this.pushState();
+      // Delete budget category key from map
+      delete this.data.budgets[category];
+      // Persist values to localStorage
+      this.save();
+    },
+
     // --- Savings Goals API ---
 
     /**
