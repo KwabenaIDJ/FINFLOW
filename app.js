@@ -2100,8 +2100,8 @@
         const targetTab = e.currentTarget.getAttribute('data-target');
         if (targetTab) {
           switchTab(targetTab);
-          closeMobileSidebar();
         }
+        closeMobileSidebar();
       });
     });
 
