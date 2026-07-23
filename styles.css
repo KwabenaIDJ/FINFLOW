@@ -1361,6 +1361,16 @@ header {
 
 /* ==================== PRINT STYLES ==================== */
 @media print {
+  /* Disable animations, transitions, and transforms to prevent hidden/transparent elements during print */
+  *,
+  *::before,
+  *::after {
+    animation: none !important;
+    transition: none !important;
+    transform: none !important;
+    opacity: 1 !important;
+  }
+
   html, body {
     background: #ffffff !important;
     color: #000000 !important;
