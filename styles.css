@@ -1361,7 +1361,7 @@ header {
 
 /* ==================== PRINT STYLES ==================== */
 @media print {
-  body {
+  html, body {
     background: #ffffff !important;
     color: #000000 !important;
     font-size: 12pt;
@@ -1369,6 +1369,7 @@ header {
     height: auto !important;
     min-height: initial !important;
     overflow: visible !important;
+    position: static !important;
   }
   
   #appSidebar,
@@ -1382,7 +1383,11 @@ header {
   #exportCsvBtn,
   #importCsvBtn,
   .modal-overlay,
-  .sidebar-backdrop {
+  .sidebar-backdrop,
+  #tourOverlay,
+  #tourTooltip,
+  #authPanel,
+  #diagnosticsLockOverlay {
     display: none !important;
   }
   
