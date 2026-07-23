@@ -240,68 +240,79 @@
         </div>
       </div>
       <div class="header-actions">
-        <!-- Multi-Currency Converter Dropdown -->
-        <select id="headerCurrencySelector" title="Switch active currency" style="background: var(--bg-card); border: 1px solid var(--color-border); color: var(--text-main); border-radius: var(--border-radius-sm); padding: 10px 12px; font-family: inherit; font-size: 0.88rem; outline: none; cursor: pointer; transition: all var(--transition-fast); margin-right: 4px; font-weight: 700;">
-          <option value="$">USD ($)</option>
-          <option value="€">EUR (€)</option>
-          <option value="£">GBP (£)</option>
-          <option value="¥">JPY/CNY (¥)</option>
-          <option value="₹">INR (₹)</option>
-          <option value="C$">CAD (C$)</option>
-          <option value="A$">AUD (A$)</option>
-          <option value="Fr">CHF (Fr)</option>
-          <option value="kr">SEK/NOK/DKK (kr)</option>
-          <option value="zł">PLN (zł)</option>
-          <option value="R$">BRL (R$)</option>
-          <option value="₽">RUB (₽)</option>
-          <option value="R">ZAR (R)</option>
-          <option value="د.إ">AED (د.إ)</option>
-          <option value="ر.س">SAR (ر.س)</option>
-          <option value="₪">ILS (₪)</option>
-          <option value="₱">PHP (₱)</option>
-          <option value="Rp">IDR (Rp)</option>
-          <option value="RM">MYR (RM)</option>
-          <option value="฿">THB (฿)</option>
-          <option value="₫">VND (₫)</option>
-          <option value="₦">NGN (₦)</option>
-          <option value="KSh">KES (KSh)</option>
-          <option value="GH₵">GHS (GH₵)</option>
-        </select>
+        <!-- Row 1: Dropdowns -->
+        <div class="header-dropdowns-row">
+          <!-- Multi-Currency Converter Dropdown -->
+          <select id="headerCurrencySelector" title="Switch active currency" style="background: var(--bg-card); border: 1px solid var(--color-border); color: var(--text-main); border-radius: var(--border-radius-sm); padding: 10px 12px; font-family: inherit; font-size: 0.88rem; outline: none; cursor: pointer; transition: all var(--transition-fast); margin-right: 4px; font-weight: 700;">
+            <option value="$">USD ($)</option>
+            <option value="€">EUR (€)</option>
+            <option value="£">GBP (£)</option>
+            <option value="¥">JPY/CNY (¥)</option>
+            <option value="₹">INR (₹)</option>
+            <option value="C$">CAD (C$)</option>
+            <option value="A$">AUD (A$)</option>
+            <option value="Fr">CHF (Fr)</option>
+            <option value="kr">SEK/NOK/DKK (kr)</option>
+            <option value="zł">PLN (zł)</option>
+            <option value="R$">BRL (R$)</option>
+            <option value="₽">RUB (₽)</option>
+            <option value="R">ZAR (R)</option>
+            <option value="د.إ">AED (د.إ)</option>
+            <option value="ر.س">SAR (ر.س)</option>
+            <option value="₪">ILS (₪)</option>
+            <option value="₱">PHP (₱)</option>
+            <option value="Rp">IDR (Rp)</option>
+            <option value="RM">MYR (RM)</option>
+            <option value="฿">THB (฿)</option>
+            <option value="₫">VND (₫)</option>
+            <option value="₦">NGN (₦)</option>
+            <option value="KSh">KES (KSh)</option>
+            <option value="GH₵">GHS (GH₵)</option>
+          </select>
 
-        <!-- Timeframe Selector -->
-        <select id="timeframeSelector" style="background: var(--bg-card); border: 1px solid var(--color-border); color: var(--text-main); border-radius: var(--border-radius-sm); padding: 10px 14px; font-family: inherit; font-size: 0.88rem; outline: none; cursor: pointer; transition: all var(--transition-fast); margin-right: 6px;">
-          <!-- Populated in JS -->
-        </select>
-        <!-- Add transaction trigger -->
-        <button class="btn btn-primary" id="addTxBtn">
-          <svg style="width: 18px; height: 18px; fill: none; stroke: currentColor; stroke-width: 2.5;"><use href="#icon-plus"></use></svg>
-          Add Transaction
-        </button>
-        <!-- PDF Financial Statement Export -->
-        <button class="btn btn-secondary" id="exportPdfBtn" title="Generate & Download PDF Financial Statement Report" style="padding: 10px 14px; display: flex; align-items: center; gap: 6px; font-weight: 700;">
-          <svg style="width: 16px; height: 16px; fill: none; stroke: currentColor; stroke-width: 2;"><use href="#icon-print"></use></svg>
-          <span>PDF Report</span>
-        </button>
-        <!-- Undo / Redo Actions -->
-        <button class="btn btn-secondary btn-icon" id="undoBtn" title="Undo change" disabled style="padding: 10px 12px; display: flex; align-items: center; justify-content: center; opacity: 0.5; cursor: not-allowed; min-width: 42px;">
-          <svg style="width: 16px; height: 16px; fill: none; stroke: currentColor; stroke-width: 2.5;"><use href="#icon-undo"></use></svg>
-        </button>
-        <button class="btn btn-secondary btn-icon" id="redoBtn" title="Redo change" disabled style="padding: 10px 12px; display: flex; align-items: center; justify-content: center; opacity: 0.5; cursor: not-allowed; min-width: 42px;">
-          <svg style="width: 16px; height: 16px; fill: none; stroke: currentColor; stroke-width: 2.5;"><use href="#icon-redo"></use></svg>
-        </button>
-        <!-- CSV Actions -->
-        <button class="btn btn-secondary btn-icon" id="exportCsvBtn" title="Export transactions to CSV" style="padding: 10px 12px; display: flex; align-items: center; justify-content: center; min-width: 42px;">
-          <svg style="width: 16px; height: 16px; fill: none; stroke: currentColor; stroke-width: 2;"><use href="#icon-download"></use></svg>
-        </button>
-        <button class="btn btn-secondary btn-icon" id="importCsvBtn" title="Import transactions from CSV" style="padding: 10px 12px; display: flex; align-items: center; justify-content: center; min-width: 42px;">
-          <svg style="width: 16px; height: 16px; fill: none; stroke: currentColor; stroke-width: 2;"><use href="#icon-upload"></use></svg>
-        </button>
-        <button class="btn btn-secondary btn-icon" id="shareBtn" title="Share dashboard summary" style="padding: 10px 12px; display: flex; align-items: center; justify-content: center; min-width: 42px;">
-          <svg style="width: 16px; height: 16px; fill: none; stroke: currentColor; stroke-width: 2;"><use href="#icon-share"></use></svg>
-        </button>
-        <button class="btn btn-secondary btn-icon" id="printBtn" title="Print dashboard report" style="padding: 10px 12px; display: flex; align-items: center; justify-content: center; min-width: 42px;">
-          <svg style="width: 16px; height: 16px; fill: none; stroke: currentColor; stroke-width: 2;"><use href="#icon-print"></use></svg>
-        </button>
+          <!-- Timeframe Selector -->
+          <select id="timeframeSelector" style="background: var(--bg-card); border: 1px solid var(--color-border); color: var(--text-main); border-radius: var(--border-radius-sm); padding: 10px 14px; font-family: inherit; font-size: 0.88rem; outline: none; cursor: pointer; transition: all var(--transition-fast); margin-right: 6px;">
+            <!-- Populated in JS -->
+          </select>
+        </div>
+
+        <!-- Row 2: Main Buttons -->
+        <div class="header-main-buttons-row">
+          <!-- Add transaction trigger -->
+          <button class="btn btn-primary" id="addTxBtn">
+            <svg style="width: 18px; height: 18px; fill: none; stroke: currentColor; stroke-width: 2.5;"><use href="#icon-plus"></use></svg>
+            Add Transaction
+          </button>
+          <!-- PDF Financial Statement Export -->
+          <button class="btn btn-secondary" id="exportPdfBtn" title="Generate & Download PDF Financial Statement Report" style="padding: 10px 14px; display: flex; align-items: center; gap: 6px; font-weight: 700;">
+            <svg style="width: 16px; height: 16px; fill: none; stroke: currentColor; stroke-width: 2;"><use href="#icon-print"></use></svg>
+            <span>PDF Report</span>
+          </button>
+        </div>
+
+        <!-- Row 3: Utility Icon Buttons -->
+        <div class="header-utilities">
+          <!-- Undo / Redo Actions -->
+          <button class="btn btn-secondary btn-icon" id="undoBtn" title="Undo change" disabled style="padding: 10px 12px; display: flex; align-items: center; justify-content: center; opacity: 0.5; cursor: not-allowed; min-width: 42px;">
+            <svg style="width: 16px; height: 16px; fill: none; stroke: currentColor; stroke-width: 2.5;"><use href="#icon-undo"></use></svg>
+          </button>
+          <button class="btn btn-secondary btn-icon" id="redoBtn" title="Redo change" disabled style="padding: 10px 12px; display: flex; align-items: center; justify-content: center; opacity: 0.5; cursor: not-allowed; min-width: 42px;">
+            <svg style="width: 16px; height: 16px; fill: none; stroke: currentColor; stroke-width: 2.5;"><use href="#icon-redo"></use></svg>
+          </button>
+          <!-- CSV Actions -->
+          <button class="btn btn-secondary btn-icon" id="exportCsvBtn" title="Export transactions to CSV" style="padding: 10px 12px; display: flex; align-items: center; justify-content: center; min-width: 42px;">
+            <svg style="width: 16px; height: 16px; fill: none; stroke: currentColor; stroke-width: 2;"><use href="#icon-download"></use></svg>
+          </button>
+          <button class="btn btn-secondary btn-icon" id="importCsvBtn" title="Import transactions from CSV" style="padding: 10px 12px; display: flex; align-items: center; justify-content: center; min-width: 42px;">
+            <svg style="width: 16px; height: 16px; fill: none; stroke: currentColor; stroke-width: 2;"><use href="#icon-upload"></use></svg>
+          </button>
+          <button class="btn btn-secondary btn-icon" id="shareBtn" title="Share dashboard summary" style="padding: 10px 12px; display: flex; align-items: center; justify-content: center; min-width: 42px;">
+            <svg style="width: 16px; height: 16px; fill: none; stroke: currentColor; stroke-width: 2;"><use href="#icon-share"></use></svg>
+          </button>
+          <button class="btn btn-secondary btn-icon" id="printBtn" title="Print dashboard report" style="padding: 10px 12px; display: flex; align-items: center; justify-content: center; min-width: 42px;">
+            <svg style="width: 16px; height: 16px; fill: none; stroke: currentColor; stroke-width: 2;"><use href="#icon-print"></use></svg>
+          </button>
+        </div>
         <input type="file" id="csvFileInput" accept=".csv" style="display: none;">
       </div>
     </header>

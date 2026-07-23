@@ -388,6 +388,13 @@ header {
   border-radius: 4px;
 }
 
+/* Header Action Groups (for desktop inline structure) */
+.header-dropdowns-row,
+.header-main-buttons-row,
+.header-utilities {
+  display: contents;
+}
+
 /* Glassmorphism Cards */
 .card {
   background: var(--bg-card);
@@ -1287,7 +1294,7 @@ header {
   }
 }
 
-@media (max-width: 640px) {
+@media (max-width: 768px) {
   header {
     flex-direction: column;
     align-items: flex-start;
@@ -1295,8 +1302,42 @@ header {
   }
 
   .header-actions {
-    width: 100%;
-    justify-content: flex-start;
+    flex-direction: column !important;
+    align-items: stretch !important;
+    gap: 12px !important;
+    width: 100% !important;
+    overflow-x: visible !important;
+    padding-bottom: 0 !important;
+  }
+
+  .header-dropdowns-row,
+  .header-main-buttons-row {
+    display: flex !important;
+    gap: 10px !important;
+    width: 100% !important;
+  }
+
+  .header-dropdowns-row > select,
+  .header-main-buttons-row > button {
+    flex: 1 !important;
+    width: 100% !important;
+    margin-right: 0 !important;
+  }
+
+  .header-utilities {
+    display: flex !important;
+    justify-content: space-between !important;
+    gap: 8px !important;
+    width: 100% !important;
+  }
+
+  .header-utilities > button {
+    flex: 1 !important;
+    min-width: 0 !important;
+    padding: 10px 0 !important;
+    display: flex !important;
+    align-items: center;
+    justify-content: center;
   }
 
   .kpi-grid {
