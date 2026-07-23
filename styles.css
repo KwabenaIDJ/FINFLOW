@@ -1402,29 +1402,36 @@ header {
     overflow: visible !important;
   }
   
+  /* Reset all grid structures to block layouts to prevent mobile print clipping */
+  .kpi-grid,
+  .diagnostics-grid,
+  .charts-row,
+  .dashboard-bottom {
+    display: block !important;
+    width: 100% !important;
+    height: auto !important;
+    overflow: visible !important;
+  }
+
+  /* Force all cards to block layout, take full width, and break pages nicely */
+  .kpi-grid > .card,
+  .diagnostics-grid > .card,
+  .charts-row > .card,
+  .dashboard-bottom > .card,
   .card {
+    display: block !important;
+    width: 100% !important;
+    margin-bottom: 20px !important;
     border: 1px solid #cccccc !important;
     background: #ffffff !important;
     color: #000000 !important;
     box-shadow: none !important;
-    page-break-inside: avoid;
-    margin-bottom: 20px !important;
-  }
-  
-  .kpi-grid {
-    grid-template-columns: repeat(2, 1fr) !important;
-    gap: 15px !important;
-    margin-bottom: 20px !important;
-  }
-  
-  .charts-grid {
-    grid-template-columns: 1fr !important;
-    gap: 20px !important;
+    page-break-inside: avoid !important;
   }
   
   .chart-container {
     height: 250px !important;
-    page-break-inside: avoid;
+    page-break-inside: avoid !important;
   }
   
   h1, h2, h3, h4, span, p, div {
