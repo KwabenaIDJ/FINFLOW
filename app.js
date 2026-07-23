@@ -2602,9 +2602,11 @@
     });
 
     // 16. Print dashboard layouts
-    elements.printBtn.addEventListener('click', () => {
-      window.print();
-    });
+    if (elements.printBtn) {
+      elements.printBtn.addEventListener('click', () => {
+        window.print();
+      });
+    }
 
     // 17. Open Share dialogue popup
     elements.shareBtn.addEventListener('click', () => {
@@ -2931,9 +2933,9 @@
       tab: 'dashboard'
     },
     {
-      targetId: 'printBtn',
-      title: 'Print Dashboard 🖨️',
-      text: 'Generate a clean, high-fidelity PDF report or paper printout optimized for physical copies and financial records.',
+      targetId: 'exportPdfBtn',
+      title: 'PDF Report 📄',
+      text: 'Generate and download a clean, high-fidelity PDF financial statement report summarizing your net worth, cash flow, and categories.',
       tab: 'dashboard'
     },
     {
