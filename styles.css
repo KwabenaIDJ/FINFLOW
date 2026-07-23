@@ -1418,7 +1418,7 @@ header {
     overflow: visible !important;
   }
 
-  /* Force all cards to block layout, take full width, and break pages nicely */
+  /* Force all cards to block layout, take full width, static position, visible overflow, and flow naturally */
   .kpi-grid > .card,
   .diagnostics-grid > .card,
   .charts-row > .card,
@@ -1431,12 +1431,14 @@ header {
     background: #ffffff !important;
     color: #000000 !important;
     box-shadow: none !important;
-    page-break-inside: avoid !important;
+    position: static !important;
+    overflow: visible !important;
   }
   
   .chart-container {
     height: 250px !important;
-    page-break-inside: avoid !important;
+    position: static !important;
+    overflow: visible !important;
   }
   
   h1, h2, h3, h4, span, p, div {
