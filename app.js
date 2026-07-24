@@ -2791,7 +2791,7 @@
       elements.upgradeCheckoutBtn.addEventListener('click', () => {
         const settings = window.AppStore.getSettings();
         // Deobfuscate key to prevent casual inspection in source code
-        const paystackKey = atob('cGtfdGVzdF9kNmViNTU5ZWY4NzEzMjFkN2I2MWI2Njg1OGY1MWJhM2RhOWRkNGQ3');
+        const paystackKey = atob('cGtfdGVzdF84Y2FmYmRhM2RiMGI1ZTIwMWYyOTQ0ZDJmZmMxMWJiNzMxOWYwM2Rj');
         
         if (typeof PaystackPop === 'undefined') {
           alert('Paystack SDK is loading or blocked. Check your internet connection.');
