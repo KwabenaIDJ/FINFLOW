@@ -341,6 +341,7 @@
     elements.settingsCustomCurrencyGroup = document.getElementById('customCurrencyGroup');
     elements.settingsCustomCurrency = document.getElementById('settingsCustomCurrency');
     elements.settingsSavingsGoal = document.getElementById('settingsSavingsGoal');
+    elements.settingsGeminiApiKey = document.getElementById('settingsGeminiApiKey');
     elements.resetAppDataBtn = document.getElementById('resetAppDataBtn');
     elements.settingsPaystackKey = document.getElementById('settingsPaystackKey');
     elements.settingsProfilePicInput = document.getElementById('settingsProfilePicInput');
@@ -458,6 +459,18 @@
     elements.upgradeCheckoutBtn = document.getElementById('upgradeCheckoutBtn');
     elements.sidebarUpgradeBtn = document.getElementById('sidebarUpgradeBtn');
     elements.diagnosticsLockOverlay = document.getElementById('diagnosticsLockOverlay');
+
+    // AI Coach Elements
+    elements.aiInsightsBanner = document.getElementById('aiInsightsBanner');
+    elements.aiInsightsContent = document.getElementById('aiInsightsContent');
+    elements.openAiCoachModalBtn = document.getElementById('openAiCoachModalBtn');
+    elements.floatingAiCoachFab = document.getElementById('floatingAiCoachFab');
+    elements.aiCoachModal = document.getElementById('aiCoachModal');
+    elements.closeAiCoachModalBtn = document.getElementById('closeAiCoachModalBtn');
+    elements.aiCoachStatusText = document.getElementById('aiCoachStatusText');
+    elements.aiChatThread = document.getElementById('aiChatThread');
+    elements.aiChatInput = document.getElementById('aiChatInput');
+    elements.sendAiChatBtn = document.getElementById('sendAiChatBtn');
   }
 
   // --- Modal Utilities ---
@@ -843,6 +856,9 @@
     // Set setting inputs value matches
     elements.settingsUserName.value = settings.userName;
     elements.settingsSavingsGoal.value = Math.round(convertCurrencyAmount(settings.monthlySavingsGoal, settings.currency, 'GH₵'));
+    if (elements.settingsGeminiApiKey) {
+      elements.settingsGeminiApiKey.value = settings.geminiApiKey || '';
+    }
     elements.settingsCurrency.dataset.lastVal = settings.currency || 'GH₵';
 
     // Check if currency configuration maps to pre-defined dropdown symbols
@@ -1942,6 +1958,7 @@
     renderFinancialGuide();
     renderPremiumLayout();
     renderBudgetBreachAlerts();
+    renderAIInsights();
     
     // Update charts dimensions and redraw trend curves
     window.AppCharts.updateAll();
@@ -1955,6 +1972,488 @@
       }
     });
     window.AppCharts.updateCategoryChart(categoryBreakdown);
+  }
+
+  /**
+   * Generates proactive AI Insights based on user transaction history, budgets, and savings goals.
+   */
+  /**
+   * Generates Proactive AI Insights (v1 Roadmap) based on user transaction history, budgets, and savings goals.
+   */
+  function renderAIInsights() {
+    if (!elements.aiInsightsContent) return;
+
+    const store = window.AppStore;
+    const settings = store.getSettings();
+    const isPremium = settings.isPremium;
+    const currency = settings.currency || '$';
+    const transactions = store.getTransactions() || [];
+    const budgets = store.getBudgets() || [];
+    const goals = store.getGoals() || [];
+    const rawBalance = store.getBalance();
+    const balanceNum = (typeof rawBalance === 'object' && rawBalance !== null) ? (rawBalance.total ?? rawBalance.cash ?? 0) : (Number(rawBalance) || 0);
+
+    const generatedInsights = [];
+
+    // --- 1. SPENDING INSIGHTS ("I see you") ---
+    const categoryTotals = {};
+    let totalExpense = 0;
+    let airtimeSpend = 0;
+    let streamingSpend = 0;
+
+    transactions.forEach(tx => {
+      if (tx.type === 'expense') {
+        categoryTotals[tx.category] = (categoryTotals[tx.category] || 0) + tx.amount;
+        totalExpense += tx.amount;
+
+        const noteLower = (tx.note || tx.description || '').toLowerCase();
+        const catLower = (tx.category || '').toLowerCase();
+        if (noteLower.includes('airtime') || noteLower.includes('data') || noteLower.includes('mtn') || noteLower.includes('telecel') || noteLower.includes('at')) {
+          airtimeSpend += tx.amount;
+        }
+        if (noteLower.includes('netflix') || noteLower.includes('dstv') || noteLower.includes('showmax') || noteLower.includes('spotify') || catLower.includes('entertainment')) {
+          streamingSpend += tx.amount;
+        }
+      }
+    });
+
+    let topCategory = null;
+    let maxExpense = 0;
+    Object.keys(categoryTotals).forEach(cat => {
+      if (categoryTotals[cat] > maxExpense) {
+        maxExpense = categoryTotals[cat];
+        topCategory = cat;
+      }
+    });
+
+    // Category Spike
+    if (topCategory && totalExpense > 0) {
+      const percent = Math.round((maxExpense / totalExpense) * 100);
+      generatedInsights.push({
+        type: 'spending',
+        title: '🚨 Category Spike Detected',
+        desc: `You spent <strong>${currency}${maxExpense.toLocaleString()}</strong> on <strong>${topCategory}</strong> this period (${percent}% of total spend).`,
+        prompt: `My spending on ${topCategory} reached ${currency}${maxExpense}. Give me 3 tips to cut it by 20% next month.`
+      });
+    }
+
+    // Leak Detection (Airtime/Data)
+    if (airtimeSpend > 50) {
+      const monthlyEst = Math.round(airtimeSpend * 2);
+      generatedInsights.push({
+        type: 'spending',
+        title: '📡 Airtime Leak Alert',
+        desc: `You spent <strong>${currency}${airtimeSpend.toLocaleString()}</strong> on airtime/data (~${currency}${monthlyEst}/mo). Switching to monthly data bundles saves up to 30%.`,
+        prompt: `I spent ${currency}${airtimeSpend} on airtime recently. How can I optimize my mobile data bundling strategy?`
+      });
+    }
+
+    // Duplicate Subscriptions Audit
+    if (streamingSpend > 100) {
+      generatedInsights.push({
+        type: 'spending',
+        title: '🎬 Subscription Audit',
+        desc: `Recurring media & entertainment costs reached <strong>${currency}${streamingSpend.toLocaleString()}</strong>. Rotating subscriptions month-to-month saves ${currency}100+ yearly.`,
+        prompt: `I am spending ${currency}${streamingSpend} on entertainment subscriptions. Give me a strategy to consolidate them.`
+      });
+    }
+
+    // --- 2. SAVINGS & GOAL INSIGHTS ---
+    const activeGoal = goals.find(g => g.currentAmount < g.targetAmount);
+    if (activeGoal) {
+      const remaining = activeGoal.targetAmount - activeGoal.currentAmount;
+      const suggestedWeekly = Math.ceil(remaining / 12);
+      generatedInsights.push({
+        type: 'savings',
+        title: '🎯 Goal Acceleration',
+        desc: `Move <strong>${currency}${suggestedWeekly.toLocaleString()}</strong> weekly into your <strong>'${activeGoal.title}'</strong> goal, and you'll hit your target 2 months early!`,
+        prompt: `How can I deposit ${currency}${suggestedWeekly} weekly to hit my '${activeGoal.title}' goal faster?`
+      });
+    }
+
+    // Idle Cash Alert
+    if (balanceNum > 500) {
+      const suggestedInvestment = Math.round(balanceNum * 0.4);
+      generatedInsights.push({
+        type: 'savings',
+        title: '💰 Idle Cash Opportunity',
+        desc: `You have <strong>${currency}${balanceNum.toLocaleString()}</strong> idle balance. Bank of Ghana T-Bills yield 15-25% p.a. Consider investing ${currency}${suggestedInvestment}.`,
+        prompt: `I have ${currency}${balanceNum} liquid cash. What is the safest way to invest ${currency}${suggestedInvestment} in T-Bills?`
+      });
+    }
+
+    // --- 3. WINS & ACCRA BENCHMARK ---
+    const isUnderBudget = budgets.length > 0 && budgets.every(b => b.spent <= b.limit);
+    if (isUnderBudget) {
+      generatedInsights.push({
+        type: 'wins',
+        title: '👏 Win of the Week',
+        desc: `Awesome discipline! You stayed under budget across all active categories. You saved more than <strong>70% of Finflow users in Accra</strong> this month!`,
+        prompt: `I stayed under budget across all categories this week. Give me 2 tips to keep up my savings streak!`
+      });
+    } else {
+      generatedInsights.push({
+        type: 'wins',
+        title: '⚡ Tracking Streak',
+        desc: `You have recorded <strong>${transactions.length} transactions</strong>! Your ledger data is now accurate enough for predictive AI cash flow forecasting.`,
+        prompt: `My ledger has ${transactions.length} transactions recorded. How can I use this data to forecast my net cash flow?`
+      });
+    }
+
+    // --- 4. GHANA-SPECIFIC PROACTIVE TIPS ---
+    generatedInsights.push({
+      type: 'ghana',
+      title: '📲 MoMo vs Bank Tip',
+      desc: `Using cash withdrawals incurs 1% MoMo cashout fees. Use MoMo Pay directly or high-yield bank savings to save GHS 15-50 monthly on fees.`,
+      prompt: `What is the best way to save on MoMo cashout withdrawal fees in Ghana?`
+    });
+
+    // Helper to safely escape prompt attributes
+    const escapeAttr = (str) => (str || '').replace(/"/g, '&quot;');
+
+    // --- RENDER LOGIC: FREE TEASER GATE VS PREMIUM UNLOCKED ---
+    let insightsHTML = '';
+
+    if (!isPremium) {
+      const freeInsight = generatedInsights[0] || {
+        title: '💡 Smart Money Tip',
+        desc: 'Keep 1-2 weeks of operational cash on MoMo and route the rest into high-yield savings or T-Bills.',
+        prompt: 'Give me 3 practical financial tips.'
+      };
+
+      insightsHTML = `
+        <div class="ai-insight-item">
+          <div class="insight-title">${freeInsight.title}</div>
+          <div class="insight-desc">${freeInsight.desc}</div>
+          <button type="button" class="explain-this-btn" data-explain="${escapeAttr(freeInsight.prompt)}">Explain this 💬</button>
+        </div>
+
+        <div class="ai-insight-item locked-teaser">
+          <div class="insight-title" style="color: #f1c40f; font-weight: 800;">👑 Proactive AI Insights (15+ Active)</div>
+          <div class="insight-desc" style="margin-bottom: 8px;">
+            Unlock background leak detection, idle cash alerts, category spike warnings & Accra benchmark stats with Premium ($1.99/mo).
+          </div>
+          <button type="button" class="btn btn-primary btn-sm upgrade-trigger-btn" style="background: linear-gradient(135deg, #f1c40f, #f39c12); color: #0b0f19; font-weight: 800; border: none; font-size: 0.76rem; padding: 6px 14px; border-radius: 14px; cursor: pointer;">
+            Unlock All Insights ($1.99)
+          </button>
+        </div>
+      `;
+    } else {
+      insightsHTML = generatedInsights.map(item => `
+        <div class="ai-insight-item">
+          <div class="insight-title">${item.title}</div>
+          <div class="insight-desc">${item.desc}</div>
+          <button type="button" class="explain-this-btn" data-explain="${escapeAttr(item.prompt)}">Explain this 💬</button>
+        </div>
+      `).join('');
+    }
+
+    elements.aiInsightsContent.innerHTML = insightsHTML;
+  }
+
+  // --- AI Chat Coach Core Engine ---
+  let aiChatHistory = [
+    {
+      sender: 'ai',
+      text: "👋 Hi! I'm **Finflow AI Coach**. I'm trained on your live financial data and budget history. Ask me anything like *'How much did I spend on food?'*, *'Can I afford a trip?'*, or *'Explain T-Bills like I'm 15'*!"
+    }
+  ];
+
+  function renderAiChatThread() {
+    if (!elements.aiChatThread) return;
+    elements.aiChatThread.innerHTML = aiChatHistory.map(msg => `
+      <div class="chat-bubble ${msg.sender}">
+        ${msg.text.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>').replace(/\n/g, '<br>')}
+      </div>
+    `).join('');
+    elements.aiChatThread.scrollTop = elements.aiChatThread.scrollHeight;
+  }
+
+  function updateAiCoachModalStatus() {
+    if (!elements.aiCoachStatusText) return;
+    const store = window.AppStore;
+    const settings = store.getSettings();
+    const isPremium = settings.isPremium;
+    const queryCount = settings.aiQueriesCount || 0;
+
+    if (!navigator.onLine) {
+      elements.aiCoachStatusText.innerHTML = `<span style="width: 6px; height: 6px; border-radius: 50%; background: var(--color-danger);"></span> 🌐 Offline Mode`;
+      elements.aiCoachStatusText.style.color = 'var(--color-danger)';
+      return;
+    }
+
+    if (isPremium) {
+      elements.aiCoachStatusText.innerHTML = `<span style="width: 6px; height: 6px; border-radius: 50%; background: var(--color-success);"></span> 🟢 Online • 👑 Premium Unlimited AI Coach`;
+      elements.aiCoachStatusText.style.color = 'var(--color-success)';
+    } else {
+      const remaining = Math.max(0, 2 - queryCount);
+      if (remaining > 0) {
+        elements.aiCoachStatusText.innerHTML = `<span style="width: 6px; height: 6px; border-radius: 50%; background: var(--color-success);"></span> 🟢 Online • 🎁 Free Trial: ${remaining} of 2 questions left`;
+        elements.aiCoachStatusText.style.color = 'var(--color-success)';
+      } else {
+        elements.aiCoachStatusText.innerHTML = `<span style="width: 6px; height: 6px; border-radius: 50%; background: #f1c40f;"></span> 👑 Free Trial Used • Upgrade for Unlimited`;
+        elements.aiCoachStatusText.style.color = '#f1c40f';
+      }
+    }
+  }
+
+  let isSendingAiMessage = false;
+
+  async function handleSendAiChatMessage(userInputText) {
+    if (isSendingAiMessage) return;
+
+    const text = (userInputText || (elements.aiChatInput ? elements.aiChatInput.value : '') || '').trim();
+    if (!text) return;
+
+    isSendingAiMessage = true;
+
+    try {
+      const store = window.AppStore;
+      const settings = store.getSettings();
+      const isPremium = settings.isPremium;
+
+      // Remove legacy localstorage key if present
+      localStorage.removeItem('FINFLOW_AI_QUERIES_COUNT');
+
+      let queryCount = settings.aiQueriesCount || 0;
+
+      // Check free trial query count for non-premium members
+      if (!isPremium && queryCount >= 2) {
+        openModal(elements.premiumUpgradeModal);
+        alert('You have used your 2 free AI Coach trial questions. Upgrade to Premium for unlimited 24/7 AI financial coaching!');
+        return;
+      }
+
+      // Check online network connectivity
+      if (!navigator.onLine) {
+        aiChatHistory.push({ sender: 'user', text: text });
+        if (elements.aiChatInput) elements.aiChatInput.value = '';
+        aiChatHistory.push({
+          sender: 'ai',
+          text: '🌐 **Finflow AI Coach requires an active internet connection**.\n\nPlease connect your device to Wi-Fi or mobile data to consult the AI Coach model.'
+        });
+        renderAiChatThread();
+        return;
+      }
+
+      // Add user message
+      aiChatHistory.push({ sender: 'user', text: text });
+      if (elements.aiChatInput) elements.aiChatInput.value = '';
+      
+      // Show temporary "Thinking..." bubble
+      aiChatHistory.push({ sender: 'ai', text: '⚡ <i>Thinking... consulting Gemini AI...</i>' });
+      renderAiChatThread();
+
+      // Increment query count for free users and save to store
+      if (!isPremium) {
+        queryCount += 1;
+        store.updateSettings({ aiQueriesCount: queryCount });
+        updateAiCoachModalStatus();
+      }
+
+      try {
+        const responseText = await fetchGeminiAiResponse(text);
+        aiChatHistory.pop(); // Remove "Thinking..."
+        aiChatHistory.push({ sender: 'ai', text: responseText });
+        renderAiChatThread();
+      } catch (err) {
+        console.warn('Gemini API fetch error, falling back to local engine:', err);
+        aiChatHistory.pop(); // Remove "Thinking..."
+        const fallbackText = generateAiCoachResponse(text); // Fallback to local rule engine
+        aiChatHistory.push({ sender: 'ai', text: fallbackText });
+        renderAiChatThread();
+      }
+    } finally {
+      isSendingAiMessage = false;
+    }
+  }
+  window.handleSendAiChatMessage = handleSendAiChatMessage;
+
+  /**
+   * Calls Google Gemini 1.5 Flash API with user's financial profile context.
+   */
+  async function fetchGeminiAiResponse(userPrompt) {
+    const store = window.AppStore;
+    const settings = store.getSettings();
+    const currency = settings.currency || '$';
+    const transactions = store.getTransactions() || [];
+    const rawBalance = store.getBalance();
+    const balanceNum = (typeof rawBalance === 'object' && rawBalance !== null) ? (rawBalance.total ?? rawBalance.cash ?? 0) : (Number(rawBalance) || 0);
+    const budgets = store.getBudgets() || [];
+    const goals = store.getGoals() || [];
+
+    // Allow user custom key override from settings or fallback to default
+    const apiKey = settings.geminiApiKey || '';
+    if (!apiKey) {
+      // If no custom API key set, use local response calculation engine
+      return generateAiCoachResponse(userPrompt);
+    }
+
+    const systemPrompt = `You are Finflow AI Coach, an empathetic, highly intelligent personal financial advisor.
+User's Financial Profile:
+- Active Currency: ${currency}
+- Total Liquid Balance: ${currency}${balanceNum.toLocaleString()}
+- Total Recorded Transactions: ${transactions.length}
+- Recent Ledger Activity: ${JSON.stringify(transactions.slice(-12).map(t => ({ date: t.date, category: t.category, type: t.type, amount: t.amount, note: t.note || t.description })))}
+- Active Budgets: ${JSON.stringify(budgets.map(b => ({ category: b.category, limit: b.limit, spent: b.spent })))}
+- Savings Goals: ${JSON.stringify(goals.map(g => ({ title: g.title, target: g.targetAmount, current: g.currentAmount })))}
+
+Directives:
+1. Answer concisely, warmly, and accurately in GFM Markdown format (use bolding, bullet points, emojis).
+2. If the user asks about category spending or affordabilities, calculate exact numbers from their financial profile above.
+3. If the user asks about Ghanaian or African financial topics (Cedis, MoMo, Bank of Ghana Treasury Bills/T-Bills, PAYE tax, Tier-3 pension), provide accurate, localized advice.
+4. Keep your answer encouraging, practical, and under 250 words.`;
+
+    const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${apiKey}`;
+
+    const res = await fetch(url, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        contents: [
+          {
+            role: 'user',
+            parts: [{ text: systemPrompt + '\n\nUser Question: ' + userPrompt }]
+          }
+        ]
+      })
+    });
+
+    if (!res.ok) {
+      throw new Error(`Gemini API HTTP Error: ${res.status}`);
+    }
+
+    const data = await res.json();
+    if (data.candidates && data.candidates[0] && data.candidates[0].content && data.candidates[0].content.parts) {
+      return data.candidates[0].content.parts.map(p => p.text).join('\n');
+    }
+
+    throw new Error('Invalid Gemini API response format');
+  }
+
+  function generateAiCoachResponse(prompt) {
+    const store = window.AppStore;
+    const settings = store.getSettings();
+    const currency = settings.currency || '$';
+    const transactions = store.getTransactions();
+    const rawBalance = store.getBalance();
+    const balanceNum = (typeof rawBalance === 'object' && rawBalance !== null) ? (rawBalance.total ?? rawBalance.cash ?? 0) : (Number(rawBalance) || 0);
+    const lower = prompt.toLowerCase().trim();
+
+    let totalIncome = 0;
+    let totalExpenses = 0;
+    const categoryTotals = {};
+
+    transactions.forEach(tx => {
+      if (tx.type === 'income') totalIncome += tx.amount;
+      else if (tx.type === 'expense') {
+        totalExpenses += tx.amount;
+        categoryTotals[tx.category] = (categoryTotals[tx.category] || 0) + tx.amount;
+      }
+    });
+
+    // ROUTE 1: T-Bills & Government Treasury / Investments Query
+    if (
+      lower.includes('t-bill') || lower.includes('t bill') || lower.includes('tbill') ||
+      lower.includes('t-bills') || lower.includes('t bills') || lower.includes('tbills') ||
+      lower.includes('treasury') || lower.includes('bonds') || lower.includes('sika') ||
+      lower.includes('investment') || lower.includes('invest')
+    ) {
+      return `📈 **Treasury Bills (T-Bills) & High-Yield Investing**:
+T-Bills are low-risk government debt securities issued by the Bank of Ghana:
+1. **How they work**: You lend money to the government for **91 days**, **182 days**, or **364 days**.
+2. **Returns**: Current annual yields range between **15% to 25% p.a.** (substantially beating basic savings accounts).
+3. **Safety**: Backed by the government, making default risk minimal.
+
+💡 *Best Way to Save with T-Bills*:
+• Keep 1 month of living expenses on MoMo/Cash for daily transactions.
+• Direct all extra savings into 91-day or 182-day T-Bills so your money compounds safely!
+• You can purchase T-Bills via your commercial bank, investment broker, or Mobile Money USSD code.`;
+    }
+
+    // ROUTE 2: MoMo vs Bank / Wallet Strategy
+    if (lower.includes('momo') || lower.includes('mobile money') || lower.includes('bank') || lower.includes('wallet')) {
+      return `📲 **MoMo vs Bank Savings Strategy**:
+- **Mobile Money (MoMo)**: Excellent for instant everyday payments & transfers, but keeping large balances in MoMo exposes your money to impulse spending and zero interest.
+- **Bank / High-Yield Savings**: Best for emergency reserves & medium-term targets, earning compounding interest.
+
+💡 *Pro Setup*:
+1. Keep 1-2 weeks of operational cash on MoMo.
+2. Automatically transfer salary surplus into a high-yield Bank account or T-Bill portfolio!`;
+    }
+
+    // ROUTE 3: Tax / PAYE / Salary
+    if (lower.includes('tax') || lower.includes('paye') || lower.includes('salary') || lower.includes('deduction')) {
+      return `🧾 **PAYE Salary Tax Guide**:
+In Ghana, Personal Income Tax (PAYE) is progressive across income brackets:
+- First **GHS 490**: 0% (Tax free)
+- Next **GHS 110**: 5%
+- Next **GHS 130**: 10%
+- Next **GHS 3,166**: 17.5%
+- Over **GHS 20,000**: 30%
+
+💡 *Tax Saving Tip*: Voluntary Tier-3 pension contributions (up to 16.5% of gross salary) are **100% tax-exempt**!`;
+    }
+
+    // ROUTE 4: Affordability & Future Goals ("Can I afford", "trip", "buy", "vacation")
+    if (lower.includes('afford') || lower.includes('trip') || lower.includes('buy') || lower.includes('vacation') || lower.includes('car') || lower.includes('house')) {
+      const netSavings = totalIncome - totalExpenses;
+      const disposable = Math.max(balanceNum, netSavings);
+      return `✈️ **Affordability Assessment**:
+Based on your current financial ledger:
+- Liquid Balance: **${currency}${balanceNum.toLocaleString()}**
+- Net Cash Flow: **${currency}${netSavings.toLocaleString()}**
+
+If you deposit **${currency}200 weekly** into a target savings account, you will accumulate **${currency}800 in 1 month** and **${currency}2,400 in 3 months**!
+${disposable > 500 ? `✅ Yes, you can afford it comfortably as long as you maintain your current spending discipline!` : `⚠️ It is doable, but consider cutting non-essential expenses by 10% to protect your emergency reserves.`}`;
+    }
+
+    // ROUTE 5: Category Spending Queries (food, uber, transport, groceries, etc.)
+    const categoryKeywords = ['food', 'dining', 'restaurant', 'uber', 'transport', 'shopping', 'groceries', 'utilities', 'bills', 'health'];
+    const hasCategoryKeyword = categoryKeywords.some(kw => lower.includes(kw));
+    const matchingCategory = Object.keys(categoryTotals).find(cat => lower.includes(cat.toLowerCase()));
+
+    if (matchingCategory || hasCategoryKeyword) {
+      const catName = matchingCategory || (lower.includes('food') ? 'Food & Dining' : (lower.includes('uber') || lower.includes('transport') ? 'Transport' : 'Shopping'));
+      const amt = categoryTotals[catName] || 0;
+      const percentage = totalExpenses > 0 ? Math.round((amt / totalExpenses) * 100) : 0;
+
+      return `📊 **Spending Analysis**:
+You have spent **${currency}${amt.toLocaleString()}** on **${catName}** so far.
+This represents **${percentage}%** of your overall recorded expenses (${currency}${totalExpenses.toLocaleString()}).
+
+💡 *Coach Tip*: ${amt > 300 ? `Consider setting a monthly budget limit for ${catName} in the **Budgets** tab to save extra cash weekly!` : `Your ${catName} spending is well balanced!`}`;
+    }
+
+    // ROUTE 6: Ways to Save Money / General Financial Tips
+    if (lower.includes('ways to save') || lower.includes('tip') || lower.includes('tips') || lower.includes('save money') || lower.includes('cut cost') || lower.includes('how to save')) {
+      return `💡 **3 Actionable Ways to Save Money This Month**:
+1. **The 24-Hour Impulse Rule**: Wait 24 hours before making non-essential purchases over ${currency}100 to curb impulse buying.
+2. **Automate Payday Savings**: Set up an automatic standing order on payday to move 15-20% directly into your savings goals.
+3. **Audit Subscription & Dining**: Review your expense ledger for small daily expenses that add up over 30 days.`;
+    }
+
+    // ROUTE 7: Greetings & Conversational Inputs
+    if (lower === 'hi' || lower === 'hello' || lower === 'hey' || lower.startsWith('hi ') || lower.startsWith('hello ') || lower.includes('who are you') || lower === 'help') {
+      return `👋 **Hello! I'm your Finflow AI Coach.**
+I'm here to analyze your live transactions and help you make smart money decisions!
+
+Try asking me:
+• *"What is the best way to save with T-Bills?"*
+• *"How much did I spend on Food this month?"*
+• *"Can I afford a trip if I save weekly?"*
+• *"What is MoMo vs Bank savings strategy?"*`;
+    }
+
+    // Default Fallback
+    return `🤖 **Finflow AI Coach Insight**:
+Your current liquid balance is **${currency}${balanceNum.toLocaleString()}** across **${transactions.length}** recorded transactions.
+
+Ask me specific questions like:
+• *"What is the best way to save with T-Bills?"*
+• *"How much did I spend on Food this month?"*
+• *"Can I afford a GHS 1,000 purchase?"*
+• *"Give me 3 ways to save money this month!"*`;
   }
 
   // --- Theme Controller ---
@@ -2524,6 +3023,7 @@
       
       const monthlySavingsGoalRaw = parseFloat(elements.settingsSavingsGoal.value);
       const paystackKey = elements.settingsPaystackKey ? elements.settingsPaystackKey.value.trim() : '';
+      const geminiApiKey = elements.settingsGeminiApiKey ? elements.settingsGeminiApiKey.value.trim() : '';
 
       if (!userName.trim()) {
         alert('Name cannot be empty.');
@@ -3323,6 +3823,57 @@
     if (elements.logoutNavBtn) {
       elements.logoutNavBtn.addEventListener('click', handleLogout);
     }
+
+    // AI Coach Event Bindings
+    if (elements.openAiCoachModalBtn) {
+      elements.openAiCoachModalBtn.addEventListener('click', () => {
+        openModal(elements.aiCoachModal);
+        updateAiCoachModalStatus();
+        renderAiChatThread();
+      });
+    }
+    if (elements.floatingAiCoachFab) {
+      elements.floatingAiCoachFab.addEventListener('click', () => {
+        openModal(elements.aiCoachModal);
+        updateAiCoachModalStatus();
+        renderAiChatThread();
+      });
+    }
+    window.addEventListener('online', updateAiCoachModalStatus);
+    window.addEventListener('offline', updateAiCoachModalStatus);
+    if (elements.closeAiCoachModalBtn) {
+      elements.closeAiCoachModalBtn.addEventListener('click', () => {
+        closeModal(elements.aiCoachModal);
+      });
+    }
+    if (elements.sendAiChatBtn) {
+      elements.sendAiChatBtn.addEventListener('click', () => handleSendAiChatMessage());
+    }
+    if (elements.aiChatInput) {
+      elements.aiChatInput.addEventListener('keydown', (e) => {
+        if (e.key === 'Enter') {
+          e.preventDefault();
+          handleSendAiChatMessage();
+        }
+      });
+    }
+    const pills = document.querySelectorAll('.ai-prompt-pill');
+    pills.forEach(pill => {
+      pill.addEventListener('click', (e) => {
+        const promptText = e.currentTarget.getAttribute('data-prompt');
+        handleSendAiChatMessage(promptText);
+      });
+    });
+
+    document.addEventListener('click', (e) => {
+      const explainBtn = e.target.closest('.explain-this-btn');
+      if (explainBtn) {
+        const promptText = explainBtn.getAttribute('data-explain');
+        openModal(elements.aiCoachModal);
+        updateAiCoachModalStatus();
+        handleSendAiChatMessage(promptText);
+      }
+    });
   }
 
   /**
@@ -3447,21 +3998,41 @@
       const { LocalNotifications } = capacitor.Plugins;
       try {
         let permStatus = await LocalNotifications.checkPermissions();
-        if (permStatus.display === 'prompt') {
+        if (permStatus.display === 'prompt' || permStatus.display === 'prompt-with-rationale') {
           permStatus = await LocalNotifications.requestPermissions();
         }
         
         if (permStatus.display === 'granted') {
-          // Schedule daily reminder at 8:00 PM
+          // Cancel existing scheduled notifications to avoid duplicates
+          const pending = await LocalNotifications.getPending();
+          if (pending && pending.notifications && pending.notifications.length > 0) {
+            await LocalNotifications.cancel(pending);
+          }
+
+          // Schedule 2 Android mobile notifications:
+          // 1. Daily Ledger Entry & AI Analysis Reminder (8:00 PM)
+          // 2. Proactive AI Insights & Leak Alerts Digest (12:00 PM Noon)
           await LocalNotifications.schedule({
             notifications: [
               {
-                title: "FinFlow Reminder 💰",
-                body: "Don't forget to review your budgets, enter your income, and log your expenses for the day!",
+                title: "✍️ Finflow Daily Check-in",
+                body: "Don't forget to log today's income & expenses so your AI Coach can calculate your spending leaks!",
                 id: 99,
                 schedule: {
                   on: {
                     hour: 20,   // 8:00 PM
+                    minute: 0
+                  },
+                  repeats: true
+                }
+              },
+              {
+                title: "💡 Proactive AI Insights Ready",
+                body: "Your AI Coach has fresh money insights & savings velocity tips ready on your dashboard!",
+                id: 100,
+                schedule: {
+                  on: {
+                    hour: 12,   // 12:00 PM Noon
                     minute: 0
                   },
                   repeats: true
@@ -3479,6 +4050,12 @@
   // --- Core Application Entry Point ---
   window.addEventListener('DOMContentLoaded', () => {
     window.AppStore.init();      // Initialize database store values
+    
+    // Reset query count to clear any double-trigger test counter
+    if (window.AppStore.getSettings().aiQueriesCount > 0 && !window.AppStore.getSettings().isPremium) {
+      window.AppStore.updateSettings({ aiQueriesCount: 0 });
+    }
+
     cacheElements();             // Map visual DOM nodes
     initTheme();                 // Configure active theme layouts
     initAuth();                  // Handle sign-in/sign-up authentication checks

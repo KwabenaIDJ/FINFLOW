@@ -76,6 +76,8 @@
         currency: 'GH₵',       // Initial currency symbol
         monthlySavingsGoal: 1200, // Monthly savings target
         paystackKey: '',       // Empty Paystack secret key placeholder
+        geminiApiKey: '',      // Optional Gemini AI API key override
+        aiQueriesCount: 0,     // Free AI Coach queries used counter
         isPremium: false,      // Default membership tier (Standard)
         exchangeRates: {...DEFAULT_GHS_RATES}
       }

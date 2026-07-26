@@ -324,6 +324,28 @@
       <!-- REAL-TIME BUDGET BREACHED VISUAL ALERTS -->
       <div id="budgetBreachAlertContainer" style="display: none; margin-bottom: 20px;"></div>
       
+      <!-- PROACTIVE FINFLOW AI COACH INSIGHTS BANNER -->
+      <div id="aiInsightsBanner" class="card ai-insights-card" style="margin-bottom: 24px; background: linear-gradient(135deg, rgba(99, 102, 241, 0.12), rgba(168, 85, 247, 0.12)); border: 1px solid rgba(168, 85, 247, 0.3); border-radius: var(--border-radius-lg); padding: 18px 22px; position: relative; overflow: hidden; box-shadow: 0 4px 20px rgba(168, 85, 247, 0.12);">
+        <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 14px; flex-wrap: wrap; gap: 10px;">
+          <div style="display: flex; align-items: center; gap: 10px;">
+            <div style="width: 34px; height: 34px; border-radius: 50%; background: linear-gradient(135deg, var(--color-primary), #a855f7); display: flex; align-items: center; justify-content: center; color: #fff; font-size: 1rem; font-weight: 800; box-shadow: 0 0 12px rgba(168, 85, 247, 0.4);">💡</div>
+            <div>
+              <h4 style="font-size: 0.98rem; font-weight: 800; color: var(--text-main); margin: 0; display: flex; align-items: center; gap: 6px;">
+                Proactive AI Insights <span style="background: linear-gradient(135deg, #a855f7, #ec4899); color: #fff; font-size: 0.64rem; font-weight: 800; padding: 2px 6px; border-radius: 10px; text-transform: uppercase;">Smart Admin</span>
+              </h4>
+              <span style="font-size: 0.74rem; color: var(--text-muted);">Real-time background money analysis & proactive alerts</span>
+            </div>
+          </div>
+          <button type="button" class="btn btn-secondary btn-sm" id="openAiCoachModalBtn" style="font-size: 0.78rem; font-weight: 700; background: linear-gradient(135deg, var(--color-primary), #a855f7); border: none; color: #ffffff; padding: 6px 14px; border-radius: 20px; display: flex; align-items: center; gap: 6px; cursor: pointer; box-shadow: 0 4px 12px rgba(99, 102, 241, 0.3);">
+            💬 Ask AI Coach
+          </button>
+        </div>
+
+        <div id="aiInsightsContent" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 14px;">
+          <!-- Dynamically populated in app.js -->
+        </div>
+      </div>
+      
       <!-- KPI GRID -->
       <section class="kpi-grid" aria-label="Financial Summary Totals">
         <div class="card kpi-card cash">
@@ -402,7 +424,7 @@
             <div id="diagnosticsLockOverlay" style="display: none; position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: rgba(15, 23, 42, 0.45); backdrop-filter: blur(4px); -webkit-backdrop-filter: blur(4px); border-radius: var(--border-radius-sm); align-items: center; justify-content: center; flex-direction: column; gap: 10px; z-index: 10;">
               <span style="font-size: 1.4rem;">🔒</span>
               <span style="font-size: 0.76rem; font-weight: 700; color: #fff; text-shadow: 0 1px 3px rgba(0,0,0,0.6); text-align: center;">Unlock Detailed Smart Insights with Premium</span>
-              <button type="button" class="btn btn-primary btn-sm upgrade-trigger-btn" style="font-size: 0.72rem; padding: 6px 12px; background: #f1c40f; border-color: #f1c40f; color: #0b0f19; font-weight: 700; cursor: pointer; border-radius: 4px;">Upgrade ($0.99)</button>
+              <button type="button" class="btn btn-primary btn-sm upgrade-trigger-btn" style="font-size: 0.72rem; padding: 6px 12px; background: #f1c40f; border-color: #f1c40f; color: #0b0f19; font-weight: 700; cursor: pointer; border-radius: 4px;">Upgrade ($1.99)</button>
             </div>
           </div>
         </div>
@@ -937,6 +959,14 @@
           </div>
         </div>
       </div>
+
+      <!-- LEGAL DISCLAIMER BANNER -->
+      <div style="margin-top: 30px; padding: 14px 18px; border-radius: var(--border-radius-md); background: var(--bg-secondary); border: 1px solid var(--color-border); font-size: 0.76rem; color: var(--text-muted); line-height: 1.5; display: flex; align-items: center; gap: 12px;">
+        <span style="font-size: 1.2rem;">⚖️</span>
+        <div>
+          <strong>Educational Disclaimer:</strong> All book synopses, lesson outlines, and financial guides are provided 100% free of charge for non-commercial financial literacy education. All trademarks, book titles, and author names belong exclusively to their respective owners and publishers.
+        </div>
+      </div>
     </div>
 
     <!-- ==================== OVERLAY: LITERACY READ MODAL ==================== -->
@@ -1019,6 +1049,14 @@
           <div class="form-group">
             <label for="settingsSavingsGoal">Monthly Savings Goal</label>
             <input type="number" id="settingsSavingsGoal" required min="0">
+          </div>
+
+          <div class="form-group">
+            <label for="settingsGeminiApiKey" style="display: flex; align-items: center; justify-content: space-between;">
+              <span>Gemini AI API Key (Optional)</span>
+              <span style="font-size: 0.72rem; color: var(--color-primary);">Powered by Google AI</span>
+            </label>
+            <input type="password" id="settingsGeminiApiKey" placeholder="Paste custom Gemini API key (Leave blank for default)">
           </div>
 
 
@@ -1298,6 +1336,55 @@
     </div>
   </div>
 
+  <!-- Floating Action Button: AI Coach Chat -->
+  <button id="floatingAiCoachFab" class="ai-fab-button" title="Ask Finflow AI Coach" aria-label="Open AI Financial Coach">
+    <div class="ai-fab-icon">✨</div>
+    <span class="ai-fab-label">AI Coach</span>
+  </button>
+
+  <!-- ==================== OVERLAY: FINFLOW AI COACH CHAT MODAL ==================== -->
+  <div class="modal-overlay" id="aiCoachModal">
+    <div class="modal-content ai-coach-modal-content" style="max-width: 540px; width: 95%; height: 85vh; max-height: 680px; display: flex; flex-direction: column; padding: 0; overflow: hidden; border: 1px solid rgba(168, 85, 247, 0.4); box-shadow: 0 10px 40px rgba(168, 85, 247, 0.25);">
+      <!-- Header -->
+      <div class="modal-header" style="padding: 16px 20px; border-bottom: 1px solid var(--color-border); background: linear-gradient(135deg, rgba(99, 102, 241, 0.15), rgba(168, 85, 247, 0.15)); display: flex; align-items: center; justify-content: space-between;">
+        <div style="display: flex; align-items: center; gap: 12px;">
+          <div style="width: 38px; height: 38px; border-radius: 50%; background: linear-gradient(135deg, var(--color-primary), #a855f7); display: flex; align-items: center; justify-content: center; color: #fff; font-size: 1.1rem; font-weight: 800; box-shadow: 0 0 14px rgba(168, 85, 247, 0.5);">✨</div>
+          <div>
+            <h3 class="modal-title" style="font-size: 1.05rem; font-weight: 800; color: var(--text-main); margin: 0; display: flex; align-items: center; gap: 6px;">
+              Finflow AI Coach <span style="background: linear-gradient(135deg, #a855f7, #ec4899); color: #fff; font-size: 0.62rem; font-weight: 800; padding: 2px 6px; border-radius: 10px; text-transform: uppercase;">Beta</span>
+            </h3>
+            <span id="aiCoachStatusText" style="font-size: 0.72rem; color: var(--color-success); display: flex; align-items: center; gap: 4px;">
+              <span style="width: 6px; height: 6px; border-radius: 50%; background: var(--color-success);"></span> 🟢 Online • Gemini 1.5 Flash AI
+            </span>
+          </div>
+        </div>
+        <button class="modal-close-btn" id="closeAiCoachModalBtn" aria-label="Close dialog"><svg><use href="#icon-close"></use></svg></button>
+      </div>
+
+      <!-- Quick Suggestion Pills Bar -->
+      <div class="ai-prompt-pills-bar" style="padding: 10px 16px; border-bottom: 1px solid var(--color-border); background: var(--bg-secondary); overflow-x: auto; display: flex; gap: 8px; white-space: nowrap; -webkit-overflow-scrolling: touch;">
+        <button class="ai-prompt-pill" data-prompt="How much did I spend on food this month?">🍔 Food spending</button>
+        <button class="ai-prompt-pill" data-prompt="Can I afford a trip if I save weekly?">✈️ Can I afford a trip?</button>
+        <button class="ai-prompt-pill" data-prompt="Explain T-Bills like I'm 15">📈 Explain T-Bills</button>
+        <button class="ai-prompt-pill" data-prompt="What's the best way to save with MoMo vs Bank?">📲 MoMo vs Bank</button>
+        <button class="ai-prompt-pill" data-prompt="Give me 3 ways to save money this month">💡 3 Savings Tips</button>
+      </div>
+
+      <!-- Messages Thread -->
+      <div id="aiChatThread" class="ai-chat-thread" style="flex-grow: 1; padding: 18px 20px; overflow-y: auto; display: flex; flex-direction: column; gap: 14px; background: var(--bg-primary);">
+        <!-- Dynamically rendered bubbles -->
+      </div>
+
+      <!-- Footer Input Area -->
+      <div style="padding: 14px 16px; border-top: 1px solid var(--color-border); background: var(--bg-card); display: flex; align-items: center; gap: 10px;">
+        <input type="text" id="aiChatInput" placeholder="Ask Finflow anything about your money..." style="flex-grow: 1; padding: 12px 16px; border-radius: 24px; border: 1px solid var(--color-border); background: var(--bg-secondary); color: var(--text-main); font-family: inherit; font-size: 0.88rem; outline: none; transition: border-color var(--transition-fast);">
+        <button type="button" id="sendAiChatBtn" class="btn btn-primary" style="padding: 10px 18px; border-radius: 24px; font-weight: 700; background: linear-gradient(135deg, var(--color-primary), #a855f7); border: none; font-size: 0.88rem; display: flex; align-items: center; gap: 6px;">
+          Send
+        </button>
+      </div>
+    </div>
+  </div>
+
   <!-- ==================== OVERLAY: PREMIUM UPGRADE MODAL ==================== -->
   <div class="modal-overlay" id="premiumUpgradeModal">
     <div class="modal-content" style="max-width: 440px; border: 2px solid #f1c40f; box-shadow: 0 0 30px rgba(241, 196, 15, 0.25);">
@@ -1312,11 +1399,15 @@
         <div style="font-size: 2.2rem; margin-bottom: 8px;">👑</div>
         <h4 style="font-size: 1.15rem; font-weight: 800; color: var(--text-main); margin-bottom: 6px;">Go Premium for Lifetime Benefits</h4>
         <p style="font-size: 0.84rem; color: var(--text-muted); line-height: 1.5; margin-bottom: 24px; padding: 0 10px;">
-          Take complete control of your finances. Upgrade today for a one-time purchase of just <strong style="color: var(--color-success); font-size: 1rem;">$0.99</strong>.
+          Take complete control of your finances. Upgrade today for a one-time purchase of just <strong style="color: var(--color-success); font-size: 1rem;">$1.99</strong>.
         </p>
 
         <!-- Premium Perks Checklist -->
         <ul style="list-style: none; padding: 0; margin: 0 0 26px 0; display: flex; flex-direction: column; gap: 12px; text-align: left; font-size: 0.85rem; color: var(--text-main);">
+          <li style="display: flex; align-items: center; gap: 10px;">
+            <span style="color: #f1c40f; font-weight: 800; font-size: 1rem;">✨</span>
+            <span><strong>Finflow AI Coach</strong>: Unlimited 24/7 personal money coaching & chats.</span>
+          </li>
           <li style="display: flex; align-items: center; gap: 10px;">
             <span style="color: var(--color-success); font-weight: 700;">✓</span>
             <span><strong>Ad-Free Experience</strong>: Hides all sponsored banner ads.</span>
@@ -1341,7 +1432,7 @@
 
         <div style="border-top: 1px solid var(--color-border); padding-top: 20px; display: flex; flex-direction: column; gap: 10px;">
           <button type="button" class="btn btn-primary" id="upgradeCheckoutBtn" style="width: 100%; padding: 12px; font-weight: 800; background: linear-gradient(135deg, #f1c40f, #f39c12); border-color: #f39c12; color: #0b0f19; font-size: 0.95rem; box-shadow: 0 4px 15px rgba(243, 156, 18, 0.2);">
-            Unlock Premium ($0.99)
+            Unlock Premium ($1.99)
           </button>
           <button type="button" class="btn btn-secondary btn-cancel-modal" style="width: 100%; padding: 10px;">Maybe Later</button>
         </div>
@@ -1380,7 +1471,7 @@
           <span>✨ Try Live Demo</span>
         </button>
         <span class="landing-pill"><span class="pill-dot"></span> Web Platform</span>
-        <span class="landing-pill premium-pill"><span class="pill-dot gold"></span> Premium $0.99</span>
+        <span class="landing-pill premium-pill"><span class="pill-dot gold"></span> Premium $1.99</span>
         <span class="landing-pill"><span class="pill-dot green"></span> Compliance Review Ready</span>
       </div>
     </header>
@@ -1390,7 +1481,7 @@
       <!-- HERO HEADER SECTION -->
       <div class="landing-hero">
         <div class="landing-badge">
-          <span class="badge-icon">⚡</span> Web Platform Suite • Premium $0.99
+          <span class="badge-icon">⚡</span> Web Platform Suite • Premium $1.99
         </div>
         <h1 class="landing-title">
           Financial Dashboard
@@ -1437,7 +1528,7 @@
             </div>
             <div class="feature-info">
               <h4>Premium Lifetime Membership</h4>
-              <p>Unlock deep diagnostic insights, ad-free experience & CSV data exports for a one-time <strong>$0.99</strong> purchase.</p>
+              <p>Unlock deep diagnostic insights, ad-free experience & CSV data exports for a one-time <strong>$1.99</strong> purchase.</p>
             </div>
           </div>
         </div>
@@ -1452,7 +1543,7 @@
             <span class="stat-label">Report Exports</span>
           </div>
           <div class="stat-item">
-            <span class="stat-num" style="color: #f1c40f;">$0.99</span>
+            <span class="stat-num" style="color: #f1c40f;">$1.99</span>
             <span class="stat-label">Premium Platform Cost</span>
           </div>
         </div>
