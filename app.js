@@ -3302,9 +3302,9 @@ Ask me specific questions like:
           return;
         }
         
-        const amountVal = 99; // $0.99 or GH₵0.99
-        const emailAddress = 'customer_' + settings.userName.toLowerCase().replace(/\s+/g, '_') + '@financialdashboard.com';
         const currencyCode = settings.currency === 'GH₵' ? 'GHS' : 'USD';
+        // Paystack amounts in sub-units (pesewas/cents): GHS 39.00 = 3900, USD $1.99 = 199
+        const amountVal = currencyCode === 'GHS' ? 3900 : 199;
 
         try {
           const handler = PaystackPop.setup({
