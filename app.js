@@ -3302,9 +3302,12 @@ Ask me specific questions like:
           return;
         }
         
-        // Always process checkout in USD ($1.99 = 199 cents) so Paystack automatically converts $1.99 to Cedis/local currency at the live bank rate
-        const currencyCode = 'USD';
-        const amountVal = 199; // $1.99 USD (199 cents)
+        // Base Premium price is $1.99 USD globally.
+        // Convert $1.99 USD to GHS dynamically using live market exchange rate:
+        const liveUsdRate = (settings.exchangeRates && settings.exchangeRates['$']) ? Number(settings.exchangeRates['$']) : 15.5;
+        const amountVal = Math.max(100, Math.round(1.99 * liveUsdRate * 100)); // amount in pesewas
+        
+        const currencyCode = 'GHS';
         const emailAddress = 'customer_' + (settings.userName || 'User').toLowerCase().replace(/\s+/g, '_') + '@financialdashboard.com';
 
         try {
