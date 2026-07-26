@@ -100,6 +100,7 @@ body {
   grid-template-columns: var(--sidebar-width) minmax(0, 1fr);
   transition: background-color var(--transition-slow), color var(--transition-normal);
   overflow-x: hidden;
+  overflow-y: auto; /* Ensure vertical scrolling is always active */
 }
 
 body.no-scroll {
@@ -139,6 +140,7 @@ aside {
   padding: 24px 16px;
   z-index: 100;
   transition: background-color var(--transition-slow), border-color var(--transition-normal);
+  overflow-y: auto; /* Enable sidebar vertical scrollbar on small heights */
 }
 
 /* Sidebar Backdrop for Mobile */
@@ -1884,5 +1886,14 @@ header {
   .landing-header-pills {
     display: none;
   }
+}
+
+/* Logout Nav Menu Hover Style */
+#logoutNavBtn {
+  color: var(--color-danger);
+}
+#logoutNavBtn:hover {
+  color: var(--color-danger-hover) !important;
+  background: rgba(239, 68, 68, 0.08) !important;
 }
 

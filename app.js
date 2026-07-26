@@ -444,6 +444,7 @@
     elements.authToggleLink = document.getElementById('authToggleLink');
     elements.authToggleText = document.getElementById('authToggleText');
     elements.logoutBtn = document.getElementById('logoutBtn');
+    elements.logoutNavBtn = document.getElementById('logoutNavBtn');
     elements.forgotPasswordLink = document.getElementById('forgotPasswordLink');
     elements.authSecurityQuestion = document.getElementById('authSecurityQuestion');
     elements.securityQuestionGroup = document.getElementById('securityQuestionGroup');
@@ -1481,7 +1482,7 @@
     // Loop through checkboxes matching lessons
     document.querySelectorAll('.lesson-checkbox').forEach(chk => {
       const idx = parseInt(chk.getAttribute('data-index'));
-      const isLocked = idx >= 4 && !isPremium;
+      const isLocked = false; // All lessons are free for all users
       const card = chk.closest('.lesson-card');
       const readBtn = card.querySelector('.read-lesson-btn');
       
@@ -3311,12 +3312,16 @@
     });
 
     // Logout Button Trigger
+    const handleLogout = () => {
+      if (confirm('Are you sure you want to log out of your session?')) {
+        store.logout();
+      }
+    };
     if (elements.logoutBtn) {
-      elements.logoutBtn.addEventListener('click', () => {
-        if (confirm('Are you sure you want to log out of your session?')) {
-          store.logout();
-        }
-      });
+      elements.logoutBtn.addEventListener('click', handleLogout);
+    }
+    if (elements.logoutNavBtn) {
+      elements.logoutNavBtn.addEventListener('click', handleLogout);
     }
   }
 

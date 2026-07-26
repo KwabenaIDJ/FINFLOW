@@ -190,6 +190,10 @@
         <svg><use href="#icon-settings"></use></svg>
         <span>Settings</span>
       </a>
+      <a class="nav-item" id="logoutNavBtn" onclick="document.getElementById('appSidebar').classList.remove('active'); document.getElementById('sidebarBackdrop').classList.remove('active'); document.body.classList.remove('no-scroll');" style="cursor: pointer; color: var(--color-danger);">
+        <svg style="stroke: var(--color-danger); fill: none;"><use href="#icon-logout"></use></svg>
+        <span style="color: var(--color-danger); font-weight: 600;">Log Out</span>
+      </a>
       <a class="nav-item upgrade-nav-item" id="sidebarUpgradeBtn" onclick="document.getElementById('appSidebar').classList.remove('active'); document.getElementById('sidebarBackdrop').classList.remove('active'); document.body.classList.remove('no-scroll');" style="cursor: pointer; background: linear-gradient(135deg, rgba(241, 196, 15, 0.15), rgba(243, 156, 18, 0.15)); border: 1px solid rgba(243, 156, 18, 0.3); color: #f1c40f; border-radius: var(--border-radius-sm); margin: 6px 12px; padding: 10px 14px; font-weight: 700; display: flex; align-items: center; gap: 10px; box-shadow: 0 4px 12px rgba(243, 156, 18, 0.1);">
         <svg style="width: 16px; height: 16px; fill: #f1c40f;"><use href="#icon-crown"></use></svg>
         <span>Go Premium</span>
@@ -220,7 +224,7 @@
       </div>
     </div>
   </aside>
-  <div class="sidebar-backdrop" id="sidebarBackdrop" onclick="document.getElementById('appSidebar').classList.remove('active'); this.classList.remove('active');"></div>
+  <div class="sidebar-backdrop" id="sidebarBackdrop" onclick="document.getElementById('appSidebar').classList.remove('active'); this.classList.remove('active'); document.body.classList.remove('no-scroll');"></div>
 
   <!-- ==================== MAIN CONTENT CONTAINER ==================== -->
   <main id="appMainContent">
@@ -228,7 +232,7 @@
     <!-- HEADER BAR -->
     <header>
       <div style="display: flex; align-items: center; gap: 16px; width: 100%;">
-        <button id="menuToggleBtn" class="btn btn-secondary btn-icon" title="Open menu" onclick="document.getElementById('appSidebar').classList.add('active'); document.getElementById('sidebarBackdrop').classList.add('active');" style="display: none; padding: 10px 12px; align-items: center; justify-content: center; min-width: 42px;">
+        <button id="menuToggleBtn" class="btn btn-secondary btn-icon" title="Open menu" onclick="document.getElementById('appSidebar').classList.add('active'); document.getElementById('sidebarBackdrop').classList.add('active'); document.body.classList.add('no-scroll');" style="display: none; padding: 10px 12px; align-items: center; justify-content: center; min-width: 42px;">
           <svg style="width: 18px; height: 18px; fill: none; stroke: currentColor; stroke-width: 2.5;"><use href="#icon-menu"></use></svg>
         </button>
         <div style="display: flex; align-items: center; gap: 14px; flex-grow: 1;">
@@ -1323,7 +1327,7 @@
           </li>
           <li style="display: flex; align-items: center; gap: 10px;">
             <span style="color: var(--color-success); font-weight: 700;">✓</span>
-            <span><strong>Advanced Lessons</strong>: Access all 10 premium financial literacy lessons.</span>
+            <span><strong>Custom Themes</strong>: Select custom dashboard colors & dark/light palettes.</span>
           </li>
           <li style="display: flex; align-items: center; gap: 10px;">
             <span style="color: var(--color-success); font-weight: 700;">✓</span>
