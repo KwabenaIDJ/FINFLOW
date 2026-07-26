@@ -3302,9 +3302,9 @@ Ask me specific questions like:
           return;
         }
         
-        const currencyCode = settings.currency === 'GH₵' ? 'GHS' : 'USD';
-        // Paystack amounts in sub-units (pesewas/cents): GHS 39.00 = 3900, USD $1.99 = 199
-        const amountVal = currencyCode === 'GHS' ? 3900 : 199;
+        // Always process checkout in USD ($1.99 = 199 cents) so Paystack automatically converts $1.99 to Cedis/local currency at the live bank rate
+        const currencyCode = 'USD';
+        const amountVal = 199; // $1.99 USD (199 cents)
         const emailAddress = 'customer_' + (settings.userName || 'User').toLowerCase().replace(/\s+/g, '_') + '@financialdashboard.com';
 
         try {
