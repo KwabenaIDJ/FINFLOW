@@ -3305,6 +3305,7 @@ Ask me specific questions like:
         const currencyCode = settings.currency === 'GH₵' ? 'GHS' : 'USD';
         // Paystack amounts in sub-units (pesewas/cents): GHS 39.00 = 3900, USD $1.99 = 199
         const amountVal = currencyCode === 'GHS' ? 3900 : 199;
+        const emailAddress = 'customer_' + (settings.userName || 'User').toLowerCase().replace(/\s+/g, '_') + '@financialdashboard.com';
 
         try {
           const handler = PaystackPop.setup({
