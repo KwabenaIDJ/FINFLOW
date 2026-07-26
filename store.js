@@ -15,6 +15,23 @@
   // The local storage key used to track the currently logged-in user session
   const SESSION_KEY = 'CURRENT_USER_SESSION';
 
+  // Hardcoded Supabase Credentials
+  const HARDCODED_SUPABASE_URL = "https://smyfhrjtljujwxjuucxe.supabase.co";
+  const HARDCODED_SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InNteWZocmp0bGp1and4anV1Y3hlIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODUwOTIzNDksImV4cCI6MjEwMDY2ODM0OX0.xn_wIIzxSb6ut4WNRcjFtTf0Jf3XSXIbjQLBAvIqb9w";
+
+  let supabaseClient = null;
+
+  function getSupabaseClient() {
+    if (!supabaseClient && window.supabase && HARDCODED_SUPABASE_URL && HARDCODED_SUPABASE_ANON_KEY) {
+      try {
+        supabaseClient = window.supabase.createClient(HARDCODED_SUPABASE_URL, HARDCODED_SUPABASE_ANON_KEY);
+      } catch (err) {
+        console.warn('Supabase client initialization error:', err);
+      }
+    }
+    return supabaseClient;
+  }
+
   const DEFAULT_GHS_RATES = {
     'GH₵': 1.0,
     '$': 11.59,
@@ -364,10 +381,152 @@
         }
       }
 
+      // Trigger Cloud Sync if Supabase client is connected
+      this.syncToCloud();
+
       // Dispatch a custom event on the window to alert observers that the state has changed
       window.dispatchEvent(new CustomEvent('store-updated'));
       // Synchronize the Undo/Redo button disable/enable states in the header toolbar
       this.updateButtonsUI();
+    },
+
+    /**
+     * Pushes active local data state to Supabase cloud database if connected.
+     */
+    async syncToCloud() {
+      const client = getSupabaseClient();
+      if (!client) return;
+
+      try {
+        const { data: { session } } = await client.auth.getSession();
+        if (!session || !session.user) return;
+
+        const userId = session.user.id;
+
+        // 1. Sync Profile & Settings
+        const settings = this.data.settings || {};
+        await client.from('profiles').upsert({
+          id: userId,
+          user_name: settings.userName || 'User',
+          currency: settings.currency || 'GH₵',
+          monthly_savings_goal: settings.monthlySavingsGoal || 1200,
+          is_premium: !!settings.isPremium,
+          ai_queries_count: settings.aiQueriesCount || 0,
+          updated_at: new Date().toISOString()
+        });
+
+        // 2. Sync Transactions
+        if (this.data.transactions && this.data.transactions.length > 0) {
+          const txRows = this.data.transactions.map(tx => ({
+            id: String(tx.id),
+            user_id: userId,
+            date: tx.date,
+            description: tx.description || tx.note || '',
+            category: tx.category,
+            type: tx.type,
+            amount: Number(tx.amount),
+            note: tx.note || ''
+          }));
+          await client.from('transactions').upsert(txRows, { onConflict: 'id' });
+        }
+
+        // 3. Sync Budgets
+        if (this.data.budgets) {
+          const budgetRows = Object.keys(this.data.budgets).map(cat => ({
+            id: `${userId}_${cat}`,
+            user_id: userId,
+            category: cat,
+            limit_amount: Number(this.data.budgets[cat])
+          }));
+          if (budgetRows.length > 0) {
+            await client.from('budgets').upsert(budgetRows, { onConflict: 'id' });
+          }
+        }
+
+        // 4. Sync Savings Goals
+        if (this.data.goals && this.data.goals.length > 0) {
+          const goalRows = this.data.goals.map(g => ({
+            id: String(g.id),
+            user_id: userId,
+            title: g.title,
+            target_amount: Number(g.targetAmount),
+            current_amount: Number(g.currentAmount),
+            target_date: g.targetDate || null
+          }));
+          await client.from('savings_goals').upsert(goalRows, { onConflict: 'id' });
+        }
+      } catch (cloudErr) {
+        console.warn('Supabase cloud sync background error:', cloudErr);
+      }
+    },
+
+    /**
+     * Pulls full financial history from Supabase cloud database into local AppStore on multi-device login.
+     */
+    async fetchFromCloud() {
+      const client = getSupabaseClient();
+      if (!client) return false;
+
+      try {
+        const { data: { session } } = await client.auth.getSession();
+        if (!session || !session.user) return false;
+
+        const userId = session.user.id;
+
+        // Fetch Profile
+        const { data: profile } = await client.from('profiles').select('*').eq('id', userId).single();
+        if (profile) {
+          this.data.settings.userName = profile.user_name || this.data.settings.userName;
+          this.data.settings.currency = profile.currency || this.data.settings.currency;
+          this.data.settings.monthlySavingsGoal = profile.monthly_savings_goal || this.data.settings.monthlySavingsGoal;
+          this.data.settings.isPremium = profile.is_premium ?? this.data.settings.isPremium;
+          this.data.settings.aiQueriesCount = profile.ai_queries_count ?? this.data.settings.aiQueriesCount;
+        }
+
+        // Fetch Transactions
+        const { data: cloudTxs } = await client.from('transactions').select('*').eq('user_id', userId).order('date', { ascending: false });
+        if (cloudTxs && cloudTxs.length > 0) {
+          this.data.transactions = cloudTxs.map(t => ({
+            id: t.id,
+            date: t.date,
+            description: t.description || t.note || '',
+            category: t.category,
+            type: t.type,
+            amount: Number(t.amount),
+            note: t.note || ''
+          }));
+        }
+
+        // Fetch Budgets
+        const { data: cloudBudgets } = await client.from('budgets').select('*').eq('user_id', userId);
+        if (cloudBudgets) {
+          const budgetObj = {};
+          cloudBudgets.forEach(b => {
+            budgetObj[b.category] = Number(b.limit_amount);
+          });
+          this.data.budgets = budgetObj;
+        }
+
+        // Fetch Goals
+        const { data: cloudGoals } = await client.from('savings_goals').select('*').eq('user_id', userId);
+        if (cloudGoals) {
+          this.data.goals = cloudGoals.map(g => ({
+            id: g.id,
+            title: g.title,
+            targetAmount: Number(g.target_amount),
+            currentAmount: Number(g.current_amount),
+            targetDate: g.target_date
+          }));
+        }
+
+        // Write to local storage and refresh views
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(this.data));
+        window.dispatchEvent(new CustomEvent('store-updated'));
+        return true;
+      } catch (err) {
+        console.warn('Supabase fetchFromCloud error:', err);
+        return false;
+      }
     },
 
     /**

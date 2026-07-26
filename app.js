@@ -14,6 +14,9 @@
   let selectedGoalId = null;       // Tracks which savings goal is selected during deposit/withdraw operations
   let selectedProfilePic = null;   // Caches uploaded profile image Base64 data url before save
 
+  // Hardcoded Gemini 1.5 Flash API Key (Set key here to enable for all users)
+  const HARDCODED_GEMINI_API_KEY = "";
+
   // Central DOM Elements object mapping to cache node lookups
   const elements = {};
 
@@ -2282,10 +2285,10 @@
     const budgets = store.getBudgets() || [];
     const goals = store.getGoals() || [];
 
-    // Allow user custom key override from settings or fallback to default
-    const apiKey = settings.geminiApiKey || '';
+    // Use hardcoded key or store settings key
+    const apiKey = HARDCODED_GEMINI_API_KEY || settings.geminiApiKey || '';
     if (!apiKey) {
-      // If no custom API key set, use local response calculation engine
+      // If no Gemini API key set, use local calculation response engine
       return generateAiCoachResponse(userPrompt);
     }
 

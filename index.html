@@ -6,6 +6,8 @@
   <meta name="description" content="Premium personal financial dashboard with offline local storage, budgets tracker, savings goals progress, mock investments ticker, and CSV data export/import.">
   <title>FinFlow - Premium Financial Dashboard</title>
   <link rel="stylesheet" href="styles.css?v=1.3">
+  <!-- Supabase JS Client Library -->
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 </head>
 <body>
 
@@ -1049,14 +1051,6 @@
           <div class="form-group">
             <label for="settingsSavingsGoal">Monthly Savings Goal</label>
             <input type="number" id="settingsSavingsGoal" required min="0">
-          </div>
-
-          <div class="form-group">
-            <label for="settingsGeminiApiKey" style="display: flex; align-items: center; justify-content: space-between;">
-              <span>Gemini AI API Key (Optional)</span>
-              <span style="font-size: 0.72rem; color: var(--color-primary);">Powered by Google AI</span>
-            </label>
-            <input type="password" id="settingsGeminiApiKey" placeholder="Paste custom Gemini API key (Leave blank for default)">
           </div>
 
 
