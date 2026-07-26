@@ -1517,7 +1517,7 @@
     // Loop through checkboxes matching books
     document.querySelectorAll('.book-checkbox').forEach(chk => {
       const idx = parseInt(chk.getAttribute('data-index'));
-      const isLocked = idx >= 4 && !isPremium;
+      const isLocked = false; // Books are free for all users
       const card = chk.closest('.book-card');
       const readBtn = card.querySelector('.read-book-btn');
       
