@@ -2348,12 +2348,68 @@ Directives:
     const categoryTotals = {};
 
     transactions.forEach(tx => {
-      if (tx.type === 'income') totalIncome += tx.amount;
-      else if (tx.type === 'expense') {
+      if (tx.type === 'income') {
+        totalIncome += tx.amount;
+      } else if (tx.type === 'expense') {
         totalExpenses += tx.amount;
         categoryTotals[tx.category] = (categoryTotals[tx.category] || 0) + tx.amount;
       }
     });
+
+    // ROUTE 0: SMART FINANCIAL MATH & RATE EVALUATOR (Daily, Weekly, Monthly & Arithmetic)
+    const rateMatch = lower.match(/(?:gh[c₵]?|\$|€|£)?\s*(\d+(?:\.\d+)?)\s*(?:cedis|dollars|naira)?\s*(daily|per day|weekly|per week|monthly|per month)\s*(?:for)?\s*(\d+)\s*(days?|weeks?|months?)/i) ||
+                      lower.match(/(\d+(?:\.\d+)?)\s*(?:daily|per day|weekly|monthly)\s*(?:for)?\s*(\d+)/i);
+
+    if (rateMatch) {
+      const amount = parseFloat(rateMatch[1]);
+      const count = parseFloat(rateMatch[2] && !isNaN(parseFloat(rateMatch[2])) ? rateMatch[2] : rateMatch[3]);
+      const freqText = lower.includes('daily') || lower.includes('per day') ? 'daily' : (lower.includes('weekly') || lower.includes('per week') ? 'weekly' : 'monthly');
+      const unitText = lower.includes('day') ? 'days' : (lower.includes('week') ? 'weeks' : 'months');
+
+      if (!isNaN(amount) && !isNaN(count)) {
+        const total = amount * count;
+        return `🧮 **Financial Calculation Result**:
+
+Receiving **${currency}${amount.toLocaleString()} ${freqText}** for **${count} ${unitText}** equals a **Total Income of ${currency}${total.toLocaleString()}**!
+
+📊 *Breakdown*:
+• Base Amount: **${currency}${amount.toLocaleString()}**
+• Frequency: **${freqText}**
+• Duration: **${count} ${unitText}**
+• Total Calculation: ${currency}${amount} × ${count} = **${currency}${total.toLocaleString()}**
+
+💡 *Smart Money Tip*:
+If you save **20%** of this income (${currency}${(total * 0.2).toLocaleString()}), you can accelerate your active savings goals!`;
+      }
+    }
+
+    // Percentage Calculation (e.g. "20% of 1000")
+    const pctMatch = lower.match(/(\d+(?:\.\d+)?)\s*%\s*(?:of)?\s*(?:gh[c₵]?|\$)?\s*(\d+(?:\.\d+)?)/i);
+    if (pctMatch) {
+      const pct = parseFloat(pctMatch[1]);
+      const base = parseFloat(pctMatch[2]);
+      const result = (pct / 100) * base;
+      return `🧮 **Percentage Calculation**:
+
+**${pct}%** of **${currency}${base.toLocaleString()}** is **${currency}${result.toLocaleString()}**.`;
+    }
+
+    // Basic arithmetic ("200 * 5", "1000 - 400")
+    const simpleMathMatch = lower.match(/(\d+(?:\.\d+)?)\s*([\+\-\*\/])\s*(\d+(?:\.\d+)?)/i);
+    if (simpleMathMatch) {
+      const n1 = parseFloat(simpleMathMatch[1]);
+      const op = simpleMathMatch[2];
+      const n2 = parseFloat(simpleMathMatch[3]);
+      let res = 0;
+      if (op === '+') res = n1 + n2;
+      else if (op === '-') res = n1 - n2;
+      else if (op === '*') res = n1 * n2;
+      else if (op === '/' && n2 !== 0) res = n1 / n2;
+      
+      return `🧮 **Calculation Result**:
+
+**${n1} ${op} ${n2}** = **${currency}${res.toLocaleString()}**.`;
+    }
 
     // ROUTE 1: T-Bills & Government Treasury / Investments Query
     if (
@@ -2448,11 +2504,72 @@ Try asking me:
 • *"What is MoMo vs Bank savings strategy?"*`;
     }
 
-    // Default Fallback
+    // ROUTE 8: Emergency Funds, Budgeting Rules (50/30/20, Envelope System, Sinking Funds)
+    if (lower.includes('emergency') || lower.includes('50/30/20') || lower.includes('budgeting rule') || lower.includes('envelope') || lower.includes('sinking')) {
+      return `🛡️ **Emergency Funds & Budgeting Frameworks**:
+1. **The 50/30/20 Rule**: Allocate **50%** to Needs (rent, food, utilities), **30%** to Wants (entertainment, dining out), and **20%** to Savings & Debt payoff.
+2. **Emergency Fund Target**: Save **3 to 6 months** of essential living expenses in a liquid high-yield account before risky investments.
+3. **Sinking Funds**: Set aside small monthly amounts for planned future expenses (e.g. Christmas, school fees, car repairs).`;
+    }
+
+    // ROUTE 9: Debt, Loans, Credit & Interest (Debt Snowball vs Avalanche)
+    if (lower.includes('debt') || lower.includes('loan') || lower.includes('borrow') || lower.includes('snowball') || lower.includes('avalanche') || lower.includes('interest rate') || lower.includes('credit')) {
+      return `💳 **Debt Management & Payoff Strategies**:
+• **Debt Avalanche**: Pay off the loan with the **highest interest rate** first to minimize interest costs over time.
+• **Debt Snowball**: Pay off the **smallest balance** first for quick psychological wins to build momentum.
+• **Golden Rule**: Never borrow for depreciating consumer items. Keep high-interest debt below 10% of monthly income!`;
+    }
+
+    // ROUTE 10: Compound Interest, Inflation, Net Worth & Assets
+    if (lower.includes('compound') || lower.includes('inflation') || lower.includes('net worth') || lower.includes('asset') || lower.includes('liability')) {
+      return `📈 **Building Wealth: Assets vs Liabilities**:
+• **Compound Interest**: Albert Einstein called this the 8th wonder of the world. Reinvesting returns causes your money to grow exponentially over time.
+• **Assets vs Liabilities**: Assets put money *into* your pocket (T-Bills, stocks, real estate, businesses). Liabilities take money *out* of your pocket (car loans, expensive subscriptions).
+• **Net Worth**: Total Assets minus Total Liabilities. Focus on increasing assets monthly!`;
+    }
+
+    // ROUTE 11: Stocks, Index Funds, ETFs, Crypto, Dividends & Real Estate
+    if (lower.includes('stock') || lower.includes('etf') || lower.includes('index fund') || lower.includes('dividend') || lower.includes('crypto') || lower.includes('bitcoin') || lower.includes('estate') || lower.includes('shares')) {
+      return `🏛️ **Investing Essentials**:
+1. **Index Funds & ETFs**: Low-cost funds that track entire markets (e.g., S&P 500 or Ghana Stock Exchange Index) giving you instant diversification.
+2. **Dividends**: Regular cash payouts companies distribute to shareholders out of corporate profits.
+3. **Crypto / High-Risk Assets**: Treat crypto as speculative. Keep it under 5% of your total net worth and prioritize emergency reserves first!`;
+    }
+
+    // ROUTE 12: Business, Revenue, Profit, Margin & Invoicing
+    if (lower.includes('business') || lower.includes('profit') || lower.includes('revenue') || lower.includes('invoice') || lower.includes('margin') || lower.includes('customer') || lower.includes('sales')) {
+      return `💼 **Business Money Management**:
+• **Profit Calculation**: Revenue minus Expenses = Net Profit.
+• **Separate Accounts**: Never mix business revenue with personal wallet cash! Keep dedicated business Mobile Money / Bank ledgers.
+• **Working Capital**: Always maintain 2 months of operational expenses for payroll and supplier bills.`;
+    }
+
+    // ROUTE 13: Non-Financial Boundary Guard (Politely declines unrelated queries)
+    const financialTerms = [
+      'money', 'cash', 'income', 'expense', 'budget', 'save', 'saving', 'invest', 'bill', 'pay',
+      'ghs', 'cedi', 'dollar', 'naira', 'cfa', 'rand', 'shilling', 'pound', 'euro', 'momo', 'bank',
+      'spend', 'buy', 'cost', 'price', 'afford', 'tax', 'loan', 'debt', 'salary', 'financial',
+      't-bill', 'stock', 'profit', 'fund', 'wallet', 'ledger', 'balance', 'wealth', 'account'
+    ];
+    const isFinancialQuery = financialTerms.some(term => lower.includes(term));
+
+    if (!isFinancialQuery && lower.length > 5) {
+      return `🚫 **Finflow AI Money Coach**:
+
+I am specifically trained as your **Personal Financial Advisor & Money Coach**. I can only answer questions related to **money, budgeting, savings, investments, business, loans, and taxes**.
+
+💡 *Ask me anything about your finances, such as:*
+• *"What is the 50/30/20 budgeting rule?"*
+• *"How do I build an emergency fund?"*
+• *"What is compound interest?"*
+• *"Explain T-Bills like I'm 15"!*`;
+    }
+
+    // Default Fallback for General Money Queries
     return `🤖 **Finflow AI Coach Insight**:
 Your current liquid balance is **${currency}${balanceNum.toLocaleString()}** across **${transactions.length}** recorded transactions.
 
-Ask me specific questions like:
+Ask me specific financial questions like:
 • *"What is the best way to save with T-Bills?"*
 • *"How much did I spend on Food this month?"*
 • *"Can I afford a GHS 1,000 purchase?"*
