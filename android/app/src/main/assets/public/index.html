@@ -196,7 +196,7 @@
         <svg style="stroke: var(--color-danger); fill: none;"><use href="#icon-logout"></use></svg>
         <span style="color: var(--color-danger); font-weight: 600;">Log Out</span>
       </a>
-      <a class="nav-item upgrade-nav-item" id="sidebarUpgradeBtn" onclick="document.getElementById('appSidebar').classList.remove('active'); document.getElementById('sidebarBackdrop').classList.remove('active'); document.body.classList.remove('no-scroll');" style="cursor: pointer; background: linear-gradient(135deg, rgba(241, 196, 15, 0.15), rgba(243, 156, 18, 0.15)); border: 1px solid rgba(243, 156, 18, 0.3); color: #f1c40f; border-radius: var(--border-radius-sm); margin: 6px 12px; padding: 10px 14px; font-weight: 700; display: flex; align-items: center; gap: 10px; box-shadow: 0 4px 12px rgba(243, 156, 18, 0.1);">
+      <a class="nav-item upgrade-nav-item" id="sidebarUpgradeBtn" onclick="document.getElementById('appSidebar').classList.remove('active'); document.getElementById('sidebarBackdrop').classList.remove('active'); document.body.classList.remove('no-scroll'); window.openPremiumModal();" style="cursor: pointer; background: linear-gradient(135deg, rgba(241, 196, 15, 0.15), rgba(243, 156, 18, 0.15)); border: 1px solid rgba(243, 156, 18, 0.3); color: #f1c40f; border-radius: var(--border-radius-sm); margin: 6px 12px; padding: 10px 14px; font-weight: 700; display: flex; align-items: center; gap: 10px; box-shadow: 0 4px 12px rgba(243, 156, 18, 0.1);">
         <svg style="width: 16px; height: 16px; fill: #f1c40f;"><use href="#icon-crown"></use></svg>
         <span>Go Premium</span>
       </a>
@@ -1395,7 +1395,7 @@
           <svg style="width: 22px; height: 22px; fill: #f1c40f;"><use href="#icon-crown"></use></svg>
           Unlock FinFlow Premium
         </h3>
-        <button class="modal-close-btn" aria-label="Close dialog"><svg><use href="#icon-close"></use></svg></button>
+        <button class="modal-close-btn" onclick="window.closePremiumModal()" aria-label="Close dialog"><svg><use href="#icon-close"></use></svg></button>
       </div>
       
       <div style="padding-top: 15px; text-align: center;">
@@ -1434,7 +1434,7 @@
           Unlock Premium ($1.99)
         </button>
 
-        <button type="button" class="btn btn-secondary modal-close-action" style="margin-top: 10px; width: 100%; border: none; background: transparent; color: var(--text-muted);">
+        <button type="button" class="btn btn-secondary modal-close-action" onclick="window.closePremiumModal()" style="margin-top: 10px; width: 100%; border: none; background: transparent; color: var(--text-muted);">
           Maybe Later
         </button>
       </div>

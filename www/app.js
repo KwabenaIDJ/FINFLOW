@@ -508,6 +508,20 @@
     }
   };
 
+  window.openPremiumModal = function() {
+    const modal = document.getElementById('premiumUpgradeModal');
+    if (modal) {
+      modal.classList.add('active');
+    }
+  };
+
+  window.closePremiumModal = function() {
+    const modal = document.getElementById('premiumUpgradeModal');
+    if (modal) {
+      modal.classList.remove('active');
+    }
+  };
+
   /**
    * Dynamic category options populator based on whether the transaction is an Income or Expense.
    */
