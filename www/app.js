@@ -4023,6 +4023,17 @@ Ask me specific financial questions like:
     });
 
     document.addEventListener('click', (e) => {
+      const upgradeBtn = e.target.closest('#sidebarUpgradeBtn, .upgrade-nav-item, .upgrade-trigger-btn');
+      if (upgradeBtn) {
+        e.preventDefault();
+        const sidebar = document.getElementById('appSidebar');
+        const backdrop = document.getElementById('sidebarBackdrop');
+        if (sidebar) sidebar.classList.remove('active');
+        if (backdrop) backdrop.classList.remove('active');
+        document.body.classList.remove('no-scroll');
+        window.openPremiumModal();
+      }
+
       const explainBtn = e.target.closest('.explain-this-btn');
       if (explainBtn) {
         const promptText = explainBtn.getAttribute('data-explain');
