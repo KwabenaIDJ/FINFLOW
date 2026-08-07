@@ -1,0 +1,7 @@
+<?xml version='1.0' encoding='utf-8'?>
+<resources>
+    <string name="app_name">FinFlow</string>
+    <string name="title_activity_main">FinFlow</string>
+    <string name="package_name">com.finflow.app</string>
+    <string name="custom_url_scheme">com.finflow.app</string>
+</resources>
