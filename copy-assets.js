@@ -3,6 +3,9 @@ const path = require('path');
 
 const filesToCopy = [
   'index.html',
+  'terms.html',
+  'privacy.html',
+  'refund.html',
   'app.js',
   'charts.js',
   'store.js',

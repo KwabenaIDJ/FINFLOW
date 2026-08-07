@@ -5,7 +5,9 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <meta name="description" content="Premium personal financial dashboard with offline local storage, budgets tracker, savings goals progress, mock investments ticker, and CSV data export/import.">
   <title>FinFlow - Premium Financial Dashboard</title>
-  <link rel="stylesheet" href="styles.css">
+  <link rel="stylesheet" href="styles.css?v=1.3">
+  <!-- Supabase JS Client Library -->
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 </head>
 <body>
 
@@ -105,41 +107,47 @@
       <path d="M2 4l3 12h14l3-12-6 7-4-7-4 7-6-7zm3 16h14a1 1 0 0 0 0-2H5a1 1 0 0 0 0 2z" stroke="none" stroke-width="2" fill="currentColor"></path>
     </symbol>
     <!-- Arrow Down Left (Income) -->
-    <symbol id="icon-arrow-down-left" viewBox="0 0 24 24">
+    <symbol id="icon-arrow-down-left" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
       <line x1="17" y1="7" x2="7" y2="17" />
       <polyline points="17 17 7 17 7 7" />
     </symbol>
     <!-- Arrow Up Right (Expense) -->
-    <symbol id="icon-arrow-up-right" viewBox="0 0 24 24">
+    <symbol id="icon-arrow-up-right" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
       <line x1="7" y1="17" x2="17" y2="7" />
       <polyline points="7 7 17 7 17 17" />
     </symbol>
     <!-- Download Icon -->
-    <symbol id="icon-download" viewBox="0 0 24 24">
+    <symbol id="icon-download" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
       <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
       <polyline points="7 10 12 15 17 10" />
       <line x1="12" y1="15" x2="12" y2="3" />
     </symbol>
     <!-- Upload Icon -->
-    <symbol id="icon-upload" viewBox="0 0 24 24">
+    <symbol id="icon-upload" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
       <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
       <polyline points="17 8 12 3 7 8" />
       <line x1="12" y1="3" x2="12" y2="15" />
     </symbol>
     <!-- Share Icon -->
-    <symbol id="icon-share" viewBox="0 0 24 24">
-      <circle cx="18" cy="5" r="3"></circle>
-      <circle cx="6" cy="12" r="3"></circle>
-      <circle cx="18" cy="19" r="3"></circle>
-      <line x1="8.59" y1="13.51" x2="15.42" y2="17.49" stroke-linecap="round" stroke-linejoin="round"></line>
-      <line x1="15.41" y1="6.51" x2="8.59" y2="10.49" stroke-linecap="round" stroke-linejoin="round"></line>
+    <symbol id="icon-share" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+      <circle cx="18" cy="5" r="3" fill="none" stroke="currentColor"></circle>
+      <circle cx="6" cy="12" r="3" fill="none" stroke="currentColor"></circle>
+      <circle cx="18" cy="19" r="3" fill="none" stroke="currentColor"></circle>
+      <line x1="8.59" y1="13.51" x2="15.42" y2="17.49"></line>
+      <line x1="15.41" y1="6.51" x2="8.59" y2="10.49"></line>
+    </symbol>
+    <!-- Menu / Hamburger Icon -->
+    <symbol id="icon-menu" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+      <line x1="3" y1="12" x2="21" y2="12"></line>
+      <line x1="3" y1="6" x2="21" y2="6"></line>
+      <line x1="3" y1="18" x2="21" y2="18"></line>
     </symbol>
     <!-- Print Icon -->
-    <symbol id="icon-print" viewBox="0 0 24 24">
-      <path d="M6 9V2h12v7M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2m-12 0v4h8v-4" stroke-linecap="round" stroke-linejoin="round"></path>
+    <symbol id="icon-print" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+      <path d="M6 9V2h12v7M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2m-12 0v4h8v-4"></path>
     </symbol>
     <!-- Close/Cross Icon -->
-    <symbol id="icon-close" viewBox="0 0 24 24">
+    <symbol id="icon-close" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
       <line x1="18" y1="6" x2="6" y2="18" />
       <line x1="6" y1="6" x2="18" y2="18" />
     </symbol>
@@ -147,43 +155,52 @@
 
   <!-- ==================== SIDEBAR ==================== -->
   <aside id="appSidebar">
-    <div class="logo-container">
-      <div class="logo-icon">
-        <svg><use href="#icon-target"></use></svg>
+    <div class="logo-container" style="display: flex; align-items: center; justify-content: space-between; width: 100%;">
+      <div style="display: flex; align-items: center; gap: 12px;">
+        <div class="logo-icon">
+          <svg><use href="#icon-target"></use></svg>
+        </div>
+        <div class="logo-text">FinFlow</div>
       </div>
-      <div class="logo-text">FinFlow</div>
+      <button id="sidebarCloseBtn" class="btn btn-secondary btn-icon" title="Close menu" onclick="document.getElementById('appSidebar').classList.remove('active'); document.getElementById('sidebarBackdrop').classList.remove('active'); document.body.classList.remove('no-scroll');" style="display: none; padding: 6px; min-width: 32px; height: 32px; align-items: center; justify-content: center; border: none; background: transparent; color: var(--text-muted); cursor: pointer;">
+        <svg style="width: 18px; height: 18px; fill: none; stroke: currentColor; stroke-width: 2.5;"><use href="#icon-close"></use></svg>
+      </button>
     </div>
 
     <nav id="appNavigation">
-      <a class="nav-item active" data-target="dashboard">
+      <a class="nav-item active" data-target="dashboard" onclick="document.getElementById('appSidebar').classList.remove('active'); document.getElementById('sidebarBackdrop').classList.remove('active'); document.body.classList.remove('no-scroll');">
         <svg><use href="#icon-dashboard"></use></svg>
         <span>Overview</span>
       </a>
-      <a class="nav-item" data-target="budgets">
+      <a class="nav-item" data-target="budgets" onclick="document.getElementById('appSidebar').classList.remove('active'); document.getElementById('sidebarBackdrop').classList.remove('active'); document.body.classList.remove('no-scroll');">
         <svg><use href="#icon-wallet"></use></svg>
         <span>Budgets</span>
       </a>
-      <a class="nav-item" data-target="goals">
+      <a class="nav-item" data-target="goals" onclick="document.getElementById('appSidebar').classList.remove('active'); document.getElementById('sidebarBackdrop').classList.remove('active'); document.body.classList.remove('no-scroll');">
         <svg><use href="#icon-target"></use></svg>
         <span>Savings Goals</span>
       </a>
-      <a class="nav-item" data-target="todos">
+      <a class="nav-item" data-target="todos" onclick="document.getElementById('appSidebar').classList.remove('active'); document.getElementById('sidebarBackdrop').classList.remove('active'); document.body.classList.remove('no-scroll');">
         <svg><use href="#icon-todo"></use></svg>
         <span>Tasks Checklist</span>
       </a>
-      <a class="nav-item" data-target="guide">
+      <a class="nav-item" data-target="guide" onclick="document.getElementById('appSidebar').classList.remove('active'); document.getElementById('sidebarBackdrop').classList.remove('active'); document.body.classList.remove('no-scroll');">
         <svg><use href="#icon-book"></use></svg>
         <span>Financial Guide</span>
       </a>
-      <a class="nav-item" data-target="settings">
+      <a class="nav-item" data-target="settings" onclick="document.getElementById('appSidebar').classList.remove('active'); document.getElementById('sidebarBackdrop').classList.remove('active'); document.body.classList.remove('no-scroll');">
         <svg><use href="#icon-settings"></use></svg>
         <span>Settings</span>
       </a>
-      <a class="nav-item upgrade-nav-item" id="sidebarUpgradeBtn" style="cursor: pointer; background: linear-gradient(135deg, rgba(241, 196, 15, 0.15), rgba(243, 156, 18, 0.15)); border: 1px solid rgba(243, 156, 18, 0.3); color: #f1c40f; border-radius: var(--border-radius-sm); margin: 6px 12px; padding: 10px 14px; font-weight: 700; display: flex; align-items: center; gap: 10px; box-shadow: 0 4px 12px rgba(243, 156, 18, 0.1);">
+      <a class="nav-item" id="logoutNavBtn" onclick="document.getElementById('appSidebar').classList.remove('active'); document.getElementById('sidebarBackdrop').classList.remove('active'); document.body.classList.remove('no-scroll');" style="cursor: pointer; color: var(--color-danger);">
+        <svg style="stroke: var(--color-danger); fill: none;"><use href="#icon-logout"></use></svg>
+        <span style="color: var(--color-danger); font-weight: 600;">Log Out</span>
+      </a>
+      <a class="nav-item upgrade-nav-item" id="sidebarUpgradeBtn" onclick="document.getElementById('appSidebar').classList.remove('active'); document.getElementById('sidebarBackdrop').classList.remove('active'); document.body.classList.remove('no-scroll');" style="cursor: pointer; background: linear-gradient(135deg, rgba(241, 196, 15, 0.15), rgba(243, 156, 18, 0.15)); border: 1px solid rgba(243, 156, 18, 0.3); color: #f1c40f; border-radius: var(--border-radius-sm); margin: 6px 12px; padding: 10px 14px; font-weight: 700; display: flex; align-items: center; gap: 10px; box-shadow: 0 4px 12px rgba(243, 156, 18, 0.1);">
         <svg style="width: 16px; height: 16px; fill: #f1c40f;"><use href="#icon-crown"></use></svg>
         <span>Go Premium</span>
       </a>
-      <a class="nav-item" id="sidebarHelpBtn" style="cursor: pointer;">
+      <a class="nav-item" id="sidebarHelpBtn" onclick="document.getElementById('appSidebar').classList.remove('active'); document.getElementById('sidebarBackdrop').classList.remove('active'); document.body.classList.remove('no-scroll');" style="cursor: pointer;">
         <svg><use href="#icon-help"></use></svg>
         <span>Help Tour</span>
       </a>
@@ -209,52 +226,127 @@
       </div>
     </div>
   </aside>
+  <div class="sidebar-backdrop" id="sidebarBackdrop" onclick="document.getElementById('appSidebar').classList.remove('active'); this.classList.remove('active'); document.body.classList.remove('no-scroll');"></div>
 
   <!-- ==================== MAIN CONTENT CONTAINER ==================== -->
   <main id="appMainContent">
     
     <!-- HEADER BAR -->
     <header>
-      <div class="header-title">
-        <h1 id="headerGreeting">Greetings!</h1>
-        <p>Keep track of your transactions, goals, budgets, and investments.</p>
+      <div style="display: flex; align-items: center; gap: 16px; width: 100%;">
+        <button id="menuToggleBtn" class="btn btn-secondary btn-icon" title="Open menu" onclick="document.getElementById('appSidebar').classList.add('active'); document.getElementById('sidebarBackdrop').classList.add('active'); document.body.classList.add('no-scroll');" style="display: none; padding: 10px 12px; align-items: center; justify-content: center; min-width: 42px;">
+          <svg style="width: 18px; height: 18px; fill: none; stroke: currentColor; stroke-width: 2.5;"><use href="#icon-menu"></use></svg>
+        </button>
+        <div style="display: flex; align-items: center; gap: 14px; flex-grow: 1;">
+          <div class="profile-avatar" style="width: 46px; height: 46px; font-size: 1.1rem; flex-shrink: 0; border: 2px solid var(--color-primary); box-shadow: 0 4px 12px var(--color-primary-glow);">U</div>
+          <div class="header-title">
+            <h1 id="headerGreeting">Greetings!</h1>
+            <p>Keep track of your transactions, goals, budgets, and investments.</p>
+          </div>
+        </div>
       </div>
       <div class="header-actions">
-        <!-- Timeframe Selector -->
-        <select id="timeframeSelector" style="background: var(--bg-card); border: 1px solid var(--color-border); color: var(--text-main); border-radius: var(--border-radius-sm); padding: 10px 14px; font-family: inherit; font-size: 0.88rem; outline: none; cursor: pointer; transition: all var(--transition-fast); margin-right: 6px;">
-          <!-- Populated in JS -->
-        </select>
-        <!-- Add transaction trigger -->
-        <button class="btn btn-primary" id="addTxBtn">
-          <svg style="width: 18px; height: 18px; fill: none; stroke: currentColor; stroke-width: 2.5;"><use href="#icon-plus"></use></svg>
-          Add Transaction
-        </button>
-        <!-- Undo / Redo Actions -->
-        <button class="btn btn-secondary btn-icon" id="undoBtn" title="Undo change" disabled style="padding: 10px 12px; display: flex; align-items: center; justify-content: center; opacity: 0.5; cursor: not-allowed; min-width: 42px;">
-          <svg style="width: 16px; height: 16px; fill: none; stroke: currentColor; stroke-width: 2.5;"><use href="#icon-undo"></use></svg>
-        </button>
-        <button class="btn btn-secondary btn-icon" id="redoBtn" title="Redo change" disabled style="padding: 10px 12px; display: flex; align-items: center; justify-content: center; opacity: 0.5; cursor: not-allowed; min-width: 42px;">
-          <svg style="width: 16px; height: 16px; fill: none; stroke: currentColor; stroke-width: 2.5;"><use href="#icon-redo"></use></svg>
-        </button>
-        <!-- CSV Actions -->
-        <button class="btn btn-secondary btn-icon" id="exportCsvBtn" title="Export transactions to CSV" style="padding: 10px 12px; display: flex; align-items: center; justify-content: center; min-width: 42px;">
-          <svg style="width: 16px; height: 16px; fill: none; stroke: currentColor; stroke-width: 2;"><use href="#icon-download"></use></svg>
-        </button>
-        <button class="btn btn-secondary btn-icon" id="importCsvBtn" title="Import transactions from CSV" style="padding: 10px 12px; display: flex; align-items: center; justify-content: center; min-width: 42px;">
-          <svg style="width: 16px; height: 16px; fill: none; stroke: currentColor; stroke-width: 2;"><use href="#icon-upload"></use></svg>
-        </button>
-        <button class="btn btn-secondary btn-icon" id="shareBtn" title="Share dashboard summary" style="padding: 10px 12px; display: flex; align-items: center; justify-content: center; min-width: 42px;">
-          <svg style="width: 16px; height: 16px; fill: none; stroke: currentColor; stroke-width: 2;"><use href="#icon-share"></use></svg>
-        </button>
-        <button class="btn btn-secondary btn-icon" id="printBtn" title="Print dashboard report" style="padding: 10px 12px; display: flex; align-items: center; justify-content: center; min-width: 42px;">
-          <svg style="width: 16px; height: 16px; fill: none; stroke: currentColor; stroke-width: 2;"><use href="#icon-print"></use></svg>
-        </button>
+        <!-- Row 1: Dropdowns -->
+        <div class="header-dropdowns-row">
+          <!-- Multi-Currency Converter Dropdown -->
+          <select id="headerCurrencySelector" title="Switch active currency" style="background: var(--bg-card); border: 1px solid var(--color-border); color: var(--text-main); border-radius: var(--border-radius-sm); padding: 10px 12px; font-family: inherit; font-size: 0.88rem; outline: none; cursor: pointer; transition: all var(--transition-fast); margin-right: 4px; font-weight: 700;">
+            <option value="$">USD ($)</option>
+            <option value="€">EUR (€)</option>
+            <option value="£">GBP (£)</option>
+            <option value="¥">JPY/CNY (¥)</option>
+            <option value="₹">INR (₹)</option>
+            <option value="C$">CAD (C$)</option>
+            <option value="A$">AUD (A$)</option>
+            <option value="Fr">CHF (Fr)</option>
+            <option value="kr">SEK/NOK/DKK (kr)</option>
+            <option value="zł">PLN (zł)</option>
+            <option value="R$">BRL (R$)</option>
+            <option value="₽">RUB (₽)</option>
+            <option value="R">ZAR (R)</option>
+            <option value="د.إ">AED (د.إ)</option>
+            <option value="ر.س">SAR (ر.س)</option>
+            <option value="₪">ILS (₪)</option>
+            <option value="₱">PHP (₱)</option>
+            <option value="Rp">IDR (Rp)</option>
+            <option value="RM">MYR (RM)</option>
+            <option value="฿">THB (฿)</option>
+            <option value="₫">VND (₫)</option>
+            <option value="₦">NGN (₦)</option>
+            <option value="KSh">KES (KSh)</option>
+            <option value="GH₵">GHS (GH₵)</option>
+          </select>
+
+          <!-- Timeframe Selector -->
+          <select id="timeframeSelector" style="background: var(--bg-card); border: 1px solid var(--color-border); color: var(--text-main); border-radius: var(--border-radius-sm); padding: 10px 14px; font-family: inherit; font-size: 0.88rem; outline: none; cursor: pointer; transition: all var(--transition-fast); margin-right: 6px;">
+            <!-- Populated in JS -->
+          </select>
+        </div>
+
+        <!-- Row 2: Main Buttons -->
+        <div class="header-main-buttons-row">
+          <!-- Add transaction trigger -->
+          <button class="btn btn-primary" id="addTxBtn">
+            <svg style="width: 18px; height: 18px; fill: none; stroke: currentColor; stroke-width: 2.5;"><use href="#icon-plus"></use></svg>
+            Add Transaction
+          </button>
+          <!-- PDF Financial Statement Export -->
+          <button class="btn btn-secondary" id="exportPdfBtn" title="Generate & Download PDF Financial Statement Report" style="padding: 10px 14px; display: flex; align-items: center; gap: 6px; font-weight: 700;">
+            <svg style="width: 16px; height: 16px; fill: none; stroke: currentColor; stroke-width: 2;"><use href="#icon-print"></use></svg>
+            <span>PDF Report</span>
+          </button>
+        </div>
+
+        <!-- Row 3: Utility Icon Buttons -->
+        <div class="header-utilities">
+          <!-- Undo / Redo Actions -->
+          <button class="btn btn-secondary btn-icon" id="undoBtn" title="Undo change" disabled style="padding: 10px 12px; display: flex; align-items: center; justify-content: center; opacity: 0.5; cursor: not-allowed; min-width: 42px;">
+            <svg style="width: 16px; height: 16px; fill: none; stroke: currentColor; stroke-width: 2.5;"><use href="#icon-undo"></use></svg>
+          </button>
+          <button class="btn btn-secondary btn-icon" id="redoBtn" title="Redo change" disabled style="padding: 10px 12px; display: flex; align-items: center; justify-content: center; opacity: 0.5; cursor: not-allowed; min-width: 42px;">
+            <svg style="width: 16px; height: 16px; fill: none; stroke: currentColor; stroke-width: 2.5;"><use href="#icon-redo"></use></svg>
+          </button>
+          <!-- CSV Actions -->
+          <button class="btn btn-secondary btn-icon" id="exportCsvBtn" title="Export transactions to CSV" style="padding: 10px 12px; display: flex; align-items: center; justify-content: center; min-width: 42px;">
+            <svg style="width: 16px; height: 16px; fill: none; stroke: currentColor; stroke-width: 2;"><use href="#icon-download"></use></svg>
+          </button>
+          <button class="btn btn-secondary btn-icon" id="importCsvBtn" title="Import transactions from CSV" style="padding: 10px 12px; display: flex; align-items: center; justify-content: center; min-width: 42px;">
+            <svg style="width: 16px; height: 16px; fill: none; stroke: currentColor; stroke-width: 2;"><use href="#icon-upload"></use></svg>
+          </button>
+          <button class="btn btn-secondary btn-icon" id="shareBtn" title="Share dashboard summary" style="padding: 10px 12px; display: flex; align-items: center; justify-content: center; min-width: 42px;">
+            <svg style="width: 16px; height: 16px; fill: none; stroke: currentColor; stroke-width: 2;"><use href="#icon-share"></use></svg>
+          </button>
+        </div>
         <input type="file" id="csvFileInput" accept=".csv" style="display: none;">
       </div>
     </header>
 
     <!-- ==================== PANEL: OVERVIEW / DASHBOARD ==================== -->
     <div class="view-panel active" id="dashboard-panel">
+      
+      <!-- REAL-TIME BUDGET BREACHED VISUAL ALERTS -->
+      <div id="budgetBreachAlertContainer" style="display: none; margin-bottom: 20px;"></div>
+      
+      <!-- PROACTIVE FINFLOW AI COACH INSIGHTS BANNER -->
+      <div id="aiInsightsBanner" class="card ai-insights-card" style="margin-bottom: 24px; background: linear-gradient(135deg, rgba(99, 102, 241, 0.12), rgba(168, 85, 247, 0.12)); border: 1px solid rgba(168, 85, 247, 0.3); border-radius: var(--border-radius-lg); padding: 18px 22px; position: relative; overflow: hidden; box-shadow: 0 4px 20px rgba(168, 85, 247, 0.12);">
+        <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 14px; flex-wrap: wrap; gap: 10px;">
+          <div style="display: flex; align-items: center; gap: 10px;">
+            <div style="width: 34px; height: 34px; border-radius: 50%; background: linear-gradient(135deg, var(--color-primary), #a855f7); display: flex; align-items: center; justify-content: center; color: #fff; font-size: 1rem; font-weight: 800; box-shadow: 0 0 12px rgba(168, 85, 247, 0.4);">💡</div>
+            <div>
+              <h4 style="font-size: 0.98rem; font-weight: 800; color: var(--text-main); margin: 0; display: flex; align-items: center; gap: 6px;">
+                Proactive AI Insights <span style="background: linear-gradient(135deg, #a855f7, #ec4899); color: #fff; font-size: 0.64rem; font-weight: 800; padding: 2px 6px; border-radius: 10px; text-transform: uppercase;">Smart Admin</span>
+              </h4>
+              <span style="font-size: 0.74rem; color: var(--text-muted);">Real-time background money analysis & proactive alerts</span>
+            </div>
+          </div>
+          <button type="button" class="btn btn-secondary btn-sm" id="openAiCoachModalBtn" style="font-size: 0.78rem; font-weight: 700; background: linear-gradient(135deg, var(--color-primary), #a855f7); border: none; color: #ffffff; padding: 6px 14px; border-radius: 20px; display: flex; align-items: center; gap: 6px; cursor: pointer; box-shadow: 0 4px 12px rgba(99, 102, 241, 0.3);">
+            💬 Ask AI Coach
+          </button>
+        </div>
+
+        <div id="aiInsightsContent" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 14px;">
+          <!-- Dynamically populated in app.js -->
+        </div>
+      </div>
       
       <!-- KPI GRID -->
       <section class="kpi-grid" aria-label="Financial Summary Totals">
@@ -334,7 +426,7 @@
             <div id="diagnosticsLockOverlay" style="display: none; position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: rgba(15, 23, 42, 0.45); backdrop-filter: blur(4px); -webkit-backdrop-filter: blur(4px); border-radius: var(--border-radius-sm); align-items: center; justify-content: center; flex-direction: column; gap: 10px; z-index: 10;">
               <span style="font-size: 1.4rem;">🔒</span>
               <span style="font-size: 0.76rem; font-weight: 700; color: #fff; text-shadow: 0 1px 3px rgba(0,0,0,0.6); text-align: center;">Unlock Detailed Smart Insights with Premium</span>
-              <button type="button" class="btn btn-primary btn-sm upgrade-trigger-btn" style="font-size: 0.72rem; padding: 6px 12px; background: #f1c40f; border-color: #f1c40f; color: #0b0f19; font-weight: 700; cursor: pointer; border-radius: 4px;">Upgrade ($0.99)</button>
+              <button type="button" class="btn btn-primary btn-sm upgrade-trigger-btn" style="font-size: 0.72rem; padding: 6px 12px; background: #f1c40f; border-color: #f1c40f; color: #0b0f19; font-weight: 700; cursor: pointer; border-radius: 4px;">Upgrade ($1.99)</button>
             </div>
           </div>
         </div>
@@ -391,26 +483,21 @@
         </section>
       </div>
 
-      <!-- MOCK ADVERTISEMENT BANNER (HIDDEN FOR PREMIUM MEMBERS) -->
-      <div id="mockAdBanner" class="card" style="margin-top: 30px; display: flex; align-items: center; justify-content: space-between; padding: 18px 24px; background: linear-gradient(135deg, rgba(99, 102, 241, 0.08), rgba(168, 85, 247, 0.08)); border: 1.5px dashed rgba(99, 102, 241, 0.25); border-radius: var(--border-radius-md); box-shadow: 0 4px 15px rgba(99, 102, 241, 0.05); position: relative; overflow: hidden;">
-        <div style="position: absolute; top: 0; left: 0; background: var(--color-primary); color: #fff; font-size: 0.6rem; font-weight: 700; text-transform: uppercase; padding: 2px 8px; border-bottom-right-radius: var(--border-radius-sm);">Sponsored</div>
-        <div style="display: flex; align-items: center; gap: 16px; text-align: left;">
-          <div style="font-size: 1.8rem; background: var(--bg-secondary); width: 48px; height: 48px; display: flex; align-items: center; justify-content: center; border-radius: var(--border-radius-sm); border: 1px solid var(--color-border);">📈</div>
-          <div>
-            <h4 style="font-size: 0.95rem; font-weight: 700; color: var(--text-main); margin-bottom: 3px;">Achieve High-Yield Savings Account</h4>
-            <p style="font-size: 0.8rem; color: var(--text-muted); margin: 0;">Start earning up to 15.5% annual returns on MoMo directly! Secure and regulated.</p>
-          </div>
-        </div>
-        <a href="https://achieve.app" target="_blank" class="btn btn-secondary btn-sm" style="font-size: 0.78rem; font-weight: 700; padding: 8px 16px; border-color: rgba(99, 102, 241, 0.3); color: var(--color-primary); text-decoration: none;">Learn More</a>
-      </div>
+
 
     </div>
 
     <!-- ==================== PANEL: BUDGETS ==================== -->
     <div class="view-panel" id="budgets-panel">
-      <div class="header-title" style="margin-bottom: 10px;">
-        <h2>Category Budgets</h2>
-        <p>Set custom expenditure limits per category. Progress bars update instantly with your transactions.</p>
+      <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; flex-wrap: wrap; gap: 12px;">
+        <div class="header-title" style="margin-bottom: 0;">
+          <h2>Category Budgets</h2>
+          <p>Set custom expenditure limits per category. Progress bars update instantly with your transactions.</p>
+        </div>
+        <button class="btn btn-primary" id="addBudgetBtn">
+          <svg style="width: 16px; height: 16px; fill: none; stroke: currentColor; stroke-width: 2.5;"><use href="#icon-plus"></use></svg>
+          Create Budget
+        </button>
       </div>
       <div class="budget-grid" id="budgetGrid">
         <!-- Dynamically populated -->
@@ -874,6 +961,14 @@
           </div>
         </div>
       </div>
+
+      <!-- LEGAL DISCLAIMER BANNER -->
+      <div style="margin-top: 30px; padding: 14px 18px; border-radius: var(--border-radius-md); background: var(--bg-secondary); border: 1px solid var(--color-border); font-size: 0.76rem; color: var(--text-muted); line-height: 1.5; display: flex; align-items: center; gap: 12px;">
+        <span style="font-size: 1.2rem;">⚖️</span>
+        <div>
+          <strong>Educational Disclaimer:</strong> All book synopses, lesson outlines, and financial guides are provided 100% free of charge for non-commercial financial literacy education. All trademarks, book titles, and author names belong exclusively to their respective owners and publishers.
+        </div>
+      </div>
     </div>
 
     <!-- ==================== OVERLAY: LITERACY READ MODAL ==================== -->
@@ -958,6 +1053,8 @@
             <input type="number" id="settingsSavingsGoal" required min="0">
           </div>
 
+
+
           <!-- Premium Theme Selection -->
           <div class="form-group" style="margin-top: 15px;">
             <label style="display: flex; align-items: center; justify-content: space-between; font-weight: 600; font-size: 0.9rem; color: var(--text-main);">
@@ -1003,6 +1100,24 @@
         </form>
       </div>
     </div>
+
+    <!-- ==================== APP FOOTER FOR COMPLIANCE & SUPPORT ==================== -->
+    <footer class="app-main-footer" style="padding: 24px 20px; margin-top: 40px; border-top: 1px solid var(--color-border); display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 16px; font-size: 0.82rem; color: var(--text-muted);">
+      <div>
+        <strong style="color: var(--text-main);">FinFlow</strong> — Cloud-based personal budgeting and financial management platform.
+        <div style="margin-top: 6px; display: flex; gap: 14px; font-size: 0.78rem;">
+          <a href="terms.html" style="color: var(--color-primary); text-decoration: underline;">Terms of Service</a>
+          <a href="privacy.html" style="color: var(--color-primary); text-decoration: underline;">Privacy Policy</a>
+          <a href="refund.html" style="color: var(--color-primary); text-decoration: underline;">Refund Policy</a>
+        </div>
+      </div>
+      <div style="display: flex; flex-direction: column; align-items: flex-end; gap: 4px;">
+        <div>
+          <span style="font-weight: 600; color: var(--text-main);">Support & Legal Review:</span>
+          <a href="mailto:finflow64@gmail.com" style="color: var(--color-primary); font-weight: 700; text-decoration: none;">finflow64@gmail.com</a>
+        </div>
+      </div>
+    </footer>
 
   </main>
 
@@ -1054,6 +1169,32 @@
         <div class="modal-footer">
           <button type="button" class="btn btn-secondary btn-cancel-modal">Cancel</button>
           <button type="submit" class="btn btn-primary">Save Transaction</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- ==================== OVERLAY: ADD BUDGET MODAL ==================== -->
+  <div class="modal-overlay" id="addBudgetModal">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h3 class="modal-title">Create Category Budget</h3>
+        <button class="modal-close-btn" aria-label="Close dialog"><svg><use href="#icon-close"></use></svg></button>
+      </div>
+      <form id="addBudgetForm">
+        <div class="form-group">
+          <label for="addBudgetCategory">Category Name</label>
+          <input type="text" id="addBudgetCategory" placeholder="e.g., Groceries, Rent, Utilities" required>
+        </div>
+
+        <div class="form-group">
+          <label for="addBudgetLimit">Monthly Limit</label>
+          <input type="number" id="addBudgetLimit" placeholder="0.00" step="1" required min="0">
+        </div>
+
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary btn-cancel-modal">Cancel</button>
+          <button type="submit" class="btn btn-primary">Create Budget</button>
         </div>
       </form>
     </div>
@@ -1195,141 +1336,405 @@
     </div>
   </div>
 
+  <!-- Floating Action Button: AI Coach Chat -->
+  <button id="floatingAiCoachFab" class="ai-fab-button" title="Ask Finflow AI Coach" aria-label="Open AI Financial Coach">
+    <div class="ai-fab-icon">✨</div>
+    <span class="ai-fab-label">AI Coach</span>
+  </button>
+
+  <!-- ==================== OVERLAY: FINFLOW AI COACH CHAT MODAL ==================== -->
+  <div class="modal-overlay" id="aiCoachModal">
+    <div class="modal-content ai-coach-modal-content" style="max-width: 540px; width: 95%; height: 85vh; max-height: 680px; display: flex; flex-direction: column; padding: 0; overflow: hidden; border: 1px solid rgba(168, 85, 247, 0.4); box-shadow: 0 10px 40px rgba(168, 85, 247, 0.25);">
+      <!-- Header -->
+      <div class="modal-header" style="padding: 16px 20px; border-bottom: 1px solid var(--color-border); background: linear-gradient(135deg, rgba(99, 102, 241, 0.15), rgba(168, 85, 247, 0.15)); display: flex; align-items: center; justify-content: space-between;">
+        <div style="display: flex; align-items: center; gap: 12px;">
+          <div style="width: 38px; height: 38px; border-radius: 50%; background: linear-gradient(135deg, #6366f1, #a855f7); display: flex; align-items: center; justify-content: center; color: #fff; font-size: 1.2rem;">
+            🤖
+          </div>
+          <div>
+            <h3 class="modal-title" style="font-size: 1.1rem; margin: 0; display: flex; align-items: center; gap: 8px;">
+              Finflow AI Coach
+              <span style="font-size: 0.65rem; font-weight: 800; background: linear-gradient(135deg, #ec4899, #a855f7); color: #fff; padding: 2px 8px; border-radius: 10px; text-transform: uppercase;">PRO</span>
+            </h3>
+            <span id="aiCoachStatusText" style="font-size: 0.74rem; color: var(--color-success); display: flex; align-items: center; gap: 4px;">
+              🟢 Online • Gemini 1.5 Flash AI
+            </span>
+          </div>
+        </div>
+        <button class="modal-close-btn" id="closeAiCoachModalBtn" aria-label="Close dialog"><svg><use href="#icon-close"></use></svg></button>
+      </div>
+
+      <!-- Quick Prompt Suggestions Pills -->
+      <div style="padding: 10px 16px; border-bottom: 1px solid var(--color-border); background: var(--bg-secondary); display: flex; gap: 8px; overflow-x: auto; white-space: nowrap;">
+        <button class="ai-prompt-pill" data-prompt="How much did I spend on Food this month?">🍔 Food Spend</button>
+        <button class="ai-prompt-pill" data-prompt="Can I afford a trip to Kumasi next month if I save GHS 200 weekly?">✈️ Trip Affordability</button>
+        <button class="ai-prompt-pill" data-prompt="Explain T-Bills like I'm 15">📈 Explain T-Bills</button>
+        <button class="ai-prompt-pill" data-prompt="Give me 3 ways to save money this month">💡 3 Savings Tips</button>
+      </div>
+
+      <!-- Messages Thread -->
+      <div id="aiChatThread" class="ai-chat-thread" style="flex-grow: 1; padding: 18px 20px; overflow-y: auto; display: flex; flex-direction: column; gap: 14px; background: var(--bg-primary);">
+        <!-- Dynamically rendered bubbles -->
+      </div>
+
+      <!-- Footer Input Area -->
+      <div style="padding: 14px 16px; border-top: 1px solid var(--color-border); background: var(--bg-card); display: flex; align-items: center; gap: 10px;">
+        <input type="text" id="aiChatInput" placeholder="Ask Finflow anything about your money..." style="flex-grow: 1; padding: 12px 16px; border-radius: 24px; border: 1px solid var(--color-border); background: var(--bg-secondary); color: var(--text-main); font-family: inherit; font-size: 0.88rem; outline: none; transition: border-color var(--transition-fast);">
+        <button type="button" id="sendAiChatBtn" class="btn btn-primary" style="padding: 10px 18px; border-radius: 24px; font-weight: 700; background: linear-gradient(135deg, var(--color-primary), #a855f7); border: none; font-size: 0.88rem; display: flex; align-items: center; gap: 6px;">
+          Send
+        </button>
+      </div>
+    </div>
+  </div>
+
   <!-- ==================== OVERLAY: PREMIUM UPGRADE MODAL ==================== -->
   <div class="modal-overlay" id="premiumUpgradeModal">
     <div class="modal-content" style="max-width: 440px; border: 2px solid #f1c40f; box-shadow: 0 0 30px rgba(241, 196, 15, 0.25);">
       <div class="modal-header" style="border-bottom: 1px solid var(--color-border); padding-bottom: 15px;">
         <h3 class="modal-title" style="color: #f1c40f; display: flex; align-items: center; gap: 8px;">
           <svg style="width: 22px; height: 22px; fill: #f1c40f;"><use href="#icon-crown"></use></svg>
-          Unlock Premium Membership
+          Unlock FinFlow Premium
         </h3>
         <button class="modal-close-btn" aria-label="Close dialog"><svg><use href="#icon-close"></use></svg></button>
       </div>
-      <div class="modal-body" style="padding-top: 20px; text-align: center;">
-        <div style="font-size: 2.2rem; margin-bottom: 8px;">👑</div>
-        <h4 style="font-size: 1.15rem; font-weight: 800; color: var(--text-main); margin-bottom: 6px;">Go Premium for Lifetime Benefits</h4>
-        <p style="font-size: 0.84rem; color: var(--text-muted); line-height: 1.5; margin-bottom: 24px; padding: 0 10px;">
-          Take complete control of your finances. Upgrade today for a one-time purchase of just <strong style="color: var(--color-success); font-size: 1rem;">$0.99</strong>.
+      
+      <div style="padding-top: 15px; text-align: center;">
+        <p style="font-size: 0.9rem; color: var(--text-muted); line-height: 1.5; margin-bottom: 20px;">
+          Take complete control of your finances. Upgrade today for a one-time purchase of just <strong style="color: #f1c40f; font-size: 1.1rem;">$1.99</strong>.
         </p>
 
-        <!-- Premium Perks Checklist -->
-        <ul style="list-style: none; padding: 0; margin: 0 0 26px 0; display: flex; flex-direction: column; gap: 12px; text-align: left; font-size: 0.85rem; color: var(--text-main);">
-          <li style="display: flex; align-items: center; gap: 10px;">
-            <span style="color: var(--color-success); font-weight: 700;">✓</span>
-            <span><strong>Ad-Free Experience</strong>: Hides all sponsored banner ads.</span>
+        <ul style="text-align: left; list-style: none; padding: 0; margin: 0 0 24px 0; display: flex; flex-direction: column; gap: 12px; font-size: 0.88rem;">
+          <li style="display: flex; align-items: flex-start; gap: 10px;">
+            <span style="color: #f1c40f; font-size: 1rem;">✨</span>
+            <span><strong>Finflow AI Coach:</strong> Unlimited 24/7 personal money coaching & chats.</span>
           </li>
-          <li style="display: flex; align-items: center; gap: 10px;">
-            <span style="color: var(--color-success); font-weight: 700;">✓</span>
-            <span><strong>Deep Financial Insights</strong>: Fully unlock smart diagnostic details.</span>
+          <li style="display: flex; align-items: flex-start; gap: 10px;">
+            <span style="color: var(--color-success); font-size: 1rem;">✓</span>
+            <span><strong>Ad-Free Experience:</strong> Hides all sponsored banner ads.</span>
           </li>
-          <li style="display: flex; align-items: center; gap: 10px;">
-            <span style="color: var(--color-success); font-weight: 700;">✓</span>
-            <span><strong>Full Literacy Curriculum</strong>: Access all 10 lessons & book summaries.</span>
+          <li style="display: flex; align-items: flex-start; gap: 10px;">
+            <span style="color: var(--color-success); font-size: 1rem;">✓</span>
+            <span><strong>Deep Financial Insights:</strong> Fully unlock smart diagnostic details.</span>
           </li>
-          <li style="display: flex; align-items: center; gap: 10px;">
-            <span style="color: var(--color-success); font-weight: 700;">✓</span>
-            <span><strong>CSV Import / Export</strong>: Enable ledger downloads & json backups.</span>
+          <li style="display: flex; align-items: flex-start; gap: 10px;">
+            <span style="color: var(--color-success); font-size: 1rem;">✓</span>
+            <span><strong>Custom Themes:</strong> Select custom dashboard colors & dark/light palettes.</span>
           </li>
-          <li style="display: flex; align-items: center; gap: 10px;">
-            <span style="color: var(--color-success); font-weight: 700;">✓</span>
-            <span><strong>Gold Crown Badge</strong>: Standout profile status styling.</span>
+          <li style="display: flex; align-items: flex-start; gap: 10px;">
+            <span style="color: var(--color-success); font-size: 1rem;">✓</span>
+            <span><strong>CSV Import / Export:</strong> Enable ledger downloads & json backups.</span>
+          </li>
+          <li style="display: flex; align-items: flex-start; gap: 10px;">
+            <span style="color: var(--color-success); font-size: 1rem;">✓</span>
+            <span><strong>Gold Crown Badge:</strong> Standout profile status styling.</span>
           </li>
         </ul>
 
-        <div style="border-top: 1px solid var(--color-border); padding-top: 20px; display: flex; flex-direction: column; gap: 10px;">
-          <button type="button" class="btn btn-primary" id="upgradeCheckoutBtn" style="width: 100%; padding: 12px; font-weight: 800; background: linear-gradient(135deg, #f1c40f, #f39c12); border-color: #f39c12; color: #0b0f19; font-size: 0.95rem; box-shadow: 0 4px 15px rgba(243, 156, 18, 0.2);">
-            Unlock Premium ($0.99)
-          </button>
-          <button type="button" class="btn btn-secondary btn-cancel-modal" style="width: 100%; padding: 10px;">Maybe Later</button>
-        </div>
+        <button class="btn btn-primary" id="upgradeCheckoutBtn" style="width: 100%; padding: 14px; font-size: 1rem; font-weight: 800; background: linear-gradient(135deg, #f1c40f, #f39c12); color: #0b0f19; border: none; border-radius: var(--border-radius-sm); cursor: pointer; box-shadow: 0 4px 15px rgba(241, 196, 15, 0.4);">
+          Unlock Premium ($1.99)
+        </button>
+
+        <button type="button" class="btn btn-secondary modal-close-action" style="margin-top: 10px; width: 100%; border: none; background: transparent; color: var(--text-muted);">
+          Maybe Later
+        </button>
       </div>
     </div>
   </div>
 
-  <!-- ==================== ONBOARDING TOUR TOOLTIP ==================== -->
-  <div id="tourOverlay" style="display: none; position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; background: rgba(0,0,0,0.4); z-index: 10001; pointer-events: none; transition: all 0.3s ease;"></div>
-  
-  <div id="tourTooltip" style="display: none; position: absolute; width: 310px; background: var(--bg-card); border: 1.5px solid var(--color-primary); border-radius: var(--border-radius-md); box-shadow: 0 12px 30px rgba(0,0,0,0.5); padding: 18px; z-index: 10003; pointer-events: auto; font-family: inherit; transition: all 0.25s ease;">
-    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px;">
-      <span id="tourStepBadge" style="background: var(--color-primary-glow); color: var(--color-primary); font-size: 0.72rem; font-weight: 700; padding: 4px 10px; border-radius: 20px;">Step 1 of 5</span>
-      <button id="tourSkipBtn" style="background: none; border: none; color: var(--text-muted); font-size: 0.78rem; cursor: pointer; font-weight: 600;">Skip Tour</button>
+  <!-- ==================== LANDING PAGE & SIGN IN / SIGN UP AUTH PANEL ==================== -->
+  <div id="authPanel">
+    <!-- LANDING HEADER -->
+    <header class="landing-nav">
+      <div class="landing-brand">
+        <div class="landing-logo-icon">
+          <svg><use href="#icon-target"></use></svg>
+        </div>
+        <span class="landing-brand-title">FinFlow</span>
+      </div>
+      <div class="landing-header-pills">
+        <button type="button" class="btn btn-primary btn-sm try-demo-btn" onclick="handleLiveDemoClick(event)" style="padding: 6px 14px; font-size: 0.78rem; font-weight: 700; background: linear-gradient(135deg, var(--color-primary), #a855f7); border: none; border-radius: 20px; cursor: pointer; color: #ffffff; display: inline-flex; align-items: center; gap: 6px; box-shadow: 0 4px 12px var(--color-primary-glow);">
+          <span>✨ Try Live Demo</span>
+        </button>
+        <span class="landing-pill"><span class="pill-dot"></span> Web Platform</span>
+        <span class="landing-pill premium-pill"><span class="pill-dot gold"></span> Premium $1.99</span>
+        <span class="landing-pill"><span class="pill-dot green"></span> Compliance Review Ready</span>
+      </div>
+    </header>
+
+    <!-- LANDING CONTAINER WITH HERO HEADER BEFORE LOGIN SECTION -->
+    <div class="landing-container">
+      <!-- HERO HEADER SECTION -->
+      <div class="landing-hero">
+        <div class="landing-badge">
+          <span class="badge-icon">⚡</span> Personal Financial Management Suite • Premium $1.99
+        </div>
+        <h1 class="landing-title">
+          FinFlow
+        </h1>
+        <p class="landing-subtitle">
+          FinFlow is a cloud-based personal budgeting and financial management software platform for tracking daily earnings, managing category budgets, computing savings goals, and accessing automated AI spending insights.
+        </p>
+
+        <!-- Feature Cards -->
+        <div class="landing-features-grid">
+          <div class="landing-feature-card">
+            <div class="feature-icon income-icon">
+              <svg><use href="#icon-arrow-down-left"></use></svg>
+            </div>
+            <div class="feature-info">
+              <h4>Tracking Earnings</h4>
+              <p>Monitor revenue, cash inflows, and asset performance with real-time analytics.</p>
+            </div>
+          </div>
+
+          <div class="landing-feature-card">
+            <div class="feature-icon expense-icon">
+              <svg><use href="#icon-arrow-up-right"></use></svg>
+            </div>
+            <div class="feature-info">
+              <h4>Managing Expenses</h4>
+              <p>Categorize transactions, set monthly budgets, and control expenditure.</p>
+            </div>
+          </div>
+
+          <div class="landing-feature-card">
+            <div class="feature-icon report-icon">
+              <svg><use href="#icon-download"></use></svg>
+            </div>
+            <div class="feature-info">
+              <h4>Exporting Financial Reports</h4>
+              <p>Generate high-precision CSV ledgers, PDF reports, and JSON data backups.</p>
+            </div>
+          </div>
+
+          <div class="landing-feature-card premium-card">
+            <div class="feature-icon premium-icon">
+              <svg><use href="#icon-crown"></use></svg>
+            </div>
+            <div class="feature-info">
+              <h4>Premium Membership</h4>
+              <p>Unlock AI Coach money analytics, ad-free experience & CSV data exports for a <strong>$1.99</strong> membership.</p>
+            </div>
+          </div>
+        </div>
+
+        <div class="landing-stats-row">
+          <div class="stat-item">
+            <span class="stat-num">100%</span>
+            <span class="stat-label">Privacy & Cloud Sync</span>
+          </div>
+          <div class="stat-item">
+            <span class="stat-num">CSV / PDF</span>
+            <span class="stat-label">Report Exports</span>
+          </div>
+          <div class="stat-item">
+            <span class="stat-num" style="color: #f1c40f;">$1.99</span>
+            <span class="stat-label">Premium Membership</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- LOGIN SECTION CARD -->
+      <div class="landing-login-box">
+        <div class="card auth-card" style="width: 100%; max-width: 420px; padding: 32px; border-radius: var(--border-radius-lg); box-shadow: var(--shadow-card); border: 1px solid var(--color-border); background: var(--bg-card); display: flex; flex-direction: column; gap: 20px;">
+          <div style="text-align: center;">
+            <h2 id="authTitle" style="font-size: 1.8rem; font-weight: 800; background: linear-gradient(135deg, var(--color-primary), #a855f7); -webkit-background-clip: text; -webkit-text-fill-color: transparent; margin: 0;">Sign In</h2>
+            <p id="authSubtitle" style="font-size: 0.88rem; color: var(--text-muted); margin-top: 6px; margin-bottom: 0;">Access your personal financial dashboard</p>
+          </div>
+
+          <form id="authForm" style="display: flex; flex-direction: column; gap: 16px;">
+            <div class="form-group" id="fullNameGroup" style="display: none;">
+              <label for="authFullName" style="font-weight: 600; font-size: 0.85rem; display: block; margin-bottom: 6px;">Full Name</label>
+              <input type="text" id="authFullName" placeholder="e.g. John Doe" style="width: 100%; padding: 11px 14px; background: var(--bg-secondary); border: 1px solid var(--color-border); color: var(--text-main); border-radius: var(--border-radius-sm); font-family: inherit; font-size: 0.9rem; outline: none;">
+            </div>
+
+            <div class="form-group" id="usernameGroup">
+              <label for="authUsername" style="font-weight: 600; font-size: 0.85rem; display: block; margin-bottom: 6px;">Username</label>
+              <input type="text" id="authUsername" required placeholder="Enter username" style="width: 100%; padding: 11px 14px; background: var(--bg-secondary); border: 1px solid var(--color-border); color: var(--text-main); border-radius: var(--border-radius-sm); font-family: inherit; font-size: 0.9rem; outline: none;">
+            </div>
+
+            <div class="form-group" id="passwordGroup">
+              <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px;">
+                <label for="authPassword" style="font-weight: 600; font-size: 0.85rem; margin: 0;">Password</label>
+                <a href="#" id="forgotPasswordLink" style="font-size: 0.78rem; color: var(--color-primary); text-decoration: none; font-weight: 600;">Forgot?</a>
+              </div>
+              <div style="position: relative; display: flex; align-items: center; width: 100%;">
+                <input type="password" id="authPassword" required placeholder="Enter password" style="width: 100%; padding: 11px 48px 11px 14px; background: var(--bg-secondary); border: 1px solid var(--color-border); color: var(--text-main); border-radius: var(--border-radius-sm); font-family: inherit; font-size: 0.9rem; outline: none;">
+                <button type="button" class="toggle-password-btn" data-target="authPassword" style="position: absolute; right: 12px; background: none; border: none; color: var(--text-muted); cursor: pointer; padding: 4px; display: flex; align-items: center; justify-content: center; font-size: 0.72rem; font-weight: 700; text-transform: uppercase; outline: none; transition: color 0.2s;">Show</button>
+              </div>
+            </div>
+
+            <div class="form-group" id="confirmPasswordGroup" style="display: none;">
+              <label for="authConfirmPassword" style="font-weight: 600; font-size: 0.85rem; display: block; margin-bottom: 6px;">Confirm Password</label>
+              <div style="position: relative; display: flex; align-items: center; width: 100%;">
+                <input type="password" id="authConfirmPassword" placeholder="Repeat password" style="width: 100%; padding: 11px 48px 11px 14px; background: var(--bg-secondary); border: 1px solid var(--color-border); color: var(--text-main); border-radius: var(--border-radius-sm); font-family: inherit; font-size: 0.9rem; outline: none;">
+                <button type="button" class="toggle-password-btn" data-target="authConfirmPassword" style="position: absolute; right: 12px; background: none; border: none; color: var(--text-muted); cursor: pointer; padding: 4px; display: flex; align-items: center; justify-content: center; font-size: 0.72rem; font-weight: 700; text-transform: uppercase; outline: none; transition: color 0.2s;">Show</button>
+              </div>
+            </div>
+
+            <div class="form-group" id="securityQuestionGroup" style="display: none;">
+              <label for="authSecurityQuestion" style="font-weight: 600; font-size: 0.85rem; display: block; margin-bottom: 6px;">Security Question (For password recovery)</label>
+              <select id="authSecurityQuestion" style="width: 100%; padding: 11px 14px; background: var(--bg-secondary); border: 1px solid var(--color-border); color: var(--text-main); border-radius: var(--border-radius-sm); font-family: inherit; font-size: 0.9rem; outline: none; cursor: pointer;">
+                <option value="What was the name of your first school?">What was the name of your first school?</option>
+                <option value="What is your mother's maiden name?">What is your mother's maiden name?</option>
+                <option value="In what city were you born?">In what city were you born?</option>
+              </select>
+            </div>
+
+            <div class="form-group" id="securityAnswerGroup" style="display: none;">
+              <label for="authSecurityAnswer" id="securityAnswerLabel" style="font-weight: 600; font-size: 0.85rem; display: block; margin-bottom: 6px;">Security Answer</label>
+              <input type="text" id="authSecurityAnswer" placeholder="Enter your answer" style="width: 100%; padding: 11px 14px; background: var(--bg-secondary); border: 1px solid var(--color-border); color: var(--text-main); border-radius: var(--border-radius-sm); font-family: inherit; font-size: 0.9rem; outline: none;">
+            </div>
+
+            <div class="form-group" id="currencyGroup" style="display: none;">
+              <label for="authCurrency" style="font-weight: 600; font-size: 0.85rem; display: block; margin-bottom: 6px;">Preferred Currency</label>
+              <select id="authCurrency" style="width: 100%; padding: 11px 14px; background: var(--bg-secondary); border: 1px solid var(--color-border); color: var(--text-main); border-radius: var(--border-radius-sm); font-family: inherit; font-size: 0.9rem; outline: none; cursor: pointer;">
+                <option value="GH₵">GHS (GH₵)</option>
+                <option value="$">USD ($)</option>
+                <option value="€">EUR (€)</option>
+                <option value="£">GBP (£)</option>
+              </select>
+            </div>
+
+            <button type="submit" class="btn btn-primary" id="authSubmitBtn" style="width: 100%; padding: 12px; font-weight: 700; margin-top: 8px;">Log In</button>
+          </form>
+
+          <div style="text-align: center; font-size: 0.85rem; color: var(--text-muted);">
+            <span id="authToggleText">Don't have an account?</span>
+            <a href="#" id="authToggleLink" style="color: var(--color-primary); font-weight: 700; text-decoration: none; margin-left: 4px;">Sign Up</a>
+          </div>
+
+          <div style="border-top: 1px solid var(--color-border); padding-top: 16px;">
+            <button type="button" class="btn btn-secondary try-demo-btn" onclick="handleLiveDemoClick(event)" style="width: 100%; padding: 10px; font-weight: 700; background: var(--bg-secondary); border: 1px dashed var(--color-primary); color: var(--color-primary); border-radius: var(--border-radius-sm); cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 8px;">
+              <span>✨ Explore Live Demo (Instant Access)</span>
+            </button>
+          </div>
+
+          <div style="border-top: 1px solid var(--color-border); padding-top: 14px; font-size: 0.78rem; text-align: center; color: var(--text-muted);">
+            <div style="font-weight: 700; color: var(--text-main); margin-bottom: 8px; text-transform: uppercase; letter-spacing: 0.5px; font-size: 0.72rem;">Legal & Compliance Policies</div>
+            <div style="display: flex; justify-content: center; gap: 12px; flex-wrap: wrap;">
+              <a href="terms.html" style="color: var(--color-primary); font-weight: 600; text-decoration: underline;">Terms of Service</a>
+              <span>•</span>
+              <a href="privacy.html" style="color: var(--color-primary); font-weight: 600; text-decoration: underline;">Privacy Policy</a>
+              <span>•</span>
+              <a href="refund.html" style="color: var(--color-primary); font-weight: 600; text-decoration: underline;">Refund Policy</a>
+            </div>
+          </div>
+        </div>
+      </div>
     </div>
-    <h4 id="tourTitle" style="font-size: 0.98rem; margin-bottom: 8px; font-weight: 700; color: var(--text-main);"></h4>
-    <p id="tourText" style="font-size: 0.82rem; color: var(--text-muted); line-height: 1.5; margin-bottom: 18px;"></p>
-    <div style="display: flex; justify-content: space-between; align-items: center;">
-      <button id="tourPrevBtn" class="btn btn-secondary btn-sm" style="font-size: 0.75rem; padding: 6px 14px;">Back</button>
-      <button id="tourNextBtn" class="btn btn-primary btn-sm" style="font-size: 0.75rem; padding: 6px 14px; background: var(--color-primary); color: #fff;">Next</button>
+
+    <!-- LANDING FOOTER (COMPLIANCE REVIEW & SUPPORT EMAIL) -->
+    <footer class="landing-footer">
+      <div class="landing-footer-content">
+        <div class="landing-footer-brand">
+          <div class="landing-footer-logo">
+            <svg style="width: 18px; height: 18px; fill: var(--color-primary);"><use href="#icon-target"></use></svg>
+            <span>FinFlow</span>
+          </div>
+          <p class="landing-footer-desc">
+            FinFlow is a cloud-based personal budgeting, transaction management, and financial analytics software platform.
+          </p>
+        </div>
+
+        <div class="landing-footer-compliance">
+          <div class="compliance-badge">
+            <svg style="width: 16px; height: 16px; fill: none; stroke: currentColor; stroke-width: 2;"><use href="#icon-help"></use></svg>
+            <span>Compliance Review & Support</span>
+          </div>
+          <p class="compliance-text">
+            For platform compliance review, audits, or support inquiries, contact our review team:
+          </p>
+          <a href="mailto:finflow64@gmail.com" class="landing-support-email">
+            <svg style="width: 16px; height: 16px; fill: none; stroke: currentColor; stroke-width: 2;"><use href="#icon-help"></use></svg>
+            finflow64@gmail.com
+          </a>
+        </div>
+      </div>
+
+      <div class="landing-footer-bottom" style="display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 12px; border-top: 1px solid var(--color-border); padding-top: 15px; margin-top: 15px;">
+        <p>© 2026 FinFlow Platform. All rights reserved. Personal Financial Management Software Platform.</p>
+        <div style="display: flex; gap: 16px; font-size: 0.8rem;">
+          <a href="terms.html" style="color: var(--color-primary); text-decoration: underline; font-weight: 600;">Terms of Service</a>
+          <a href="privacy.html" style="color: var(--color-primary); text-decoration: underline; font-weight: 600;">Privacy Policy</a>
+          <a href="refund.html" style="color: var(--color-primary); text-decoration: underline; font-weight: 600;">Refund Policy</a>
+        </div>
+      </div>
+    </footer>
+  </div>
+
+  <!-- ==================== OVERLAY: TERMS OF SERVICE MODAL ==================== -->
+  <div class="modal-overlay" id="termsModal">
+    <div class="modal-content" style="max-width: 580px;">
+      <div class="modal-header">
+        <h3 class="modal-title">Terms of Service</h3>
+        <button class="modal-close-btn" onclick="window.closeLegalModal('termsModal')" aria-label="Close dialog"><svg><use href="#icon-close"></use></svg></button>
+      </div>
+      <div class="modal-body" style="padding-top: 15px; font-size: 0.86rem; line-height: 1.6; color: var(--text-muted); max-height: 420px; overflow-y: auto;">
+        <h4 style="color: var(--text-main); margin-bottom: 6px;">1. Service Description</h4>
+        <p>Finflow is a cloud-based and local-first personal financial management, budgeting, and analytics software tool. Finflow provides users with tools for recording personal ledger transactions, tracking spending limits, calculating savings goals, and accessing automated money organizational insights.</p>
+        
+        <h4 style="color: var(--text-main); margin-top: 14px; margin-bottom: 6px;">2. No Financial Advice or Money Transfer Services</h4>
+        <p style="background: rgba(245, 158, 11, 0.1); border-left: 3px solid #f59e0b; padding: 10px; border-radius: 4px; color: var(--text-main);">
+          <strong>IMPORTANT DISCLAIMER:</strong> Finflow is strictly a self-directed software organization tool. Finflow does NOT provide financial advice, investment management, wealth management, asset custody, or money transfer services. Finflow does not manage investments, hold user funds in custody, or process money transfer transactions between accounts.
+        </p>
+
+        <h4 style="color: var(--text-main); margin-top: 14px; margin-bottom: 6px;">3. Subscriptions & Pricing Model</h4>
+        <p>Basic financial literacy guides, transaction logging, and budgeting tools are provided 100% free of charge. Premium Membership features (including Finflow AI Coach analytics, custom themes, and unlimited PDF exports) are available for $1.99 / month or equivalent converted local currency ($1.99 USD / GH₵39).</p>
+
+        <h4 style="color: var(--text-main); margin-top: 14px; margin-bottom: 6px;">4. User Responsibilities</h4>
+        <p>Users are responsible for ensuring the accuracy of data entered into their personal ledger and keeping their private account login credentials confidential.</p>
+
+        <h4 style="color: var(--text-main); margin-top: 14px; margin-bottom: 6px;">5. Contact & Support</h4>
+        <p>For support or legal inquiries, contact us at <a href="mailto:finflow64@gmail.com" style="color: var(--color-primary);">finflow64@gmail.com</a>.</p>
+      </div>
     </div>
   </div>
 
-  <!-- ==================== SIGN IN / SIGN UP AUTH PANEL ==================== -->
-  <div id="authPanel" style="position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; background: var(--bg-main); display: grid; place-items: center; overflow-y: auto; padding: 40px 16px; z-index: 10020; backdrop-filter: blur(20px); transition: all 0.4s ease;">
-    <div class="card auth-card" style="width: 100%; max-width: 420px; padding: 32px; border-radius: var(--border-radius-lg); box-shadow: var(--shadow-card); border: 1px solid var(--color-border); background: var(--bg-card); display: flex; flex-direction: column; gap: 20px; margin: auto;">
-      <div style="text-align: center;">
-        <h2 id="authTitle" style="font-size: 1.8rem; font-weight: 800; background: linear-gradient(135deg, var(--color-primary), #a855f7); -webkit-background-clip: text; -webkit-text-fill-color: transparent; margin: 0;">Sign In</h2>
-        <p id="authSubtitle" style="font-size: 0.88rem; color: var(--text-muted); margin-top: 6px; margin-bottom: 0;">Access your personal financial dashboard</p>
+  <!-- ==================== OVERLAY: PRIVACY POLICY MODAL ==================== -->
+  <div class="modal-overlay" id="privacyModal">
+    <div class="modal-content" style="max-width: 580px;">
+      <div class="modal-header">
+        <h3 class="modal-title">Privacy Policy</h3>
+        <button class="modal-close-btn" onclick="window.closeLegalModal('privacyModal')" aria-label="Close dialog"><svg><use href="#icon-close"></use></svg></button>
       </div>
+      <div class="modal-body" style="padding-top: 15px; font-size: 0.86rem; line-height: 1.6; color: var(--text-muted); max-height: 420px; overflow-y: auto;">
+        <h4 style="color: var(--text-main); margin-bottom: 6px;">1. Information We Collect</h4>
+        <p>Finflow collects user-entered financial transactions, budget limits, savings goals, and account profile preferences necessary to compute personal dashboard analytics.</p>
 
-      <form id="authForm" style="display: flex; flex-direction: column; gap: 16px;">
-        <div class="form-group" id="fullNameGroup" style="display: none;">
-          <label for="authFullName" style="font-weight: 600; font-size: 0.85rem; display: block; margin-bottom: 6px;">Full Name</label>
-          <input type="text" id="authFullName" placeholder="e.g. John Doe" style="width: 100%; padding: 11px 14px; background: var(--bg-secondary); border: 1px solid var(--color-border); color: var(--text-main); border-radius: var(--border-radius-sm); font-family: inherit; font-size: 0.9rem; outline: none;">
-        </div>
+        <h4 style="color: var(--text-main); margin-top: 14px; margin-bottom: 6px;">2. Data Storage & Security</h4>
+        <p>Your financial ledger data is stored locally on your device and synchronized over encrypted SSL connections to Supabase PostgreSQL database servers. Finflow uses end-to-end HTTPS encryption for all network requests.</p>
 
-        <div class="form-group" id="usernameGroup">
-          <label for="authUsername" style="font-weight: 600; font-size: 0.85rem; display: block; margin-bottom: 6px;">Username</label>
-          <input type="text" id="authUsername" required placeholder="Enter username" style="width: 100%; padding: 11px 14px; background: var(--bg-secondary); border: 1px solid var(--color-border); color: var(--text-main); border-radius: var(--border-radius-sm); font-family: inherit; font-size: 0.9rem; outline: none;">
-        </div>
+        <h4 style="color: var(--text-main); margin-top: 14px; margin-bottom: 6px;">3. No Third-Party Data Selling</h4>
+        <p>Finflow respects user privacy. We do NOT sell, rent, monetize, or share your personal transaction data, email addresses, or financial records with any third-party advertisers or data brokers.</p>
 
-        <div class="form-group" id="passwordGroup">
-          <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px;">
-            <label for="authPassword" style="font-weight: 600; font-size: 0.85rem; margin: 0;">Password</label>
-            <a href="#" id="forgotPasswordLink" style="font-size: 0.78rem; color: var(--color-primary); text-decoration: none; font-weight: 600;">Forgot?</a>
-          </div>
-          <div style="position: relative; display: flex; align-items: center; width: 100%;">
-            <input type="password" id="authPassword" required placeholder="Enter password" style="width: 100%; padding: 11px 48px 11px 14px; background: var(--bg-secondary); border: 1px solid var(--color-border); color: var(--text-main); border-radius: var(--border-radius-sm); font-family: inherit; font-size: 0.9rem; outline: none;">
-            <button type="button" class="toggle-password-btn" data-target="authPassword" style="position: absolute; right: 12px; background: none; border: none; color: var(--text-muted); cursor: pointer; padding: 4px; display: flex; align-items: center; justify-content: center; font-size: 0.72rem; font-weight: 700; text-transform: uppercase; outline: none; transition: color 0.2s;">Show</button>
-          </div>
-        </div>
+        <h4 style="color: var(--text-main); margin-top: 14px; margin-bottom: 6px;">4. Payment Processing Security</h4>
+        <p>All subscription payments are securely processed directly by Paystack PCI-DSS Level 1 certified payment gateways. Finflow never stores or handles your debit card numbers, Mobile Money PINs, or bank credentials.</p>
+      </div>
+    </div>
+  </div>
 
-        <div class="form-group" id="confirmPasswordGroup" style="display: none;">
-          <label for="authConfirmPassword" style="font-weight: 600; font-size: 0.85rem; display: block; margin-bottom: 6px;">Confirm Password</label>
-          <div style="position: relative; display: flex; align-items: center; width: 100%;">
-            <input type="password" id="authConfirmPassword" placeholder="Repeat password" style="width: 100%; padding: 11px 48px 11px 14px; background: var(--bg-secondary); border: 1px solid var(--color-border); color: var(--text-main); border-radius: var(--border-radius-sm); font-family: inherit; font-size: 0.9rem; outline: none;">
-            <button type="button" class="toggle-password-btn" data-target="authConfirmPassword" style="position: absolute; right: 12px; background: none; border: none; color: var(--text-muted); cursor: pointer; padding: 4px; display: flex; align-items: center; justify-content: center; font-size: 0.72rem; font-weight: 700; text-transform: uppercase; outline: none; transition: color 0.2s;">Show</button>
-          </div>
-        </div>
+  <!-- ==================== OVERLAY: REFUND & CANCELLATION POLICY MODAL ==================== -->
+  <div class="modal-overlay" id="refundModal">
+    <div class="modal-content" style="max-width: 580px;">
+      <div class="modal-header">
+        <h3 class="modal-title">Refund & Cancellation Policy</h3>
+        <button class="modal-close-btn" onclick="window.closeLegalModal('refundModal')" aria-label="Close dialog"><svg><use href="#icon-close"></use></svg></button>
+      </div>
+      <div class="modal-body" style="padding-top: 15px; font-size: 0.86rem; line-height: 1.6; color: var(--text-muted); max-height: 420px; overflow-y: auto;">
+        <h4 style="color: var(--text-main); margin-bottom: 6px;">1. 7-Day Money-Back Guarantee</h4>
+        <p style="background: rgba(16, 185, 129, 0.1); border-left: 3px solid #10b981; padding: 10px; border-radius: 4px; color: var(--text-main);">
+          We want you to be 100% satisfied with Finflow. We offer a <strong>7-day full refund guarantee</strong> for all Premium Membership purchases ($1.99 USD / GH₵39).
+        </p>
 
-        <div class="form-group" id="securityQuestionGroup" style="display: none;">
-          <label for="authSecurityQuestion" style="font-weight: 600; font-size: 0.85rem; display: block; margin-bottom: 6px;">Security Question (For password recovery)</label>
-          <select id="authSecurityQuestion" style="width: 100%; padding: 11px 14px; background: var(--bg-secondary); border: 1px solid var(--color-border); color: var(--text-main); border-radius: var(--border-radius-sm); font-family: inherit; font-size: 0.9rem; outline: none; cursor: pointer;">
-            <option value="What was the name of your first school?">What was the name of your first school?</option>
-            <option value="What is your mother's maiden name?">What is your mother's maiden name?</option>
-            <option value="In what city were you born?">In what city were you born?</option>
-          </select>
-        </div>
+        <h4 style="color: var(--text-main); margin-top: 14px; margin-bottom: 6px;">2. How to Request a Refund</h4>
+        <p>If you are not completely satisfied with your Premium features within 7 days of purchase, simply email our support team at <a href="mailto:finflow64@gmail.com" style="color: var(--color-primary);">finflow64@gmail.com</a> with your payment transaction reference or registered email.</p>
 
-        <div class="form-group" id="securityAnswerGroup" style="display: none;">
-          <label for="authSecurityAnswer" id="securityAnswerLabel" style="font-weight: 600; font-size: 0.85rem; display: block; margin-bottom: 6px;">Security Answer</label>
-          <input type="text" id="authSecurityAnswer" placeholder="Enter your answer" style="width: 100%; padding: 11px 14px; background: var(--bg-secondary); border: 1px solid var(--color-border); color: var(--text-main); border-radius: var(--border-radius-sm); font-family: inherit; font-size: 0.9rem; outline: none;">
-        </div>
+        <h4 style="color: var(--text-main); margin-top: 14px; margin-bottom: 6px;">3. Refund Processing Timeline</h4>
+        <p>Approved refunds are processed back to your original payment method (Mobile Money wallet or bank card) within 24 to 48 hours via Paystack.</p>
 
-        <div class="form-group" id="currencyGroup" style="display: none;">
-          <label for="authCurrency" style="font-weight: 600; font-size: 0.85rem; display: block; margin-bottom: 6px;">Preferred Currency</label>
-          <select id="authCurrency" style="width: 100%; padding: 11px 14px; background: var(--bg-secondary); border: 1px solid var(--color-border); color: var(--text-main); border-radius: var(--border-radius-sm); font-family: inherit; font-size: 0.9rem; outline: none; cursor: pointer;">
-            <option value="GH₵">GHS (GH₵)</option>
-            <option value="$">USD ($)</option>
-            <option value="€">EUR (€)</option>
-            <option value="£">GBP (£)</option>
-          </select>
-        </div>
-
-        <button type="submit" class="btn btn-primary" id="authSubmitBtn" style="width: 100%; padding: 12px; font-weight: 700; margin-top: 8px;">Log In</button>
-      </form>
-
-      <div style="text-align: center; font-size: 0.85rem; color: var(--text-muted);">
-        <span id="authToggleText">Don't have an account?</span>
-        <a href="#" id="authToggleLink" style="color: var(--color-primary); font-weight: 700; text-decoration: none; margin-left: 4px;">Sign Up</a>
+        <h4 style="color: var(--text-main); margin-top: 14px; margin-bottom: 6px;">4. Subscription Cancellation</h4>
+        <p>You may cancel your Premium subscription or delete your account at any time directly in your app settings with zero cancellation fees.</p>
       </div>
     </div>
   </div>

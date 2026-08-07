@@ -148,9 +148,14 @@
               },
               ticks: {
                 color: colors.text,
-                // Prefix ticks values with local store's preferred currency symbol
                 callback: function (value) {
-                  return window.AppStore.getSettings().currency + value;
+                  const store = window.AppStore;
+                  const activeCurrency = store ? store.getSettings().currency : 'GH₵';
+                  if (window.convertCurrencyAmount) {
+                    const converted = window.convertCurrencyAmount(value, activeCurrency, 'GH₵');
+                    return activeCurrency + Math.round(converted).toLocaleString();
+                  }
+                  return activeCurrency + value;
                 }
               }
             }

@@ -15,6 +15,50 @@
   // The local storage key used to track the currently logged-in user session
   const SESSION_KEY = 'CURRENT_USER_SESSION';
 
+  // Hardcoded Supabase Credentials
+  const HARDCODED_SUPABASE_URL = "https://smyfhrjtljujwxjuucxe.supabase.co";
+  const HARDCODED_SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InNteWZocmp0bGp1and4anV1Y3hlIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODUwOTIzNDksImV4cCI6MjEwMDY2ODM0OX0.xn_wIIzxSb6ut4WNRcjFtTf0Jf3XSXIbjQLBAvIqb9w";
+
+  let supabaseClient = null;
+
+  function getSupabaseClient() {
+    if (!supabaseClient && window.supabase && HARDCODED_SUPABASE_URL && HARDCODED_SUPABASE_ANON_KEY) {
+      try {
+        supabaseClient = window.supabase.createClient(HARDCODED_SUPABASE_URL, HARDCODED_SUPABASE_ANON_KEY);
+      } catch (err) {
+        console.warn('Supabase client initialization error:', err);
+      }
+    }
+    return supabaseClient;
+  }
+
+  const DEFAULT_GHS_RATES = {
+    'GH₵': 1.0,
+    '$': 11.59,
+    '€': 12.60,
+    '£': 14.80,
+    '¥': 2.15,
+    '₹': 0.19,
+    'C$': 11.30,
+    'A$': 10.30,
+    'Fr': 17.50,
+    'kr': 1.45,
+    'zł': 3.90,
+    'R$': 2.80,
+    '₽': 0.17,
+    'R': 0.85,
+    'د.إ': 4.22,
+    'ر.س': 4.13,
+    '₪': 4.20,
+    '₱': 0.27,
+    'Rp': 0.0010,
+    'RM': 3.30,
+    '฿': 0.43,
+    '₫': 0.00061,
+    '₦': 0.010,
+    'KSh': 0.12
+  };
+
   /**
    * Generates default structural seed data if no data exists in localStorage.
    * This sets up initial budgets, empty lists of transactions and goals, and default settings.
@@ -49,7 +93,10 @@
         currency: 'GH₵',       // Initial currency symbol
         monthlySavingsGoal: 1200, // Monthly savings target
         paystackKey: '',       // Empty Paystack secret key placeholder
-        isPremium: false       // Default membership tier (Standard)
+        geminiApiKey: '',      // Optional Gemini AI API key override
+        aiQueriesCount: 0,     // Free AI Coach queries used counter
+        isPremium: false,      // Default membership tier (Standard)
+        exchangeRates: {...DEFAULT_GHS_RATES}
       }
     };
   }
@@ -195,6 +242,106 @@
     },
 
     /**
+     * Seeds and authenticates an interactive Demo user account populated with rich sample data.
+     */
+    signInDemo() {
+      const demoKey = 'demo_user';
+      const today = new Date();
+      const formatIsoDate = (offsetDays) => {
+        const d = new Date(today);
+        d.setDate(today.getDate() - offsetDays);
+        return d.toISOString().split('T')[0];
+      };
+
+      const demoData = {
+        transactions: [
+          { id: 'tx-demo-1', type: 'income', category: 'Salary', amount: 4800.00, date: formatIsoDate(1), description: 'Monthly Tech Salary Deposit', destination: 'Bank Account' },
+          { id: 'tx-demo-2', type: 'income', category: 'Investments', amount: 950.00, date: formatIsoDate(3), description: 'Quarterly Stock Dividend Yield', destination: 'Achieve App' },
+          { id: 'tx-demo-3', type: 'expense', category: 'Food', amount: 620.00, date: formatIsoDate(2), description: 'Monthly Supermarket & Grocery Stockup', destination: 'Credit Card' },
+          { id: 'tx-demo-4', type: 'expense', category: 'Utilities', amount: 280.00, date: formatIsoDate(4), description: 'High-speed Fiber Internet & Power Bill', destination: 'Bank Account' },
+          { id: 'tx-demo-5', type: 'expense', category: 'Shopping', amount: 390.00, date: formatIsoDate(5), description: 'Ergonomic Desk Accessories & Chair', destination: 'Credit Card' },
+          { id: 'tx-demo-6', type: 'expense', category: 'Entertainment', amount: 160.00, date: formatIsoDate(7), description: 'Concert Tickets & Streaming Subscriptions', destination: 'Mobile Money' },
+          { id: 'tx-demo-7', type: 'income', category: 'Freelance', amount: 1200.00, date: formatIsoDate(10), description: 'Web Development Client Retainer', destination: 'Mobile Money' }
+        ],
+        budgets: {
+          Rent: 1400,
+          Food: 550,       // 620 spent breaches 550 budget limit (112.7%)
+          Utilities: 250,  // 280 spent breaches 250 budget limit (112%)
+          Shopping: 350,   // 390 spent breaches 350 budget limit (111%)
+          Entertainment: 200,
+          Travel: 300,
+          Other: 150
+        },
+        goals: [
+          { id: 'g-demo-1', name: 'Emergency Cushion Fund', targetAmount: 5000, currentAmount: 3750, targetDate: formatIsoDate(-120), destination: 'Achieve App' },
+          { id: 'g-demo-2', name: 'MacBook Pro Upgrade', targetAmount: 2400, currentAmount: 1800, targetDate: formatIsoDate(-60), destination: 'Fido App' }
+        ],
+        portfolio: [
+          { id: 'p-demo-1', symbol: 'AAPL', name: 'Apple Inc.', shares: 15, buyPrice: 175.50, currentPrice: 224.30 },
+          { id: 'p-demo-2', symbol: 'NVDA', name: 'NVIDIA Corp.', shares: 25, buyPrice: 92.00, currentPrice: 128.50 }
+        ],
+        todos: [
+          { id: 't-demo-1', text: 'Review quarterly tax report export', completed: true },
+          { id: 't-demo-2', text: 'Rebalance stock portfolio dividends', completed: false }
+        ],
+        settings: {
+          userName: 'Demo Account',
+          currency: 'GH₵',
+          monthlySavingsGoal: 1500,
+          paystackKey: 'pk_test_demo12345',
+          isPremium: false,
+          exchangeRates: {...DEFAULT_GHS_RATES}
+        }
+      };
+
+      const registry = JSON.parse(localStorage.getItem(USERS_REGISTRY_KEY) || '{}');
+      registry[demoKey] = {
+        fullName: 'Demo Account',
+        username: 'demo_user',
+        password: 'demopassword',
+        currency: 'GH₵',
+        securityQuestion: 'What is your mother\'s maiden name?',
+        securityAnswer: 'demo',
+        data: demoData
+      };
+
+      localStorage.setItem(USERS_REGISTRY_KEY, JSON.stringify(registry));
+      localStorage.setItem(SESSION_KEY, demoKey);
+      this.data = demoData;
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(this.data));
+      window.dispatchEvent(new CustomEvent('store-updated'));
+
+      return { success: true };
+    },
+
+    /**
+     * Global instant click handler for Live Demo buttons.
+     */
+    handleLiveDemoClick(e) {
+      if (e) {
+        if (e.preventDefault) e.preventDefault();
+        if (e.stopPropagation) e.stopPropagation();
+      }
+      try {
+        this.signInDemo();
+      } catch (err) {
+        console.error('Demo click error:', err);
+        localStorage.setItem('CURRENT_USER_SESSION', 'demo_user');
+      }
+      
+      const authPanel = document.getElementById('authPanel');
+      if (authPanel) {
+        authPanel.classList.add('auth-hidden');
+        authPanel.style.setProperty('display', 'none', 'important');
+      }
+      document.body.style.overflow = 'auto';
+
+      setTimeout(() => {
+        window.location.reload();
+      }, 50);
+    },
+
+    /**
      * Clears active session credentials and returns user to the login screen.
      */
     logout() {
@@ -234,10 +381,152 @@
         }
       }
 
+      // Trigger Cloud Sync if Supabase client is connected
+      this.syncToCloud();
+
       // Dispatch a custom event on the window to alert observers that the state has changed
       window.dispatchEvent(new CustomEvent('store-updated'));
       // Synchronize the Undo/Redo button disable/enable states in the header toolbar
       this.updateButtonsUI();
+    },
+
+    /**
+     * Pushes active local data state to Supabase cloud database if connected.
+     */
+    async syncToCloud() {
+      const client = getSupabaseClient();
+      if (!client) return;
+
+      try {
+        const { data: { session } } = await client.auth.getSession();
+        if (!session || !session.user) return;
+
+        const userId = session.user.id;
+
+        // 1. Sync Profile & Settings
+        const settings = this.data.settings || {};
+        await client.from('profiles').upsert({
+          id: userId,
+          user_name: settings.userName || 'User',
+          currency: settings.currency || 'GH₵',
+          monthly_savings_goal: settings.monthlySavingsGoal || 1200,
+          is_premium: !!settings.isPremium,
+          ai_queries_count: settings.aiQueriesCount || 0,
+          updated_at: new Date().toISOString()
+        });
+
+        // 2. Sync Transactions
+        if (this.data.transactions && this.data.transactions.length > 0) {
+          const txRows = this.data.transactions.map(tx => ({
+            id: String(tx.id),
+            user_id: userId,
+            date: tx.date,
+            description: tx.description || tx.note || '',
+            category: tx.category,
+            type: tx.type,
+            amount: Number(tx.amount),
+            note: tx.note || ''
+          }));
+          await client.from('transactions').upsert(txRows, { onConflict: 'id' });
+        }
+
+        // 3. Sync Budgets
+        if (this.data.budgets) {
+          const budgetRows = Object.keys(this.data.budgets).map(cat => ({
+            id: `${userId}_${cat}`,
+            user_id: userId,
+            category: cat,
+            limit_amount: Number(this.data.budgets[cat])
+          }));
+          if (budgetRows.length > 0) {
+            await client.from('budgets').upsert(budgetRows, { onConflict: 'id' });
+          }
+        }
+
+        // 4. Sync Savings Goals
+        if (this.data.goals && this.data.goals.length > 0) {
+          const goalRows = this.data.goals.map(g => ({
+            id: String(g.id),
+            user_id: userId,
+            title: g.title,
+            target_amount: Number(g.targetAmount),
+            current_amount: Number(g.currentAmount),
+            target_date: g.targetDate || null
+          }));
+          await client.from('savings_goals').upsert(goalRows, { onConflict: 'id' });
+        }
+      } catch (cloudErr) {
+        console.warn('Supabase cloud sync background error:', cloudErr);
+      }
+    },
+
+    /**
+     * Pulls full financial history from Supabase cloud database into local AppStore on multi-device login.
+     */
+    async fetchFromCloud() {
+      const client = getSupabaseClient();
+      if (!client) return false;
+
+      try {
+        const { data: { session } } = await client.auth.getSession();
+        if (!session || !session.user) return false;
+
+        const userId = session.user.id;
+
+        // Fetch Profile
+        const { data: profile } = await client.from('profiles').select('*').eq('id', userId).single();
+        if (profile) {
+          this.data.settings.userName = profile.user_name || this.data.settings.userName;
+          this.data.settings.currency = profile.currency || this.data.settings.currency;
+          this.data.settings.monthlySavingsGoal = profile.monthly_savings_goal || this.data.settings.monthlySavingsGoal;
+          this.data.settings.isPremium = profile.is_premium ?? this.data.settings.isPremium;
+          this.data.settings.aiQueriesCount = profile.ai_queries_count ?? this.data.settings.aiQueriesCount;
+        }
+
+        // Fetch Transactions
+        const { data: cloudTxs } = await client.from('transactions').select('*').eq('user_id', userId).order('date', { ascending: false });
+        if (cloudTxs && cloudTxs.length > 0) {
+          this.data.transactions = cloudTxs.map(t => ({
+            id: t.id,
+            date: t.date,
+            description: t.description || t.note || '',
+            category: t.category,
+            type: t.type,
+            amount: Number(t.amount),
+            note: t.note || ''
+          }));
+        }
+
+        // Fetch Budgets
+        const { data: cloudBudgets } = await client.from('budgets').select('*').eq('user_id', userId);
+        if (cloudBudgets) {
+          const budgetObj = {};
+          cloudBudgets.forEach(b => {
+            budgetObj[b.category] = Number(b.limit_amount);
+          });
+          this.data.budgets = budgetObj;
+        }
+
+        // Fetch Goals
+        const { data: cloudGoals } = await client.from('savings_goals').select('*').eq('user_id', userId);
+        if (cloudGoals) {
+          this.data.goals = cloudGoals.map(g => ({
+            id: g.id,
+            title: g.title,
+            targetAmount: Number(g.target_amount),
+            currentAmount: Number(g.current_amount),
+            targetDate: g.target_date
+          }));
+        }
+
+        // Write to local storage and refresh views
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(this.data));
+        window.dispatchEvent(new CustomEvent('store-updated'));
+        return true;
+      } catch (err) {
+        console.warn('Supabase fetchFromCloud error:', err);
+        return false;
+      }
     },
 
     /**
@@ -265,6 +554,10 @@
     undo() {
       // Validate that we have a past state history to return to
       if (this.undoStack.length > 0) {
+        // Cache billing & usage trial metadata to prevent undo cheats/exploits
+        const isPremiumCached = this.data && this.data.settings ? this.data.settings.isPremium : false;
+        const freePdfCached = this.data && this.data.settings ? this.data.settings.freePdfExportsUsed : 0;
+
         // Serialize the current state and push it onto the redo stack
         const currentState = JSON.stringify(this.data);
         this.redoStack.push(currentState);
@@ -273,6 +566,12 @@
         const previousState = this.undoStack.pop();
         // Parse the retrieved historical state string back into active memory
         this.data = JSON.parse(previousState);
+
+        // Re-apply protected billing configurations
+        if (this.data && this.data.settings) {
+          this.data.settings.isPremium = isPremiumCached;
+          this.data.settings.freePdfExportsUsed = freePdfCached;
+        }
         
         // Save state changes
         this.save();
@@ -285,6 +584,10 @@
     redo() {
       // Validate that we have a forward state history to apply
       if (this.redoStack.length > 0) {
+        // Cache billing & usage trial metadata to prevent redo cheats/exploits
+        const isPremiumCached = this.data && this.data.settings ? this.data.settings.isPremium : false;
+        const freePdfCached = this.data && this.data.settings ? this.data.settings.freePdfExportsUsed : 0;
+
         // Serialize current state and push it back to the undo stack
         const currentState = JSON.stringify(this.data);
         this.undoStack.push(currentState);
@@ -293,6 +596,12 @@
         const nextState = this.redoStack.pop();
         // Parse the next state back into the active database structure
         this.data = JSON.parse(nextState);
+
+        // Re-apply protected billing configurations
+        if (this.data && this.data.settings) {
+          this.data.settings.isPremium = isPremiumCached;
+          this.data.settings.freePdfExportsUsed = freePdfCached;
+        }
         
         // Save database updates
         this.save();
@@ -406,6 +715,18 @@
       this.pushState();
       // Update or create budget entry category map limit
       this.data.budgets[category] = Number(amount);
+      // Persist values to localStorage
+      this.save();
+    },
+
+    /**
+     * Removes a category budget limit completely.
+     */
+    deleteBudget(category) {
+      // Save state snapshot for Undo
+      this.pushState();
+      // Delete budget category key from map
+      delete this.data.budgets[category];
       // Persist values to localStorage
       this.save();
     },
@@ -754,6 +1075,9 @@
     }
   };
 
-  // Attach AppStore to the global window container
+  // Attach AppStore and global demo handler to the window container
   window.AppStore = AppStore;
+  window.handleLiveDemoClick = function(e) {
+    AppStore.handleLiveDemoClick(e);
+  };
 })(window);

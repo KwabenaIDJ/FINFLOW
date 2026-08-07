@@ -14,6 +14,9 @@
   let selectedGoalId = null;       // Tracks which savings goal is selected during deposit/withdraw operations
   let selectedProfilePic = null;   // Caches uploaded profile image Base64 data url before save
 
+  // Hardcoded Gemini 1.5 Flash API Key (Set key here to enable for all users)
+  const HARDCODED_GEMINI_API_KEY = "";
+
   // Central DOM Elements object mapping to cache node lookups
   const elements = {};
 
@@ -27,16 +30,135 @@
     return 'success';                    // Budget is healthy (Green color scheme)
   }
 
+  // Default exchange rates: How many Ghanaian Cedis (GH₵) equal 1 unit of foreign currency
+  const DEFAULT_GHS_RATES = {
+    'GH₵': 1.0,      // Ghanaian Cedi (Base)
+    '$': 11.59,      // US Dollar
+    '€': 12.60,      // Euro
+    '£': 14.80,      // British Pound
+    '¥': 2.15,       // Chinese Yuan (CNY)
+    '₹': 0.19,       // Indian Rupee
+    'C$': 11.30,     // Canadian Dollar
+    'A$': 10.30,     // Australian Dollar
+    'Fr': 17.50,     // Swiss Franc
+    'kr': 1.45,      // Swedish Krona
+    'zł': 3.90,      // Polish Zloty
+    'R$': 2.80,      // Brazilian Real
+    '₽': 0.17,       // Russian Ruble
+    'R': 0.85,       // South African Rand
+    'د.إ': 4.22,     // UAE Dirham
+    'ر.س': 4.13,     // Saudi Riyal
+    '₪': 4.20,       // Israeli Shekel
+    '₱': 0.27,       // Philippine Peso
+    'Rp': 0.0010,    // Indonesian Rupiah
+    'RM': 3.30,      // Malaysian Ringgit
+    '฿': 0.43,       // Thai Baht
+    '₫': 0.00061,    // Vietnamese Dong
+    '₦': 0.010,      // Nigerian Naira
+    'KSh': 0.12      // Kenyan Shilling
+  };
+
+  function getGhsExchangeRates() {
+    const store = window.AppStore;
+    const settings = (store && store.getSettings) ? store.getSettings() : {};
+    return (settings && settings.exchangeRates) ? settings.exchangeRates : DEFAULT_GHS_RATES;
+  }
+
+  const SYMBOL_TO_CODE = {
+    '$': 'USD',
+    '€': 'EUR',
+    '£': 'GBP',
+    '¥': 'CNY',
+    '₹': 'INR',
+    'C$': 'CAD',
+    'A$': 'AUD',
+    'Fr': 'CHF',
+    'kr': 'SEK',
+    'zł': 'PLN',
+    'R$': 'BRL',
+    '₽': 'RUB',
+    'R': 'ZAR',
+    'د.إ': 'AED',
+    'ر.س': 'SAR',
+    '₪': 'ILS',
+    '₱': 'PHP',
+    'Rp': 'IDR',
+    'RM': 'MYR',
+    '฿': 'THB',
+    '₫': 'VND',
+    '₦': 'NGN',
+    'KSh': 'KES',
+    'GH₵': 'GHS'
+  };
+
+  async function fetchLiveExchangeRates() {
+    try {
+      const response = await fetch('https://open.er-api.com/v6/latest/GHS');
+      if (!response.ok) throw new Error('API fetch failed');
+      const data = await response.json();
+      
+      if (data && data.result === 'success' && data.rates) {
+        const liveRates = { 'GH₵': 1.0 };
+        for (const [symbol, code] of Object.entries(SYMBOL_TO_CODE)) {
+          if (code === 'GHS') continue;
+          const ratePerGhs = data.rates[code];
+          if (ratePerGhs && ratePerGhs > 0) {
+            // How many GHS equal 1 unit of foreign currency
+            liveRates[symbol] = 1 / ratePerGhs;
+          }
+        }
+        
+        // Cache rates in settings
+        const store = window.AppStore;
+        if (store && store.getSettings) {
+          const settings = store.getSettings();
+          store.updateSettings({ exchangeRates: liveRates });
+          console.log('Live exchange rates updated from API successfully:', liveRates);
+        }
+      }
+    } catch (err) {
+      console.warn('Could not fetch live exchange rates, using local fallback:', err);
+    }
+  }
+
   /**
-   * Helper: formats numeric inputs into local currency strings.
-   * Example: formatMoney(1250.5, "GH₵") -> "GH₵1,250.50"
+   * Converts a numeric value between supported currencies using exact GHS rates per unit.
    */
-  function formatMoney(amount, currency = '$') {
-    return currency + Number(amount).toLocaleString('en-US', {
-      minimumFractionDigits: 2, // Retain exact cents representation
+  function convertCurrencyAmount(amount, targetCurrency = 'GH₵', baseCurrency = 'GH₵') {
+    const num = Number(amount) || 0;
+    const rates = getGhsExchangeRates();
+    
+    const fromGhsRate = rates[baseCurrency] || DEFAULT_GHS_RATES[baseCurrency] || 1.0;
+    const toGhsRate = rates[targetCurrency] || DEFAULT_GHS_RATES[targetCurrency] || 1.0;
+    
+    // Step 1: Convert base input to GH₵
+    const amountInGhs = baseCurrency === 'GH₵' ? num : (num * fromGhsRate);
+    
+    // Step 2: Convert GH₵ to target currency
+    const finalConverted = targetCurrency === 'GH₵' ? amountInGhs : (amountInGhs / toGhsRate);
+    
+    return finalConverted;
+  }
+
+  /**
+   * Helper: formats numeric inputs into local currency strings with automatic real-time FX conversion.
+   * Example: formatMoney(1550, "$", "GH₵") -> "$100.00"
+   */
+  function formatMoney(amount, currency = null, baseCurrency = 'GH₵') {
+    const store = window.AppStore;
+    const activeCurrency = currency || (store && store.getSettings ? store.getSettings().currency : 'GH₵');
+    const converted = convertCurrencyAmount(amount, activeCurrency, baseCurrency);
+    
+    return activeCurrency + converted.toLocaleString('en-US', {
+      minimumFractionDigits: 2,
       maximumFractionDigits: 2
     });
   }
+
+  // Expose FX converters globally for chart tooltips & calculations
+  window.EXCHANGE_RATES = DEFAULT_GHS_RATES;
+  window.convertCurrencyAmount = convertCurrencyAmount;
+  window.formatMoney = formatMoney;
 
   /**
    * Resizes an image file to a 128x128px square JPEG and converts to Base64.
@@ -178,6 +300,12 @@
     elements.themeIcon = document.getElementById('themeIcon');
     elements.themeText = document.getElementById('themeText');
     
+    // Mobile Sidebar Drawer Elements
+    elements.appSidebar = document.getElementById('appSidebar');
+    elements.menuToggleBtn = document.getElementById('menuToggleBtn');
+    elements.sidebarCloseBtn = document.getElementById('sidebarCloseBtn');
+    elements.sidebarBackdrop = document.getElementById('sidebarBackdrop');
+    
     // KPI Cards
     elements.netWorthValue = document.getElementById('netWorthValue');
     elements.cashBalanceValue = document.getElementById('cashBalanceValue');
@@ -194,6 +322,7 @@
     elements.exportCsvBtn = document.getElementById('exportCsvBtn');
     elements.importCsvBtn = document.getElementById('importCsvBtn');
     elements.csvFileInput = document.getElementById('csvFileInput');
+    elements.exportPdfBtn = document.getElementById('exportPdfBtn');
     
     // Budgets Panel
     elements.budgetGrid = document.getElementById('budgetGrid');
@@ -206,6 +335,7 @@
     
     // Timeframe Selector
     elements.timeframeSelector = document.getElementById('timeframeSelector');
+    elements.headerCurrencySelector = document.getElementById('headerCurrencySelector');
     
     // Settings Form
     elements.settingsForm = document.getElementById('settingsForm');
@@ -214,6 +344,7 @@
     elements.settingsCustomCurrencyGroup = document.getElementById('customCurrencyGroup');
     elements.settingsCustomCurrency = document.getElementById('settingsCustomCurrency');
     elements.settingsSavingsGoal = document.getElementById('settingsSavingsGoal');
+    elements.settingsGeminiApiKey = document.getElementById('settingsGeminiApiKey');
     elements.resetAppDataBtn = document.getElementById('resetAppDataBtn');
     elements.settingsPaystackKey = document.getElementById('settingsPaystackKey');
     elements.settingsProfilePicInput = document.getElementById('settingsProfilePicInput');
@@ -235,6 +366,11 @@
     
     elements.editBudgetModal = document.getElementById('editBudgetModal');
     elements.editBudgetForm = document.getElementById('editBudgetForm');
+    
+    // Add Budget Elements
+    elements.addBudgetBtn = document.getElementById('addBudgetBtn');
+    elements.addBudgetModal = document.getElementById('addBudgetModal');
+    elements.addBudgetForm = document.getElementById('addBudgetForm');
     
     elements.addGoalModal = document.getElementById('addGoalModal');
     elements.addGoalForm = document.getElementById('addGoalForm');
@@ -312,6 +448,7 @@
     elements.authToggleLink = document.getElementById('authToggleLink');
     elements.authToggleText = document.getElementById('authToggleText');
     elements.logoutBtn = document.getElementById('logoutBtn');
+    elements.logoutNavBtn = document.getElementById('logoutNavBtn');
     elements.forgotPasswordLink = document.getElementById('forgotPasswordLink');
     elements.authSecurityQuestion = document.getElementById('authSecurityQuestion');
     elements.securityQuestionGroup = document.getElementById('securityQuestionGroup');
@@ -321,12 +458,27 @@
     elements.passwordGroup = document.getElementById('passwordGroup');
     elements.usernameGroup = document.getElementById('usernameGroup');
 
-    // Premium Tiers elements
     elements.premiumUpgradeModal = document.getElementById('premiumUpgradeModal');
     elements.upgradeCheckoutBtn = document.getElementById('upgradeCheckoutBtn');
     elements.sidebarUpgradeBtn = document.getElementById('sidebarUpgradeBtn');
-    elements.mockAdBanner = document.getElementById('mockAdBanner');
     elements.diagnosticsLockOverlay = document.getElementById('diagnosticsLockOverlay');
+
+    // Legal Compliance Modals
+    elements.termsModal = document.getElementById('termsModal');
+    elements.privacyModal = document.getElementById('privacyModal');
+    elements.refundModal = document.getElementById('refundModal');
+
+    // AI Coach Elements
+    elements.aiInsightsBanner = document.getElementById('aiInsightsBanner');
+    elements.aiInsightsContent = document.getElementById('aiInsightsContent');
+    elements.openAiCoachModalBtn = document.getElementById('openAiCoachModalBtn');
+    elements.floatingAiCoachFab = document.getElementById('floatingAiCoachFab');
+    elements.aiCoachModal = document.getElementById('aiCoachModal');
+    elements.closeAiCoachModalBtn = document.getElementById('closeAiCoachModalBtn');
+    elements.aiCoachStatusText = document.getElementById('aiCoachStatusText');
+    elements.aiChatThread = document.getElementById('aiChatThread');
+    elements.aiChatInput = document.getElementById('aiChatInput');
+    elements.sendAiChatBtn = document.getElementById('sendAiChatBtn');
   }
 
   // --- Modal Utilities ---
@@ -341,6 +493,20 @@
       modal.classList.remove('active'); // Hide modal backdrop
     }
   }
+
+  window.openLegalModal = function(modalId) {
+    const modal = document.getElementById(modalId);
+    if (modal) {
+      modal.classList.add('active');
+    }
+  };
+
+  window.closeLegalModal = function(modalId) {
+    const modal = document.getElementById(modalId);
+    if (modal) {
+      modal.classList.remove('active');
+    }
+  };
 
   /**
    * Dynamic category options populator based on whether the transaction is an Income or Expense.
@@ -504,7 +670,7 @@
 
       item.innerHTML = `
         <div style="display: flex; align-items: center; gap: 14px;">
-          <div class="tx-icon">${iconSvg}</div>
+          <div class="tx-icon-wrapper">${iconSvg}</div>
           <div>
             <div class="tx-title" style="font-weight: 700;">${tx.description || 'No description'}</div>
             <div style="display: flex; gap: 8px; align-items: center; margin-top: 4px;">
@@ -581,9 +747,14 @@
             : `Safe: ${(100 - percent).toFixed(0)}% remaining`
           }
         </div>
-        <button class="btn btn-secondary btn-sm budget-edit-btn" data-category="${category}">
-          Edit Budget
-        </button>
+        <div style="display: flex; gap: 8px; margin-top: 14px; width: 100%;">
+          <button class="btn btn-secondary btn-sm budget-edit-btn" data-category="${category}" style="flex: 1; margin-top: 0;">
+            Edit
+          </button>
+          <button class="btn btn-danger btn-sm budget-delete-btn" data-category="${category}" style="flex: 1; margin-top: 0;">
+            Delete
+          </button>
+        </div>
       `;
 
       // Bind adjust limits listener
@@ -592,6 +763,14 @@
         document.getElementById('editBudgetCategory').value = cat;
         document.getElementById('editBudgetLimit').value = budgets[cat];
         openModal(elements.editBudgetModal);
+      });
+
+      // Bind delete budget listener
+      card.querySelector('.budget-delete-btn').addEventListener('click', (e) => {
+        const cat = e.currentTarget.getAttribute('data-category');
+        if (confirm(`Are you sure you want to delete the budget limit for "${cat}"?`)) {
+          window.AppStore.deleteBudget(cat);
+        }
       });
 
       elements.budgetGrid.appendChild(card);
@@ -698,7 +877,11 @@
     
     // Set setting inputs value matches
     elements.settingsUserName.value = settings.userName;
-    elements.settingsSavingsGoal.value = settings.monthlySavingsGoal;
+    elements.settingsSavingsGoal.value = Math.round(convertCurrencyAmount(settings.monthlySavingsGoal, settings.currency, 'GH₵'));
+    if (elements.settingsGeminiApiKey) {
+      elements.settingsGeminiApiKey.value = settings.geminiApiKey || '';
+    }
+    elements.settingsCurrency.dataset.lastVal = settings.currency || 'GH₵';
 
     // Check if currency configuration maps to pre-defined dropdown symbols
     const hasCurrencyOption = Array.from(elements.settingsCurrency.options).some(opt => opt.value === settings.currency);
@@ -756,6 +939,8 @@
     if (elements.settingsPaystackKey) {
       elements.settingsPaystackKey.value = settings.paystackKey || '';
     }
+
+
   }
 
   /**
@@ -1335,7 +1520,7 @@
     // Loop through checkboxes matching lessons
     document.querySelectorAll('.lesson-checkbox').forEach(chk => {
       const idx = parseInt(chk.getAttribute('data-index'));
-      const isLocked = idx >= 4 && !isPremium;
+      const isLocked = false; // All lessons are free for all users
       const card = chk.closest('.lesson-card');
       const readBtn = card.querySelector('.read-lesson-btn');
       
@@ -1371,7 +1556,7 @@
     // Loop through checkboxes matching books
     document.querySelectorAll('.book-checkbox').forEach(chk => {
       const idx = parseInt(chk.getAttribute('data-index'));
-      const isLocked = idx >= 4 && !isPremium;
+      const isLocked = false; // Books are free for all users
       const card = chk.closest('.book-card');
       const readBtn = card.querySelector('.read-book-btn');
       
@@ -1426,10 +1611,7 @@
     const settings = store.getSettings();
     const isPremium = settings.isPremium;
 
-    // Toggle ad display
-    if (elements.mockAdBanner) {
-      elements.mockAdBanner.style.display = isPremium ? 'none' : 'flex';
-    }
+
 
     // Toggle diagnostics blur overlay
     if (elements.diagnosticsLockOverlay) {
@@ -1449,24 +1631,49 @@
       elements.sidebarUpgradeBtn.style.display = isPremium ? 'none' : 'flex';
     }
 
-    // Handle CSV tools lock tooltip styles
-    const csvTools = [elements.exportCsvBtn, elements.importCsvBtn, elements.exportJsonShareBtn, elements.loadJsonBackupBtn];
-    csvTools.forEach(tool => {
+    // Handle Premium tool lock configurations
+    const premiumTools = [
+      elements.exportCsvBtn,
+      elements.importCsvBtn,
+      elements.exportJsonShareBtn,
+      elements.loadJsonBackupBtn,
+      elements.exportPdfBtn
+    ];
+
+    const freePdfUsed = settings.freePdfExportsUsed || 0;
+
+    premiumTools.forEach(tool => {
       if (tool) {
         if (isPremium) {
           tool.removeAttribute('disabled');
           tool.style.opacity = '1';
           tool.style.cursor = 'pointer';
-          // Restore original titles
           if (tool.id === 'exportCsvBtn') tool.title = 'Export transactions to CSV';
           if (tool.id === 'importCsvBtn') tool.title = 'Import transactions from CSV';
           if (tool.id === 'exportJsonShareBtn') tool.title = 'Download JSON backup';
           if (tool.id === 'loadJsonBackupBtn') tool.title = 'Upload JSON backup';
+          if (tool.id === 'exportPdfBtn') {
+            tool.title = 'Export PDF monthly statement';
+            tool.innerHTML = '<svg style="width: 14px; height: 14px; fill: none; stroke: currentColor; stroke-width: 2; margin-right: 6px; vertical-align: middle;"><use href="#icon-print"></use></svg>PDF Report';
+          }
         } else {
-          tool.setAttribute('disabled', 'true');
-          tool.style.opacity = '0.5';
-          tool.style.cursor = 'not-allowed';
-          tool.title = '🔒 Premium Feature: Upgrade to CSV/Backup tools';
+          if (tool.id === 'exportPdfBtn' && freePdfUsed === 0) {
+            tool.removeAttribute('disabled');
+            tool.style.opacity = '1';
+            tool.style.cursor = 'pointer';
+            tool.title = '🎁 Free Trial: 1 PDF statement export remaining';
+            tool.innerHTML = '<svg style="width: 14px; height: 14px; fill: none; stroke: currentColor; stroke-width: 2; margin-right: 6px; vertical-align: middle;"><use href="#icon-print"></use></svg>PDF Report (1 Free)';
+          } else {
+            tool.setAttribute('disabled', 'true');
+            tool.style.opacity = '0.5';
+            tool.style.cursor = 'not-allowed';
+            if (tool.id === 'exportPdfBtn') {
+              tool.title = '🔒 Premium Feature: PDF Report Export';
+              tool.innerHTML = '🔒 PDF Report';
+            } else {
+              tool.title = '🔒 Premium Feature: Upgrade to CSV/Backup tools';
+            }
+          }
         }
       }
     });
@@ -1513,9 +1720,254 @@
   }
 
   /**
+   * Renders real-time visual alert banners if any budget category is breached or over 75% capacity.
+   */
+  function renderBudgetBreachAlerts() {
+    const container = document.getElementById('budgetBreachAlertContainer');
+    if (!container) return;
+
+    const store = window.AppStore;
+    const currency = store.getSettings().currency;
+    const transactions = getFilteredTransactions();
+    const budgets = store.getBudgets();
+
+    const categoryTotals = {};
+    transactions.forEach(tx => {
+      if (tx.type === 'expense' && tx.category) {
+        categoryTotals[tx.category] = (categoryTotals[tx.category] || 0) + tx.amount;
+      }
+    });
+
+    const breachedList = [];
+    const warningList = [];
+
+    Object.keys(budgets).forEach(category => {
+      const limit = budgets[category];
+      const spent = categoryTotals[category] || 0;
+      if (limit > 0) {
+        const percent = (spent / limit) * 100;
+        if (percent > 100) {
+          breachedList.push({ category, spent, limit, over: spent - limit });
+        } else if (percent >= 75) {
+          warningList.push({ category, spent, limit, percent });
+        }
+      }
+    });
+
+    if (breachedList.length === 0 && warningList.length === 0) {
+      container.style.display = 'none';
+      container.innerHTML = '';
+      return;
+    }
+
+    container.style.display = 'block';
+
+    if (breachedList.length > 0) {
+      const names = breachedList.map(b => `${b.category} (+${formatMoney(b.over, currency)})`).join(', ');
+      container.innerHTML = `
+        <div class="card alert-card-breach" style="background: linear-gradient(135deg, rgba(239, 68, 68, 0.18), rgba(17, 24, 39, 0.75)); border: 1.5px solid var(--color-danger); padding: 16px 20px; border-radius: var(--border-radius-md); display: flex; align-items: center; justify-content: space-between; gap: 16px; box-shadow: 0 4px 20px rgba(239, 68, 68, 0.25);">
+          <div style="display: flex; align-items: center; gap: 14px;">
+            <div style="width: 42px; height: 42px; border-radius: 50%; background: var(--color-danger); color: #fff; display: flex; align-items: center; justify-content: center; font-size: 1.3rem; flex-shrink: 0; box-shadow: 0 0 12px rgba(239, 68, 68, 0.6);">
+              🚨
+            </div>
+            <div>
+              <h4 style="font-size: 0.98rem; font-weight: 800; color: var(--color-danger); margin: 0 0 2px 0;">Budget Overspend Alert (${breachedList.length} ${breachedList.length === 1 ? 'Category' : 'Categories'} Breached)</h4>
+              <p style="font-size: 0.83rem; color: var(--text-main); margin: 0; line-height: 1.4;">${names} exceeded spending limits! Review your ledger entries or adjust monthly budgets.</p>
+            </div>
+          </div>
+          <button class="btn btn-secondary btn-sm" id="alertManageBudgetsBtn" style="white-space: nowrap; font-weight: 700; border-color: var(--color-danger); color: var(--color-danger); background: rgba(239, 68, 68, 0.1);">
+            Manage Budgets
+          </button>
+        </div>
+      `;
+      const btn = container.querySelector('#alertManageBudgetsBtn');
+      if (btn) {
+        btn.addEventListener('click', () => {
+          switchTab('budgets');
+        });
+      }
+    } else {
+      const names = warningList.map(w => `${w.category} (${w.percent.toFixed(0)}%)`).join(', ');
+      container.innerHTML = `
+        <div class="card alert-card-warning" style="background: linear-gradient(135deg, rgba(245, 158, 11, 0.18), rgba(17, 24, 39, 0.75)); border: 1.5px solid var(--color-warning); padding: 16px 20px; border-radius: var(--border-radius-md); display: flex; align-items: center; justify-content: space-between; gap: 16px; box-shadow: 0 4px 20px rgba(245, 158, 11, 0.2);">
+          <div style="display: flex; align-items: center; gap: 14px;">
+            <div style="width: 42px; height: 42px; border-radius: 50%; background: var(--color-warning); color: #0b0f19; display: flex; align-items: center; justify-content: center; font-size: 1.3rem; flex-shrink: 0; box-shadow: 0 0 12px rgba(245, 158, 11, 0.5);">
+              ⚠️
+            </div>
+            <div>
+              <h4 style="font-size: 0.98rem; font-weight: 800; color: var(--color-warning); margin: 0 0 2px 0;">Budget Warning (${warningList.length} ${warningList.length === 1 ? 'Category' : 'Categories'} Near Limit)</h4>
+              <p style="font-size: 0.83rem; color: var(--text-main); margin: 0; line-height: 1.4;">${names} reached over 75% capacity. Monitor upcoming expenses to prevent breaches.</p>
+            </div>
+          </div>
+          <button class="btn btn-secondary btn-sm" id="alertManageBudgetsBtn" style="white-space: nowrap; font-weight: 700; border-color: var(--color-warning); color: var(--color-warning); background: rgba(245, 158, 11, 0.1);">
+            Manage Budgets
+          </button>
+        </div>
+      `;
+      const btn = container.querySelector('#alertManageBudgetsBtn');
+      if (btn) {
+        btn.addEventListener('click', () => {
+          switchTab('budgets');
+        });
+      }
+    }
+  }
+
+  /**
+   * Generates and prints a complete formatted PDF Monthly Financial Statement.
+   */
+  function exportPdfStatement() {
+    const store = window.AppStore;
+    const settings = store.getSettings();
+    const isPremium = settings.isPremium;
+    const freePdfUsed = settings.freePdfExportsUsed || 0;
+
+    if (!isPremium) {
+      if (freePdfUsed >= 1) {
+        openModal(elements.premiumUpgradeModal);
+        alert('You have already used your 1 free PDF statement export. Please upgrade to Premium to unlock unlimited report exports!');
+        return;
+      } else {
+        // Persist the 1-time usage count to settings
+        store.updateSettings({ freePdfExportsUsed: 1 });
+        // Update premium visual elements instantly
+        renderPremiumLayout();
+        alert('🎁 You are using your 1-time Free Trial PDF Report Export. Future PDF reports require upgrading to Premium!');
+      }
+    }
+    const currency = settings.currency;
+    const transactions = getFilteredTransactions();
+    const balance = store.getBalance();
+    const today = new Date().toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' });
+
+    let incomeTotal = 0;
+    let expenseTotal = 0;
+    transactions.forEach(tx => {
+      if (tx.type === 'income') incomeTotal += tx.amount;
+      else expenseTotal += tx.amount;
+    });
+
+    const printWin = window.open('', '_blank', 'width=900,height=800');
+    if (!printWin) {
+      alert('Please allow popups to generate your PDF Financial Statement.');
+      return;
+    }
+
+    const htmlContent = `
+      <!DOCTYPE html>
+      <html>
+      <head>
+        <title>Financial Statement - ${settings.userName}</title>
+        <style>
+          body { font-family: 'Helvetica Neue', Arial, sans-serif; color: #1e293b; padding: 40px; margin: 0; background: #fff; }
+          .header { display: flex; justify-content: space-between; align-items: flex-start; border-bottom: 2px solid #6366f1; padding-bottom: 20px; margin-bottom: 30px; }
+          .brand { font-size: 24px; font-weight: 800; color: #4f46e5; }
+          .subtitle { font-size: 13px; color: #64748b; margin-top: 4px; }
+          .meta { text-align: right; font-size: 13px; color: #475569; }
+          .summary-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px; margin-bottom: 30px; }
+          .kpi-box { background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 8px; padding: 16px; text-align: center; }
+          .kpi-title { font-size: 11px; font-weight: 700; text-transform: uppercase; color: #64748b; margin-bottom: 6px; }
+          .kpi-num { font-size: 20px; font-weight: 800; color: #0f172a; }
+          table { width: 100%; border-collapse: collapse; margin-top: 15px; font-size: 13px; }
+          th { background: #f1f5f9; text-align: left; padding: 10px 12px; font-weight: 700; border-bottom: 1px solid #cbd5e1; }
+          td { padding: 10px 12px; border-bottom: 1px solid #e2e8f0; }
+          .income { color: #059669; font-weight: 600; }
+          .expense { color: #dc2626; font-weight: 600; }
+          .footer { margin-top: 50px; padding-top: 20px; border-top: 1px solid #e2e8f0; display: flex; justify-content: space-between; font-size: 12px; color: #64748b; }
+          @media print { body { padding: 0; } }
+        </style>
+      </head>
+      <body>
+        <div class="header">
+          <div>
+            <div class="brand">FinFlow Financial Dashboard</div>
+            <div class="subtitle">Official Executive Financial Statement & Ledger Export</div>
+          </div>
+          <div class="meta">
+            <div><strong>Account Holder:</strong> ${settings.userName}</div>
+            <div><strong>Date:</strong> ${today}</div>
+            <div><strong>Currency:</strong> ${currency}</div>
+          </div>
+        </div>
+
+        <div class="summary-grid">
+          <div class="kpi-box">
+            <div class="kpi-title">Net Worth</div>
+            <div class="kpi-num">${formatMoney(balance.total, currency)}</div>
+          </div>
+          <div class="kpi-box">
+            <div class="kpi-title">Liquid Cash</div>
+            <div class="kpi-num">${formatMoney(balance.cash, currency)}</div>
+          </div>
+          <div class="kpi-box">
+            <div class="kpi-title">Selected Inflows</div>
+            <div class="kpi-num income">${formatMoney(incomeTotal, currency)}</div>
+          </div>
+          <div class="kpi-box">
+            <div class="kpi-title">Selected Outflows</div>
+            <div class="kpi-num expense">${formatMoney(expenseTotal, currency)}</div>
+          </div>
+        </div>
+
+        <h3 style="font-size: 16px; margin-bottom: 8px;">Itemized Financial Ledger (${transactions.length} entries)</h3>
+        <table>
+          <thead>
+            <tr>
+              <th>Date</th>
+              <th>Description</th>
+              <th>Category</th>
+              <th>Type</th>
+              <th>Amount</th>
+            </tr>
+          </thead>
+          <tbody>
+            ${transactions.map(tx => `
+              <tr>
+                <td>${tx.date}</td>
+                <td>${tx.description}</td>
+                <td>${tx.category}</td>
+                <td>${tx.type.toUpperCase()}</td>
+                <td class="${tx.type}">${tx.type === 'income' ? '+' : '-'}${formatMoney(tx.amount, currency)}</td>
+              </tr>
+            `).join('')}
+          </tbody>
+        </table>
+
+        <div class="footer">
+          <div>FinFlow — Personal Financial Management Software Platform</div>
+          <div>Compliance Review & Support: finflow64@gmail.com</div>
+        </div>
+
+        <script>
+          window.onload = function() {
+            window.print();
+          };
+        </script>
+      </body>
+      </html>
+    `;
+
+    printWin.document.write(htmlContent);
+    printWin.document.close();
+  }
+
+  /**
    * Main synchronization routing function. Redraws all view panels.
    */
   function syncUI() {
+    const store = window.AppStore;
+    // Sync header currency switcher value to active settings currency
+    if (elements.headerCurrencySelector) {
+      const activeCurr = store.getSettings().currency;
+      const hasOption = Array.from(elements.headerCurrencySelector.options).some(opt => opt.value === activeCurr);
+      if (!hasOption && activeCurr) {
+        const newOpt = document.createElement('option');
+        newOpt.value = activeCurr;
+        newOpt.textContent = activeCurr;
+        elements.headerCurrencySelector.appendChild(newOpt);
+      }
+      elements.headerCurrencySelector.value = activeCurr;
+    }
     populateTimeframeOptions();
     renderKPIs();
     renderTransactions();
@@ -1527,6 +1979,8 @@
     renderDailyAdvice();
     renderFinancialGuide();
     renderPremiumLayout();
+    renderBudgetBreachAlerts();
+    renderAIInsights();
     
     // Update charts dimensions and redraw trend curves
     window.AppCharts.updateAll();
@@ -1540,6 +1994,605 @@
       }
     });
     window.AppCharts.updateCategoryChart(categoryBreakdown);
+  }
+
+  /**
+   * Generates proactive AI Insights based on user transaction history, budgets, and savings goals.
+   */
+  /**
+   * Generates Proactive AI Insights (v1 Roadmap) based on user transaction history, budgets, and savings goals.
+   */
+  function renderAIInsights() {
+    if (!elements.aiInsightsContent) return;
+
+    const store = window.AppStore;
+    const settings = store.getSettings();
+    const isPremium = settings.isPremium;
+    const currency = settings.currency || '$';
+    const transactions = store.getTransactions() || [];
+    const budgets = store.getBudgets() || [];
+    const goals = store.getGoals() || [];
+    const rawBalance = store.getBalance();
+    const balanceNum = (typeof rawBalance === 'object' && rawBalance !== null) ? (rawBalance.total ?? rawBalance.cash ?? 0) : (Number(rawBalance) || 0);
+
+    const generatedInsights = [];
+
+    // --- 1. SPENDING INSIGHTS ("I see you") ---
+    const categoryTotals = {};
+    let totalExpense = 0;
+    let airtimeSpend = 0;
+    let streamingSpend = 0;
+
+    transactions.forEach(tx => {
+      if (tx.type === 'expense') {
+        categoryTotals[tx.category] = (categoryTotals[tx.category] || 0) + tx.amount;
+        totalExpense += tx.amount;
+
+        const noteLower = (tx.note || tx.description || '').toLowerCase();
+        const catLower = (tx.category || '').toLowerCase();
+        if (noteLower.includes('airtime') || noteLower.includes('data') || noteLower.includes('mtn') || noteLower.includes('telecel') || noteLower.includes('at')) {
+          airtimeSpend += tx.amount;
+        }
+        if (noteLower.includes('netflix') || noteLower.includes('dstv') || noteLower.includes('showmax') || noteLower.includes('spotify') || catLower.includes('entertainment')) {
+          streamingSpend += tx.amount;
+        }
+      }
+    });
+
+    let topCategory = null;
+    let maxExpense = 0;
+    Object.keys(categoryTotals).forEach(cat => {
+      if (categoryTotals[cat] > maxExpense) {
+        maxExpense = categoryTotals[cat];
+        topCategory = cat;
+      }
+    });
+
+    // Category Spike
+    if (topCategory && totalExpense > 0) {
+      const percent = Math.round((maxExpense / totalExpense) * 100);
+      generatedInsights.push({
+        type: 'spending',
+        title: '🚨 Category Spike Detected',
+        desc: `You spent <strong>${currency}${maxExpense.toLocaleString()}</strong> on <strong>${topCategory}</strong> this period (${percent}% of total spend).`,
+        prompt: `My spending on ${topCategory} reached ${currency}${maxExpense}. Give me 3 tips to cut it by 20% next month.`
+      });
+    }
+
+    // Leak Detection (Airtime/Data)
+    if (airtimeSpend > 50) {
+      const monthlyEst = Math.round(airtimeSpend * 2);
+      generatedInsights.push({
+        type: 'spending',
+        title: '📡 Airtime Leak Alert',
+        desc: `You spent <strong>${currency}${airtimeSpend.toLocaleString()}</strong> on airtime/data (~${currency}${monthlyEst}/mo). Switching to monthly data bundles saves up to 30%.`,
+        prompt: `I spent ${currency}${airtimeSpend} on airtime recently. How can I optimize my mobile data bundling strategy?`
+      });
+    }
+
+    // Duplicate Subscriptions Audit
+    if (streamingSpend > 100) {
+      generatedInsights.push({
+        type: 'spending',
+        title: '🎬 Subscription Audit',
+        desc: `Recurring media & entertainment costs reached <strong>${currency}${streamingSpend.toLocaleString()}</strong>. Rotating subscriptions month-to-month saves ${currency}100+ yearly.`,
+        prompt: `I am spending ${currency}${streamingSpend} on entertainment subscriptions. Give me a strategy to consolidate them.`
+      });
+    }
+
+    // --- 2. SAVINGS & GOAL INSIGHTS ---
+    const activeGoal = goals.find(g => g.currentAmount < g.targetAmount);
+    if (activeGoal) {
+      const remaining = activeGoal.targetAmount - activeGoal.currentAmount;
+      const suggestedWeekly = Math.ceil(remaining / 12);
+      generatedInsights.push({
+        type: 'savings',
+        title: '🎯 Goal Acceleration',
+        desc: `Move <strong>${currency}${suggestedWeekly.toLocaleString()}</strong> weekly into your <strong>'${activeGoal.title}'</strong> goal, and you'll hit your target 2 months early!`,
+        prompt: `How can I deposit ${currency}${suggestedWeekly} weekly to hit my '${activeGoal.title}' goal faster?`
+      });
+    }
+
+    // Idle Cash Alert
+    if (balanceNum > 500) {
+      const suggestedInvestment = Math.round(balanceNum * 0.4);
+      generatedInsights.push({
+        type: 'savings',
+        title: '💰 Idle Cash Opportunity',
+        desc: `You have <strong>${currency}${balanceNum.toLocaleString()}</strong> idle balance. Bank of Ghana T-Bills yield 15-25% p.a. Consider investing ${currency}${suggestedInvestment}.`,
+        prompt: `I have ${currency}${balanceNum} liquid cash. What is the safest way to invest ${currency}${suggestedInvestment} in T-Bills?`
+      });
+    }
+
+    // --- 3. WINS & ACCRA BENCHMARK ---
+    const isUnderBudget = budgets.length > 0 && budgets.every(b => b.spent <= b.limit);
+    if (isUnderBudget) {
+      generatedInsights.push({
+        type: 'wins',
+        title: '👏 Win of the Week',
+        desc: `Awesome discipline! You stayed under budget across all active categories. You saved more than <strong>70% of Finflow users in Accra</strong> this month!`,
+        prompt: `I stayed under budget across all categories this week. Give me 2 tips to keep up my savings streak!`
+      });
+    } else {
+      generatedInsights.push({
+        type: 'wins',
+        title: '⚡ Tracking Streak',
+        desc: `You have recorded <strong>${transactions.length} transactions</strong>! Your ledger data is now accurate enough for predictive AI cash flow forecasting.`,
+        prompt: `My ledger has ${transactions.length} transactions recorded. How can I use this data to forecast my net cash flow?`
+      });
+    }
+
+    // --- 4. GHANA-SPECIFIC PROACTIVE TIPS ---
+    generatedInsights.push({
+      type: 'ghana',
+      title: '📲 MoMo vs Bank Tip',
+      desc: `Using cash withdrawals incurs 1% MoMo cashout fees. Use MoMo Pay directly or high-yield bank savings to save GHS 15-50 monthly on fees.`,
+      prompt: `What is the best way to save on MoMo cashout withdrawal fees in Ghana?`
+    });
+
+    // Helper to safely escape prompt attributes
+    const escapeAttr = (str) => (str || '').replace(/"/g, '&quot;');
+
+    // --- RENDER LOGIC: FREE TEASER GATE VS PREMIUM UNLOCKED ---
+    let insightsHTML = '';
+
+    if (!isPremium) {
+      const freeInsight = generatedInsights[0] || {
+        title: '💡 Smart Money Tip',
+        desc: 'Keep 1-2 weeks of operational cash on MoMo and route the rest into high-yield savings or T-Bills.',
+        prompt: 'Give me 3 practical financial tips.'
+      };
+
+      insightsHTML = `
+        <div class="ai-insight-item">
+          <div class="insight-title">${freeInsight.title}</div>
+          <div class="insight-desc">${freeInsight.desc}</div>
+          <button type="button" class="explain-this-btn" data-explain="${escapeAttr(freeInsight.prompt)}">Explain this 💬</button>
+        </div>
+
+        <div class="ai-insight-item locked-teaser">
+          <div class="insight-title" style="color: #f1c40f; font-weight: 800;">👑 Proactive AI Insights (15+ Active)</div>
+          <div class="insight-desc" style="margin-bottom: 8px;">
+            Unlock background leak detection, idle cash alerts, category spike warnings & Accra benchmark stats with Premium ($1.99/mo).
+          </div>
+          <button type="button" class="btn btn-primary btn-sm upgrade-trigger-btn" style="background: linear-gradient(135deg, #f1c40f, #f39c12); color: #0b0f19; font-weight: 800; border: none; font-size: 0.76rem; padding: 6px 14px; border-radius: 14px; cursor: pointer;">
+            Unlock All Insights ($1.99)
+          </button>
+        </div>
+      `;
+    } else {
+      insightsHTML = generatedInsights.map(item => `
+        <div class="ai-insight-item">
+          <div class="insight-title">${item.title}</div>
+          <div class="insight-desc">${item.desc}</div>
+          <button type="button" class="explain-this-btn" data-explain="${escapeAttr(item.prompt)}">Explain this 💬</button>
+        </div>
+      `).join('');
+    }
+
+    elements.aiInsightsContent.innerHTML = insightsHTML;
+  }
+
+  // --- AI Chat Coach Core Engine ---
+  let aiChatHistory = [
+    {
+      sender: 'ai',
+      text: "👋 Hi! I'm **Finflow AI Coach**. I'm trained on your live financial data and budget history. Ask me anything like *'How much did I spend on food?'*, *'Can I afford a trip?'*, or *'Explain T-Bills like I'm 15'*!"
+    }
+  ];
+
+  function renderAiChatThread() {
+    if (!elements.aiChatThread) return;
+    elements.aiChatThread.innerHTML = aiChatHistory.map(msg => `
+      <div class="chat-bubble ${msg.sender}">
+        ${msg.text.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>').replace(/\n/g, '<br>')}
+      </div>
+    `).join('');
+    elements.aiChatThread.scrollTop = elements.aiChatThread.scrollHeight;
+  }
+
+  function updateAiCoachModalStatus() {
+    if (!elements.aiCoachStatusText) return;
+    const store = window.AppStore;
+    const settings = store.getSettings();
+    const isPremium = settings.isPremium;
+    const queryCount = settings.aiQueriesCount || 0;
+
+    if (!navigator.onLine) {
+      elements.aiCoachStatusText.innerHTML = `<span style="width: 6px; height: 6px; border-radius: 50%; background: var(--color-danger);"></span> 🌐 Offline Mode`;
+      elements.aiCoachStatusText.style.color = 'var(--color-danger)';
+      return;
+    }
+
+    if (isPremium) {
+      elements.aiCoachStatusText.innerHTML = `<span style="width: 6px; height: 6px; border-radius: 50%; background: var(--color-success);"></span> 🟢 Online • 👑 Premium Unlimited AI Coach`;
+      elements.aiCoachStatusText.style.color = 'var(--color-success)';
+    } else {
+      const remaining = Math.max(0, 2 - queryCount);
+      if (remaining > 0) {
+        elements.aiCoachStatusText.innerHTML = `<span style="width: 6px; height: 6px; border-radius: 50%; background: var(--color-success);"></span> 🟢 Online • 🎁 Free Trial: ${remaining} of 2 questions left`;
+        elements.aiCoachStatusText.style.color = 'var(--color-success)';
+      } else {
+        elements.aiCoachStatusText.innerHTML = `<span style="width: 6px; height: 6px; border-radius: 50%; background: #f1c40f;"></span> 👑 Free Trial Used • Upgrade for Unlimited`;
+        elements.aiCoachStatusText.style.color = '#f1c40f';
+      }
+    }
+  }
+
+  let isSendingAiMessage = false;
+
+  async function handleSendAiChatMessage(userInputText) {
+    if (isSendingAiMessage) return;
+
+    const text = (userInputText || (elements.aiChatInput ? elements.aiChatInput.value : '') || '').trim();
+    if (!text) return;
+
+    isSendingAiMessage = true;
+
+    try {
+      const store = window.AppStore;
+      const settings = store.getSettings();
+      const isPremium = settings.isPremium;
+
+      // Remove legacy localstorage key if present
+      localStorage.removeItem('FINFLOW_AI_QUERIES_COUNT');
+
+      let queryCount = settings.aiQueriesCount || 0;
+
+      // Check free trial query count for non-premium members
+      if (!isPremium && queryCount >= 2) {
+        openModal(elements.premiumUpgradeModal);
+        alert('You have used your 2 free AI Coach trial questions. Upgrade to Premium for unlimited 24/7 AI financial coaching!');
+        return;
+      }
+
+      // Check online network connectivity
+      if (!navigator.onLine) {
+        aiChatHistory.push({ sender: 'user', text: text });
+        if (elements.aiChatInput) elements.aiChatInput.value = '';
+        aiChatHistory.push({
+          sender: 'ai',
+          text: '🌐 **Finflow AI Coach requires an active internet connection**.\n\nPlease connect your device to Wi-Fi or mobile data to consult the AI Coach model.'
+        });
+        renderAiChatThread();
+        return;
+      }
+
+      // Add user message
+      aiChatHistory.push({ sender: 'user', text: text });
+      if (elements.aiChatInput) elements.aiChatInput.value = '';
+      
+      // Show temporary "Thinking..." bubble
+      aiChatHistory.push({ sender: 'ai', text: '⚡ <i>Thinking... consulting Gemini AI...</i>' });
+      renderAiChatThread();
+
+      // Increment query count for free users and save to store
+      if (!isPremium) {
+        queryCount += 1;
+        store.updateSettings({ aiQueriesCount: queryCount });
+        updateAiCoachModalStatus();
+      }
+
+      try {
+        const responseText = await fetchGeminiAiResponse(text);
+        aiChatHistory.pop(); // Remove "Thinking..."
+        aiChatHistory.push({ sender: 'ai', text: responseText });
+        renderAiChatThread();
+      } catch (err) {
+        console.warn('Gemini API fetch error, falling back to local engine:', err);
+        aiChatHistory.pop(); // Remove "Thinking..."
+        const fallbackText = generateAiCoachResponse(text); // Fallback to local rule engine
+        aiChatHistory.push({ sender: 'ai', text: fallbackText });
+        renderAiChatThread();
+      }
+    } finally {
+      isSendingAiMessage = false;
+    }
+  }
+  window.handleSendAiChatMessage = handleSendAiChatMessage;
+
+  /**
+   * Calls Google Gemini 1.5 Flash API with user's financial profile context.
+   */
+  async function fetchGeminiAiResponse(userPrompt) {
+    const store = window.AppStore;
+    const settings = store.getSettings();
+    const currency = settings.currency || '$';
+    const transactions = store.getTransactions() || [];
+    const rawBalance = store.getBalance();
+    const balanceNum = (typeof rawBalance === 'object' && rawBalance !== null) ? (rawBalance.total ?? rawBalance.cash ?? 0) : (Number(rawBalance) || 0);
+    const budgets = store.getBudgets() || [];
+    const goals = store.getGoals() || [];
+
+    // Use hardcoded key or store settings key
+    const apiKey = HARDCODED_GEMINI_API_KEY || settings.geminiApiKey || '';
+    if (!apiKey) {
+      // If no Gemini API key set, use local calculation response engine
+      return generateAiCoachResponse(userPrompt);
+    }
+
+    const systemPrompt = `You are Finflow AI Coach, an empathetic, highly intelligent personal financial advisor.
+User's Financial Profile:
+- Active Currency: ${currency}
+- Total Liquid Balance: ${currency}${balanceNum.toLocaleString()}
+- Total Recorded Transactions: ${transactions.length}
+- Recent Ledger Activity: ${JSON.stringify(transactions.slice(-12).map(t => ({ date: t.date, category: t.category, type: t.type, amount: t.amount, note: t.note || t.description })))}
+- Active Budgets: ${JSON.stringify(budgets.map(b => ({ category: b.category, limit: b.limit, spent: b.spent })))}
+- Savings Goals: ${JSON.stringify(goals.map(g => ({ title: g.title, target: g.targetAmount, current: g.currentAmount })))}
+
+Directives:
+1. Answer concisely, warmly, and accurately in GFM Markdown format (use bolding, bullet points, emojis).
+2. If the user asks about category spending or affordabilities, calculate exact numbers from their financial profile above.
+3. If the user asks about Ghanaian or African financial topics (Cedis, MoMo, Bank of Ghana Treasury Bills/T-Bills, PAYE tax, Tier-3 pension), provide accurate, localized advice.
+4. Keep your answer encouraging, practical, and under 250 words.`;
+
+    const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${apiKey}`;
+
+    const res = await fetch(url, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        contents: [
+          {
+            role: 'user',
+            parts: [{ text: systemPrompt + '\n\nUser Question: ' + userPrompt }]
+          }
+        ]
+      })
+    });
+
+    if (!res.ok) {
+      throw new Error(`Gemini API HTTP Error: ${res.status}`);
+    }
+
+    const data = await res.json();
+    if (data.candidates && data.candidates[0] && data.candidates[0].content && data.candidates[0].content.parts) {
+      return data.candidates[0].content.parts.map(p => p.text).join('\n');
+    }
+
+    throw new Error('Invalid Gemini API response format');
+  }
+
+  function generateAiCoachResponse(prompt) {
+    const store = window.AppStore;
+    const settings = store.getSettings();
+    const currency = settings.currency || '$';
+    const transactions = store.getTransactions();
+    const rawBalance = store.getBalance();
+    const balanceNum = (typeof rawBalance === 'object' && rawBalance !== null) ? (rawBalance.total ?? rawBalance.cash ?? 0) : (Number(rawBalance) || 0);
+    const lower = prompt.toLowerCase().trim();
+
+    let totalIncome = 0;
+    let totalExpenses = 0;
+    const categoryTotals = {};
+
+    transactions.forEach(tx => {
+      if (tx.type === 'income') {
+        totalIncome += tx.amount;
+      } else if (tx.type === 'expense') {
+        totalExpenses += tx.amount;
+        categoryTotals[tx.category] = (categoryTotals[tx.category] || 0) + tx.amount;
+      }
+    });
+
+    // ROUTE 0: SMART FINANCIAL MATH & RATE EVALUATOR (Daily, Weekly, Monthly & Arithmetic)
+    const rateMatch = lower.match(/(?:gh[c₵]?|\$|€|£)?\s*(\d+(?:\.\d+)?)\s*(?:cedis|dollars|naira)?\s*(daily|per day|weekly|per week|monthly|per month)\s*(?:for)?\s*(\d+)\s*(days?|weeks?|months?)/i) ||
+                      lower.match(/(\d+(?:\.\d+)?)\s*(?:daily|per day|weekly|monthly)\s*(?:for)?\s*(\d+)/i);
+
+    if (rateMatch) {
+      const amount = parseFloat(rateMatch[1]);
+      const count = parseFloat(rateMatch[2] && !isNaN(parseFloat(rateMatch[2])) ? rateMatch[2] : rateMatch[3]);
+      const freqText = lower.includes('daily') || lower.includes('per day') ? 'daily' : (lower.includes('weekly') || lower.includes('per week') ? 'weekly' : 'monthly');
+      const unitText = lower.includes('day') ? 'days' : (lower.includes('week') ? 'weeks' : 'months');
+
+      if (!isNaN(amount) && !isNaN(count)) {
+        const total = amount * count;
+        return `🧮 **Financial Calculation Result**:
+
+Receiving **${currency}${amount.toLocaleString()} ${freqText}** for **${count} ${unitText}** equals a **Total Income of ${currency}${total.toLocaleString()}**!
+
+📊 *Breakdown*:
+• Base Amount: **${currency}${amount.toLocaleString()}**
+• Frequency: **${freqText}**
+• Duration: **${count} ${unitText}**
+• Total Calculation: ${currency}${amount} × ${count} = **${currency}${total.toLocaleString()}**
+
+💡 *Smart Money Tip*:
+If you save **20%** of this income (${currency}${(total * 0.2).toLocaleString()}), you can accelerate your active savings goals!`;
+      }
+    }
+
+    // Percentage Calculation (e.g. "20% of 1000")
+    const pctMatch = lower.match(/(\d+(?:\.\d+)?)\s*%\s*(?:of)?\s*(?:gh[c₵]?|\$)?\s*(\d+(?:\.\d+)?)/i);
+    if (pctMatch) {
+      const pct = parseFloat(pctMatch[1]);
+      const base = parseFloat(pctMatch[2]);
+      const result = (pct / 100) * base;
+      return `🧮 **Percentage Calculation**:
+
+**${pct}%** of **${currency}${base.toLocaleString()}** is **${currency}${result.toLocaleString()}**.`;
+    }
+
+    // Basic arithmetic ("200 * 5", "1000 - 400")
+    const simpleMathMatch = lower.match(/(\d+(?:\.\d+)?)\s*([\+\-\*\/])\s*(\d+(?:\.\d+)?)/i);
+    if (simpleMathMatch) {
+      const n1 = parseFloat(simpleMathMatch[1]);
+      const op = simpleMathMatch[2];
+      const n2 = parseFloat(simpleMathMatch[3]);
+      let res = 0;
+      if (op === '+') res = n1 + n2;
+      else if (op === '-') res = n1 - n2;
+      else if (op === '*') res = n1 * n2;
+      else if (op === '/' && n2 !== 0) res = n1 / n2;
+      
+      return `🧮 **Calculation Result**:
+
+**${n1} ${op} ${n2}** = **${currency}${res.toLocaleString()}**.`;
+    }
+
+    // ROUTE 1: T-Bills & Government Treasury / Investments Query
+    if (
+      lower.includes('t-bill') || lower.includes('t bill') || lower.includes('tbill') ||
+      lower.includes('t-bills') || lower.includes('t bills') || lower.includes('tbills') ||
+      lower.includes('treasury') || lower.includes('bonds') || lower.includes('sika') ||
+      lower.includes('investment') || lower.includes('invest')
+    ) {
+      return `📈 **Treasury Bills (T-Bills) & High-Yield Investing**:
+T-Bills are low-risk government debt securities issued by the Bank of Ghana:
+1. **How they work**: You lend money to the government for **91 days**, **182 days**, or **364 days**.
+2. **Returns**: Current annual yields range between **15% to 25% p.a.** (substantially beating basic savings accounts).
+3. **Safety**: Backed by the government, making default risk minimal.
+
+💡 *Best Way to Save with T-Bills*:
+• Keep 1 month of living expenses on MoMo/Cash for daily transactions.
+• Direct all extra savings into 91-day or 182-day T-Bills so your money compounds safely!
+• You can purchase T-Bills via your commercial bank, investment broker, or Mobile Money USSD code.`;
+    }
+
+    // ROUTE 2: MoMo vs Bank / Wallet Strategy
+    if (lower.includes('momo') || lower.includes('mobile money') || lower.includes('bank') || lower.includes('wallet')) {
+      return `📲 **MoMo vs Bank Savings Strategy**:
+- **Mobile Money (MoMo)**: Excellent for instant everyday payments & transfers, but keeping large balances in MoMo exposes your money to impulse spending and zero interest.
+- **Bank / High-Yield Savings**: Best for emergency reserves & medium-term targets, earning compounding interest.
+
+💡 *Pro Setup*:
+1. Keep 1-2 weeks of operational cash on MoMo.
+2. Automatically transfer salary surplus into a high-yield Bank account or T-Bill portfolio!`;
+    }
+
+    // ROUTE 3: Tax / PAYE / Salary
+    if (lower.includes('tax') || lower.includes('paye') || lower.includes('salary') || lower.includes('deduction')) {
+      return `🧾 **PAYE Salary Tax Guide**:
+In Ghana, Personal Income Tax (PAYE) is progressive across income brackets:
+- First **GHS 490**: 0% (Tax free)
+- Next **GHS 110**: 5%
+- Next **GHS 130**: 10%
+- Next **GHS 3,166**: 17.5%
+- Over **GHS 20,000**: 30%
+
+💡 *Tax Saving Tip*: Voluntary Tier-3 pension contributions (up to 16.5% of gross salary) are **100% tax-exempt**!`;
+    }
+
+    // ROUTE 4: Affordability & Future Goals ("Can I afford", "trip", "buy", "vacation")
+    if (lower.includes('afford') || lower.includes('trip') || lower.includes('buy') || lower.includes('vacation') || lower.includes('car') || lower.includes('house')) {
+      const netSavings = totalIncome - totalExpenses;
+      const disposable = Math.max(balanceNum, netSavings);
+      return `✈️ **Affordability Assessment**:
+Based on your current financial ledger:
+- Liquid Balance: **${currency}${balanceNum.toLocaleString()}**
+- Net Cash Flow: **${currency}${netSavings.toLocaleString()}**
+
+If you deposit **${currency}200 weekly** into a target savings account, you will accumulate **${currency}800 in 1 month** and **${currency}2,400 in 3 months**!
+${disposable > 500 ? `✅ Yes, you can afford it comfortably as long as you maintain your current spending discipline!` : `⚠️ It is doable, but consider cutting non-essential expenses by 10% to protect your emergency reserves.`}`;
+    }
+
+    // ROUTE 5: Category Spending Queries (food, uber, transport, groceries, etc.)
+    const categoryKeywords = ['food', 'dining', 'restaurant', 'uber', 'transport', 'shopping', 'groceries', 'utilities', 'bills', 'health'];
+    const hasCategoryKeyword = categoryKeywords.some(kw => lower.includes(kw));
+    const matchingCategory = Object.keys(categoryTotals).find(cat => lower.includes(cat.toLowerCase()));
+
+    if (matchingCategory || hasCategoryKeyword) {
+      const catName = matchingCategory || (lower.includes('food') ? 'Food & Dining' : (lower.includes('uber') || lower.includes('transport') ? 'Transport' : 'Shopping'));
+      const amt = categoryTotals[catName] || 0;
+      const percentage = totalExpenses > 0 ? Math.round((amt / totalExpenses) * 100) : 0;
+
+      return `📊 **Spending Analysis**:
+You have spent **${currency}${amt.toLocaleString()}** on **${catName}** so far.
+This represents **${percentage}%** of your overall recorded expenses (${currency}${totalExpenses.toLocaleString()}).
+
+💡 *Coach Tip*: ${amt > 300 ? `Consider setting a monthly budget limit for ${catName} in the **Budgets** tab to save extra cash weekly!` : `Your ${catName} spending is well balanced!`}`;
+    }
+
+    // ROUTE 6: Ways to Save Money / General Financial Tips
+    if (lower.includes('ways to save') || lower.includes('tip') || lower.includes('tips') || lower.includes('save money') || lower.includes('cut cost') || lower.includes('how to save')) {
+      return `💡 **3 Actionable Ways to Save Money This Month**:
+1. **The 24-Hour Impulse Rule**: Wait 24 hours before making non-essential purchases over ${currency}100 to curb impulse buying.
+2. **Automate Payday Savings**: Set up an automatic standing order on payday to move 15-20% directly into your savings goals.
+3. **Audit Subscription & Dining**: Review your expense ledger for small daily expenses that add up over 30 days.`;
+    }
+
+    // ROUTE 7: Greetings & Conversational Inputs
+    if (lower === 'hi' || lower === 'hello' || lower === 'hey' || lower.startsWith('hi ') || lower.startsWith('hello ') || lower.includes('who are you') || lower === 'help') {
+      return `👋 **Hello! I'm your Finflow AI Coach.**
+I'm here to analyze your live transactions and help you make smart money decisions!
+
+Try asking me:
+• *"What is the best way to save with T-Bills?"*
+• *"How much did I spend on Food this month?"*
+• *"Can I afford a trip if I save weekly?"*
+• *"What is MoMo vs Bank savings strategy?"*`;
+    }
+
+    // ROUTE 8: Emergency Funds, Budgeting Rules (50/30/20, Envelope System, Sinking Funds)
+    if (lower.includes('emergency') || lower.includes('50/30/20') || lower.includes('budgeting rule') || lower.includes('envelope') || lower.includes('sinking')) {
+      return `🛡️ **Emergency Funds & Budgeting Frameworks**:
+1. **The 50/30/20 Rule**: Allocate **50%** to Needs (rent, food, utilities), **30%** to Wants (entertainment, dining out), and **20%** to Savings & Debt payoff.
+2. **Emergency Fund Target**: Save **3 to 6 months** of essential living expenses in a liquid high-yield account before risky investments.
+3. **Sinking Funds**: Set aside small monthly amounts for planned future expenses (e.g. Christmas, school fees, car repairs).`;
+    }
+
+    // ROUTE 9: Debt, Loans, Credit & Interest (Debt Snowball vs Avalanche)
+    if (lower.includes('debt') || lower.includes('loan') || lower.includes('borrow') || lower.includes('snowball') || lower.includes('avalanche') || lower.includes('interest rate') || lower.includes('credit')) {
+      return `💳 **Debt Management & Payoff Strategies**:
+• **Debt Avalanche**: Pay off the loan with the **highest interest rate** first to minimize interest costs over time.
+• **Debt Snowball**: Pay off the **smallest balance** first for quick psychological wins to build momentum.
+• **Golden Rule**: Never borrow for depreciating consumer items. Keep high-interest debt below 10% of monthly income!`;
+    }
+
+    // ROUTE 10: Compound Interest, Inflation, Net Worth & Assets
+    if (lower.includes('compound') || lower.includes('inflation') || lower.includes('net worth') || lower.includes('asset') || lower.includes('liability')) {
+      return `📈 **Building Wealth: Assets vs Liabilities**:
+• **Compound Interest**: Albert Einstein called this the 8th wonder of the world. Reinvesting returns causes your money to grow exponentially over time.
+• **Assets vs Liabilities**: Assets put money *into* your pocket (T-Bills, stocks, real estate, businesses). Liabilities take money *out* of your pocket (car loans, expensive subscriptions).
+• **Net Worth**: Total Assets minus Total Liabilities. Focus on increasing assets monthly!`;
+    }
+
+    // ROUTE 11: Stocks, Index Funds, ETFs, Crypto, Dividends & Real Estate
+    if (lower.includes('stock') || lower.includes('etf') || lower.includes('index fund') || lower.includes('dividend') || lower.includes('crypto') || lower.includes('bitcoin') || lower.includes('estate') || lower.includes('shares')) {
+      return `🏛️ **Investing Essentials**:
+1. **Index Funds & ETFs**: Low-cost funds that track entire markets (e.g., S&P 500 or Ghana Stock Exchange Index) giving you instant diversification.
+2. **Dividends**: Regular cash payouts companies distribute to shareholders out of corporate profits.
+3. **Crypto / High-Risk Assets**: Treat crypto as speculative. Keep it under 5% of your total net worth and prioritize emergency reserves first!`;
+    }
+
+    // ROUTE 12: Business, Revenue, Profit, Margin & Invoicing
+    if (lower.includes('business') || lower.includes('profit') || lower.includes('revenue') || lower.includes('invoice') || lower.includes('margin') || lower.includes('customer') || lower.includes('sales')) {
+      return `💼 **Business Money Management**:
+• **Profit Calculation**: Revenue minus Expenses = Net Profit.
+• **Separate Accounts**: Never mix business revenue with personal wallet cash! Keep dedicated business Mobile Money / Bank ledgers.
+• **Working Capital**: Always maintain 2 months of operational expenses for payroll and supplier bills.`;
+    }
+
+    // ROUTE 13: Non-Financial Boundary Guard (Politely declines unrelated queries)
+    const financialTerms = [
+      'money', 'cash', 'income', 'expense', 'budget', 'save', 'saving', 'invest', 'bill', 'pay',
+      'ghs', 'cedi', 'dollar', 'naira', 'cfa', 'rand', 'shilling', 'pound', 'euro', 'momo', 'bank',
+      'spend', 'buy', 'cost', 'price', 'afford', 'tax', 'loan', 'debt', 'salary', 'financial',
+      't-bill', 'stock', 'profit', 'fund', 'wallet', 'ledger', 'balance', 'wealth', 'account'
+    ];
+    const isFinancialQuery = financialTerms.some(term => lower.includes(term));
+
+    if (!isFinancialQuery && lower.length > 5) {
+      return `🚫 **Finflow AI Money Coach**:
+
+I am specifically trained as your **Personal Financial Advisor & Money Coach**. I can only answer questions related to **money, budgeting, savings, investments, business, loans, and taxes**.
+
+💡 *Ask me anything about your finances, such as:*
+• *"What is the 50/30/20 budgeting rule?"*
+• *"How do I build an emergency fund?"*
+• *"What is compound interest?"*
+• *"Explain T-Bills like I'm 15"!*`;
+    }
+
+    // Default Fallback for General Money Queries
+    return `🤖 **Finflow AI Coach Insight**:
+Your current liquid balance is **${currency}${balanceNum.toLocaleString()}** across **${transactions.length}** recorded transactions.
+
+Ask me specific financial questions like:
+• *"What is the best way to save with T-Bills?"*
+• *"How much did I spend on Food this month?"*
+• *"Can I afford a GHS 1,000 purchase?"*
+• *"Give me 3 ways to save money this month!"*`;
   }
 
   // --- Theme Controller ---
@@ -1685,6 +2738,18 @@
     });
   }
 
+  function openMobileSidebar() {
+    if (elements.appSidebar) elements.appSidebar.classList.add('active');
+    if (elements.sidebarBackdrop) elements.sidebarBackdrop.classList.add('active');
+    document.body.classList.add('no-scroll');
+  }
+
+  function closeMobileSidebar() {
+    if (elements.appSidebar) elements.appSidebar.classList.remove('active');
+    if (elements.sidebarBackdrop) elements.sidebarBackdrop.classList.remove('active');
+    document.body.classList.remove('no-scroll');
+  }
+
   // --- Bind Form Events & UI Event Listeners ---
   function registerEvents() {
     // 1. Sidebar Nav click bindings
@@ -1692,9 +2757,23 @@
       item.addEventListener('click', (e) => {
         e.preventDefault();
         const targetTab = e.currentTarget.getAttribute('data-target');
-        switchTab(targetTab);
+        if (targetTab) {
+          switchTab(targetTab);
+        }
+        closeMobileSidebar();
       });
     });
+
+    // Mobile Sidebar Drawer Toggle Events
+    if (elements.menuToggleBtn) {
+      elements.menuToggleBtn.addEventListener('click', openMobileSidebar);
+    }
+    if (elements.sidebarCloseBtn) {
+      elements.sidebarCloseBtn.addEventListener('click', closeMobileSidebar);
+    }
+    if (elements.sidebarBackdrop) {
+      elements.sidebarBackdrop.addEventListener('click', closeMobileSidebar);
+    }
 
     // 2. Theme Toggle click binding
     elements.themeToggleBtn.addEventListener('click', toggleTheme);
@@ -1753,6 +2832,24 @@
     if (elements.redoBtn) {
       elements.redoBtn.addEventListener('click', () => {
         window.AppStore.redo(); // Re-apply action
+      });
+    }
+
+    // Header Currency Quick Switcher Listener
+    const headerCurrSel = document.getElementById('headerCurrencySelector');
+    if (headerCurrSel) {
+      headerCurrSel.addEventListener('change', (e) => {
+        const newCurr = e.target.value;
+        window.AppStore.updateSettings({ currency: newCurr });
+        syncUI();
+      });
+    }
+
+    // Export PDF Financial Statement Listener
+    const exportPdfBtn = document.getElementById('exportPdfBtn');
+    if (exportPdfBtn) {
+      exportPdfBtn.addEventListener('click', () => {
+        exportPdfStatement();
       });
     }
 
@@ -1843,14 +2940,17 @@
         category = elements.addTxCategoryOther.value.trim() || 'Other';
       }
       
-      const amount = parseFloat(document.getElementById('addTxAmount').value);
+      const amountRaw = parseFloat(document.getElementById('addTxAmount').value);
       const date = document.getElementById('addTxDate').value;
       const description = document.getElementById('addTxDesc').value;
 
-      if (isNaN(amount) || amount <= 0) {
+      if (isNaN(amountRaw) || amountRaw <= 0) {
         alert('Please enter a valid positive amount.');
         return;
       }
+
+      const activeCurrency = window.AppStore.getSettings().currency;
+      const amount = convertCurrencyAmount(amountRaw, 'GH₵', activeCurrency);
 
       window.AppStore.addTransaction({ type, category, amount, date, description });
       closeModal(elements.addTxModal);
@@ -1870,23 +2970,67 @@
     elements.editBudgetForm.addEventListener('submit', (e) => {
       e.preventDefault();
       const category = document.getElementById('editBudgetCategory').value;
-      const limit = parseFloat(document.getElementById('editBudgetLimit').value);
+      const limitRaw = parseFloat(document.getElementById('editBudgetLimit').value);
 
-      if (isNaN(limit) || limit < 0) {
+      if (isNaN(limitRaw) || limitRaw < 0) {
         alert('Please enter a valid positive budget amount.');
         return;
       }
+
+      const activeCurrency = window.AppStore.getSettings().currency;
+      const limit = convertCurrencyAmount(limitRaw, 'GH₵', activeCurrency);
 
       window.AppStore.updateBudget(category, limit);
       closeModal(elements.editBudgetModal);
     });
 
+    // Open / Submit Create Budget Form
+    if (elements.addBudgetBtn) {
+      elements.addBudgetBtn.addEventListener('click', () => {
+        openModal(elements.addBudgetModal);
+      });
+    }
+
+    if (elements.addBudgetForm) {
+      elements.addBudgetForm.addEventListener('submit', (e) => {
+        e.preventDefault();
+        const categoryInput = document.getElementById('addBudgetCategory');
+        const limitInput = document.getElementById('addBudgetLimit');
+        const category = categoryInput.value.trim();
+        const limitRaw = parseFloat(limitInput.value);
+
+        if (!category) {
+          alert('Please enter a category name.');
+          return;
+        }
+        if (isNaN(limitRaw) || limitRaw < 0) {
+          alert('Please enter a valid positive budget amount.');
+          return;
+        }
+
+        const activeCurrency = window.AppStore.getSettings().currency;
+        const limit = convertCurrencyAmount(limitRaw, 'GH₵', activeCurrency);
+
+        // Check if category already has a budget
+        const budgets = window.AppStore.getBudgets();
+        if (budgets[category] !== undefined) {
+          if (!confirm(`A budget for "${category}" already exists. Do you want to overwrite it?`)) {
+            return;
+          }
+        }
+
+        window.AppStore.updateBudget(category, limit);
+        closeModal(elements.addBudgetModal);
+        elements.addBudgetForm.reset();
+      });
+    }
+
     // 8. Submit Add Goal Form
     elements.addGoalForm.addEventListener('submit', (e) => {
       e.preventDefault();
       const name = document.getElementById('addGoalName').value;
-      const targetAmount = parseFloat(document.getElementById('addGoalTarget').value);
-      const currentAmount = parseFloat(document.getElementById('addGoalCurrent').value || 0);
+      const targetAmountRaw = parseFloat(document.getElementById('addGoalTarget').value);
+      const currentAmountRaw = parseFloat(document.getElementById('addGoalCurrent').value || 0);
       const targetDate = document.getElementById('addGoalDate').value;
       
       let destination = elements.addGoalDestination.value;
@@ -1895,10 +3039,14 @@
         destination = elements.addGoalDestinationOther.value.trim() || 'Other Savings App/Bank';
       }
 
-      if (isNaN(targetAmount) || targetAmount <= 0) {
+      if (isNaN(targetAmountRaw) || targetAmountRaw <= 0) {
         alert('Please enter a valid target amount.');
         return;
       }
+
+      const activeCurrency = window.AppStore.getSettings().currency;
+      const targetAmount = convertCurrencyAmount(targetAmountRaw, 'GH₵', activeCurrency);
+      const currentAmount = convertCurrencyAmount(currentAmountRaw, 'GH₵', activeCurrency);
 
       window.AppStore.addGoal({ name, targetAmount, currentAmount, targetDate, destination });
       closeModal(elements.addGoalModal);
@@ -1917,24 +3065,29 @@
     // 9. Submit Deposit/Withdraw Goal Form
     elements.goalFundForm.addEventListener('submit', (e) => {
       e.preventDefault();
-      const amount = parseFloat(document.getElementById('goalFundAmount').value);
+      const amountRaw = parseFloat(document.getElementById('goalFundAmount').value);
       const type = elements.goalFundType.value; // 'deposit' or 'withdraw'
 
-      if (isNaN(amount) || amount <= 0) {
+      if (isNaN(amountRaw) || amountRaw <= 0) {
         alert('Please enter a valid positive amount.');
         return;
       }
 
       const store = window.AppStore;
       const goal = store.getGoals().find(g => g.id === selectedGoalId);
+      const activeCurrency = store.getSettings().currency;
 
-      if (type === 'withdraw' && amount > goal.currentAmount) {
+      // Check withdrawal limits in display currency coordinates
+      const goalCurrentConverted = convertCurrencyAmount(goal.currentAmount, activeCurrency, 'GH₵');
+      if (type === 'withdraw' && amountRaw > goalCurrentConverted) {
         alert('Cannot withdraw more than current savings.');
         return;
       }
 
       const wasCompletedBefore = goal.currentAmount >= goal.targetAmount;
-      const changeVal = type === 'deposit' ? amount : -amount;
+      const changeValRaw = type === 'deposit' ? amountRaw : -amountRaw;
+      const changeVal = convertCurrencyAmount(changeValRaw, 'GH₵', activeCurrency);
+      const amount = convertCurrencyAmount(amountRaw, 'GH₵', activeCurrency);
       
       // Modify goals ledger
       store.updateGoalAmount(selectedGoalId, changeVal);
@@ -1963,6 +3116,22 @@
     });
 
     // 10. Settings Currency selection dropdown update listener
+    const refreshFxCalibration = () => {
+      let activeCurr = elements.settingsCurrency.value;
+      if (activeCurr === 'custom' && elements.settingsCustomCurrency) {
+        activeCurr = elements.settingsCustomCurrency.value.trim();
+      }
+      
+      // Dynamic conversion of monthlySavingsGoal input value
+      const oldCurr = elements.settingsCurrency.dataset.lastVal || 'GH₵';
+      const currentVal = parseFloat(elements.settingsSavingsGoal.value) || 0;
+      if (oldCurr !== activeCurr && activeCurr && !isNaN(currentVal)) {
+        const converted = convertCurrencyAmount(currentVal, activeCurr, oldCurr);
+        elements.settingsSavingsGoal.value = Math.round(converted);
+        elements.settingsCurrency.dataset.lastVal = activeCurr;
+      }
+    };
+
     elements.settingsCurrency.addEventListener('change', (e) => {
       if (e.target.value === 'custom') {
         elements.settingsCustomCurrencyGroup.style.display = 'flex';
@@ -1970,7 +3139,12 @@
       } else {
         elements.settingsCustomCurrencyGroup.style.display = 'none';
       }
+      refreshFxCalibration();
     });
+
+    if (elements.settingsCustomCurrency) {
+      elements.settingsCustomCurrency.addEventListener('blur', refreshFxCalibration);
+    }
 
     // 11. Submit settings profile edits
     elements.settingsForm.addEventListener('submit', (e) => {
@@ -1986,18 +3160,22 @@
         }
       }
       
-      const monthlySavingsGoal = parseFloat(elements.settingsSavingsGoal.value);
+      const monthlySavingsGoalRaw = parseFloat(elements.settingsSavingsGoal.value);
       const paystackKey = elements.settingsPaystackKey ? elements.settingsPaystackKey.value.trim() : '';
+      const geminiApiKey = elements.settingsGeminiApiKey ? elements.settingsGeminiApiKey.value.trim() : '';
 
       if (!userName.trim()) {
         alert('Name cannot be empty.');
         return;
       }
 
-      if (isNaN(monthlySavingsGoal) || monthlySavingsGoal < 0) {
+      if (isNaN(monthlySavingsGoalRaw) || monthlySavingsGoalRaw < 0) {
         alert('Savings goal must be positive.');
         return;
       }
+
+      // Convert savings goal to base currency GH₵ relative to selected currency
+      const monthlySavingsGoal = convertCurrencyAmount(monthlySavingsGoalRaw, 'GH₵', currency);
 
       const settings = window.AppStore.getSettings();
       const profilePicToSave = (selectedProfilePic !== null) ? selectedProfilePic : (settings.profilePic || '');
@@ -2064,9 +3242,11 @@
     });
 
     // 16. Print dashboard layouts
-    elements.printBtn.addEventListener('click', () => {
-      window.print();
-    });
+    if (elements.printBtn) {
+      elements.printBtn.addEventListener('click', () => {
+        window.print();
+      });
+    }
 
     // 17. Open Share dialogue popup
     elements.shareBtn.addEventListener('click', () => {
@@ -2251,16 +3431,20 @@
       elements.upgradeCheckoutBtn.addEventListener('click', () => {
         const settings = window.AppStore.getSettings();
         // Deobfuscate key to prevent casual inspection in source code
-        const paystackKey = atob('cGtfdGVzdF9kNmViNTU5ZWY4NzEzMjFkN2I2MWI2Njg1OGY1MWJhM2RhOWRkNGQ3');
+        const paystackKey = atob('cGtfdGVzdF84Y2FmYmRhM2RiMGI1ZTIwMWYyOTQ0ZDJmZmMxMWJiNzMxOWYwM2Rj');
         
         if (typeof PaystackPop === 'undefined') {
           alert('Paystack SDK is loading or blocked. Check your internet connection.');
           return;
         }
         
-        const amountVal = 99; // $0.99 or GH₵0.99
-        const emailAddress = 'customer_' + settings.userName.toLowerCase().replace(/\s+/g, '_') + '@financialdashboard.com';
-        const currencyCode = settings.currency === 'GH₵' ? 'GHS' : 'USD';
+        // Base Premium price is $1.99 USD globally.
+        // Convert $1.99 USD to GHS dynamically using live market exchange rate:
+        const liveUsdRate = (settings.exchangeRates && settings.exchangeRates['$']) ? Number(settings.exchangeRates['$']) : 15.5;
+        const amountVal = Math.max(100, Math.round(1.99 * liveUsdRate * 100)); // amount in pesewas
+        
+        const currencyCode = 'GHS';
+        const emailAddress = 'customer_' + (settings.userName || 'User').toLowerCase().replace(/\s+/g, '_') + '@financialdashboard.com';
 
         try {
           const handler = PaystackPop.setup({
@@ -2393,9 +3577,9 @@
       tab: 'dashboard'
     },
     {
-      targetId: 'printBtn',
-      title: 'Print Dashboard 🖨️',
-      text: 'Generate a clean, high-fidelity PDF report or paper printout optimized for physical copies and financial records.',
+      targetId: 'exportPdfBtn',
+      title: 'PDF Report 📄',
+      text: 'Generate and download a clean, high-fidelity PDF financial statement report summarizing your net worth, cash flow, and categories.',
       tab: 'dashboard'
     },
     {
@@ -2625,13 +3809,31 @@
     
     // Check if user is already logged in
     if (store.isLoggedIn()) {
-      elements.authPanel.style.display = 'none'; // Hide auth overlay
+      if (elements.authPanel) {
+        elements.authPanel.classList.add('auth-hidden');
+        elements.authPanel.style.setProperty('display', 'none', 'important');
+      }
       elements.body.style.overflow = 'auto';     // Restore page scrolling
     } else {
-      elements.authPanel.style.display = 'grid';  // Show auth overlay as a grid
+      if (elements.authPanel) {
+        elements.authPanel.classList.remove('auth-hidden');
+        elements.authPanel.style.setProperty('display', 'flex', 'important');
+      }
       elements.body.style.overflow = 'hidden';    // Disable page scrolling
       toggleAuthMode('login');                    // Default to Sign In mode
     }
+
+    // Live Demo Button Event Delegation
+    document.addEventListener('click', (e) => {
+      const demoBtn = e.target.closest('.try-demo-btn');
+      if (demoBtn) {
+        e.preventDefault();
+        e.stopPropagation();
+        if (window.handleLiveDemoClick) {
+          window.handleLiveDemoClick(e);
+        }
+      }
+    });
 
     // Toggle Link Click Listener
     elements.authToggleLink.addEventListener('click', (e) => {
@@ -2753,13 +3955,86 @@
     });
 
     // Logout Button Trigger
+    const handleLogout = () => {
+      if (confirm('Are you sure you want to log out of your session?')) {
+        store.logout();
+      }
+    };
     if (elements.logoutBtn) {
-      elements.logoutBtn.addEventListener('click', () => {
-        if (confirm('Are you sure you want to log out of your session?')) {
-          store.logout();
+      elements.logoutBtn.addEventListener('click', handleLogout);
+    }
+    if (elements.logoutNavBtn) {
+      elements.logoutNavBtn.addEventListener('click', handleLogout);
+    }
+
+    // AI Coach Event Bindings
+    if (elements.openAiCoachModalBtn) {
+      elements.openAiCoachModalBtn.addEventListener('click', () => {
+        openModal(elements.aiCoachModal);
+        updateAiCoachModalStatus();
+        renderAiChatThread();
+      });
+    }
+    if (elements.floatingAiCoachFab) {
+      elements.floatingAiCoachFab.addEventListener('click', () => {
+        openModal(elements.aiCoachModal);
+        updateAiCoachModalStatus();
+        renderAiChatThread();
+      });
+    }
+    window.addEventListener('online', updateAiCoachModalStatus);
+    window.addEventListener('offline', updateAiCoachModalStatus);
+    if (elements.closeAiCoachModalBtn) {
+      elements.closeAiCoachModalBtn.addEventListener('click', () => {
+        closeModal(elements.aiCoachModal);
+      });
+    }
+    if (elements.sendAiChatBtn) {
+      elements.sendAiChatBtn.addEventListener('click', () => handleSendAiChatMessage());
+    }
+    if (elements.aiChatInput) {
+      elements.aiChatInput.addEventListener('keydown', (e) => {
+        if (e.key === 'Enter') {
+          e.preventDefault();
+          handleSendAiChatMessage();
         }
       });
     }
+    const pills = document.querySelectorAll('.ai-prompt-pill');
+    pills.forEach(pill => {
+      pill.addEventListener('click', (e) => {
+        const promptText = e.currentTarget.getAttribute('data-prompt');
+        handleSendAiChatMessage(promptText);
+      });
+    });
+
+    document.addEventListener('click', (e) => {
+      const explainBtn = e.target.closest('.explain-this-btn');
+      if (explainBtn) {
+        const promptText = explainBtn.getAttribute('data-explain');
+        openModal(elements.aiCoachModal);
+        updateAiCoachModalStatus();
+        handleSendAiChatMessage(promptText);
+      }
+
+      const termsBtn = e.target.closest('.open-terms-modal-btn');
+      if (termsBtn) {
+        e.preventDefault();
+        openModal(elements.termsModal);
+      }
+
+      const privacyBtn = e.target.closest('.open-privacy-modal-btn');
+      if (privacyBtn) {
+        e.preventDefault();
+        openModal(elements.privacyModal);
+      }
+
+      const refundBtn = e.target.closest('.open-refund-modal-btn');
+      if (refundBtn) {
+        e.preventDefault();
+        openModal(elements.refundModal);
+      }
+    });
   }
 
   /**
@@ -2884,21 +4159,41 @@
       const { LocalNotifications } = capacitor.Plugins;
       try {
         let permStatus = await LocalNotifications.checkPermissions();
-        if (permStatus.display === 'prompt') {
+        if (permStatus.display === 'prompt' || permStatus.display === 'prompt-with-rationale') {
           permStatus = await LocalNotifications.requestPermissions();
         }
         
         if (permStatus.display === 'granted') {
-          // Schedule daily reminder at 8:00 PM
+          // Cancel existing scheduled notifications to avoid duplicates
+          const pending = await LocalNotifications.getPending();
+          if (pending && pending.notifications && pending.notifications.length > 0) {
+            await LocalNotifications.cancel(pending);
+          }
+
+          // Schedule 2 Android mobile notifications:
+          // 1. Daily Ledger Entry & AI Analysis Reminder (8:00 PM)
+          // 2. Proactive AI Insights & Leak Alerts Digest (12:00 PM Noon)
           await LocalNotifications.schedule({
             notifications: [
               {
-                title: "FinFlow Reminder 💰",
-                body: "Don't forget to review your budgets, enter your income, and log your expenses for the day!",
+                title: "✍️ Finflow Daily Check-in",
+                body: "Don't forget to log today's income & expenses so your AI Coach can calculate your spending leaks!",
                 id: 99,
                 schedule: {
                   on: {
                     hour: 20,   // 8:00 PM
+                    minute: 0
+                  },
+                  repeats: true
+                }
+              },
+              {
+                title: "💡 Proactive AI Insights Ready",
+                body: "Your AI Coach has fresh money insights & savings velocity tips ready on your dashboard!",
+                id: 100,
+                schedule: {
+                  on: {
+                    hour: 12,   // 12:00 PM Noon
                     minute: 0
                   },
                   repeats: true
@@ -2916,6 +4211,12 @@
   // --- Core Application Entry Point ---
   window.addEventListener('DOMContentLoaded', () => {
     window.AppStore.init();      // Initialize database store values
+    
+    // Reset query count to clear any double-trigger test counter
+    if (window.AppStore.getSettings().aiQueriesCount > 0 && !window.AppStore.getSettings().isPremium) {
+      window.AppStore.updateSettings({ aiQueriesCount: 0 });
+    }
+
     cacheElements();             // Map visual DOM nodes
     initTheme();                 // Configure active theme layouts
     initAuth();                  // Handle sign-in/sign-up authentication checks
@@ -2926,6 +4227,11 @@
       registerEvents();            // Bind forms and button click actions listeners
       syncUI();                    // Redraw all UI elements
       initLocalNotifications();    // Setup local notifications reminders
+
+      // Fetch fresh FX rates in the background to update conversions in real-time
+      fetchLiveExchangeRates().then(() => {
+        syncUI();
+      });
       
       // Auto-trigger help tour on first loading index context
       if (!localStorage.getItem('FINANCIAL_DASHBOARD_TOUR_DONE')) {
