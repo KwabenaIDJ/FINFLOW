@@ -1613,11 +1613,11 @@
           <div style="border-top: 1px solid var(--color-border); padding-top: 14px; font-size: 0.78rem; text-align: center; color: var(--text-muted);">
             <div style="font-weight: 700; color: var(--text-main); margin-bottom: 8px; text-transform: uppercase; letter-spacing: 0.5px; font-size: 0.72rem;">Legal & Compliance Policies</div>
             <div style="display: flex; justify-content: center; gap: 12px; flex-wrap: wrap;">
-              <a href="#" class="open-terms-modal-btn" style="color: var(--color-primary); font-weight: 600; text-decoration: underline;">Terms of Service</a>
+              <a href="#" onclick="event.preventDefault(); window.openLegalModal('termsModal');" style="color: var(--color-primary); font-weight: 600; text-decoration: underline;">Terms of Service</a>
               <span>•</span>
-              <a href="#" class="open-privacy-modal-btn" style="color: var(--color-primary); font-weight: 600; text-decoration: underline;">Privacy Policy</a>
+              <a href="#" onclick="event.preventDefault(); window.openLegalModal('privacyModal');" style="color: var(--color-primary); font-weight: 600; text-decoration: underline;">Privacy Policy</a>
               <span>•</span>
-              <a href="#" class="open-refund-modal-btn" style="color: var(--color-primary); font-weight: 600; text-decoration: underline;">Refund Policy</a>
+              <a href="#" onclick="event.preventDefault(); window.openLegalModal('refundModal');" style="color: var(--color-primary); font-weight: 600; text-decoration: underline;">Refund Policy</a>
             </div>
           </div>
         </div>
@@ -1630,16 +1630,11 @@
         <div class="landing-footer-brand">
           <div class="landing-footer-logo">
             <svg style="width: 18px; height: 18px; fill: var(--color-primary);"><use href="#icon-target"></use></svg>
-            <span>Financial Dashboard</span>
+            <span>FinFlow</span>
           </div>
           <p class="landing-footer-desc">
             FinFlow is a cloud-based personal budgeting, transaction management, and financial analytics software platform.
           </p>
-          <div style="margin-top: 12px; display: flex; flex-wrap: wrap; gap: 14px; font-size: 0.84rem;">
-            <a href="#" class="open-terms-modal-btn" style="color: var(--color-primary); font-weight: 600; text-decoration: underline;">📜 Terms of Service</a>
-            <a href="#" class="open-privacy-modal-btn" style="color: var(--color-primary); font-weight: 600; text-decoration: underline;">🔒 Privacy Policy</a>
-            <a href="#" class="open-refund-modal-btn" style="color: var(--color-primary); font-weight: 600; text-decoration: underline;">💵 Refund & Cancellation Policy</a>
-          </div>
         </div>
 
         <div class="landing-footer-compliance">
@@ -1660,9 +1655,9 @@
       <div class="landing-footer-bottom" style="display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 12px; border-top: 1px solid var(--color-border); padding-top: 15px; margin-top: 15px;">
         <p>© 2026 FinFlow Platform. All rights reserved. Personal Financial Management Software Platform.</p>
         <div style="display: flex; gap: 16px; font-size: 0.8rem;">
-          <a href="#" class="open-terms-modal-btn" style="color: var(--color-primary); text-decoration: underline;">Terms of Service</a>
-          <a href="#" class="open-privacy-modal-btn" style="color: var(--color-primary); text-decoration: underline;">Privacy Policy</a>
-          <a href="#" class="open-refund-modal-btn" style="color: var(--color-primary); text-decoration: underline;">Refund Policy</a>
+          <a href="#" onclick="event.preventDefault(); window.openLegalModal('termsModal');" style="color: var(--color-primary); text-decoration: underline; font-weight: 600;">Terms of Service</a>
+          <a href="#" onclick="event.preventDefault(); window.openLegalModal('privacyModal');" style="color: var(--color-primary); text-decoration: underline; font-weight: 600;">Privacy Policy</a>
+          <a href="#" onclick="event.preventDefault(); window.openLegalModal('refundModal');" style="color: var(--color-primary); text-decoration: underline; font-weight: 600;">Refund Policy</a>
         </div>
       </div>
     </footer>
@@ -1673,7 +1668,7 @@
     <div class="modal-content" style="max-width: 580px;">
       <div class="modal-header">
         <h3 class="modal-title">Terms of Service</h3>
-        <button class="modal-close-btn" aria-label="Close dialog"><svg><use href="#icon-close"></use></svg></button>
+        <button class="modal-close-btn" onclick="window.closeLegalModal('termsModal')" aria-label="Close dialog"><svg><use href="#icon-close"></use></svg></button>
       </div>
       <div class="modal-body" style="padding-top: 15px; font-size: 0.86rem; line-height: 1.6; color: var(--text-muted); max-height: 420px; overflow-y: auto;">
         <h4 style="color: var(--text-main); margin-bottom: 6px;">1. Service Description</h4>
@@ -1701,7 +1696,7 @@
     <div class="modal-content" style="max-width: 580px;">
       <div class="modal-header">
         <h3 class="modal-title">Privacy Policy</h3>
-        <button class="modal-close-btn" aria-label="Close dialog"><svg><use href="#icon-close"></use></svg></button>
+        <button class="modal-close-btn" onclick="window.closeLegalModal('privacyModal')" aria-label="Close dialog"><svg><use href="#icon-close"></use></svg></button>
       </div>
       <div class="modal-body" style="padding-top: 15px; font-size: 0.86rem; line-height: 1.6; color: var(--text-muted); max-height: 420px; overflow-y: auto;">
         <h4 style="color: var(--text-main); margin-bottom: 6px;">1. Information We Collect</h4>
@@ -1724,7 +1719,7 @@
     <div class="modal-content" style="max-width: 580px;">
       <div class="modal-header">
         <h3 class="modal-title">Refund & Cancellation Policy</h3>
-        <button class="modal-close-btn" aria-label="Close dialog"><svg><use href="#icon-close"></use></svg></button>
+        <button class="modal-close-btn" onclick="window.closeLegalModal('refundModal')" aria-label="Close dialog"><svg><use href="#icon-close"></use></svg></button>
       </div>
       <div class="modal-body" style="padding-top: 15px; font-size: 0.86rem; line-height: 1.6; color: var(--text-muted); max-height: 420px; overflow-y: auto;">
         <h4 style="color: var(--text-main); margin-bottom: 6px;">1. 7-Day Money-Back Guarantee</h4>

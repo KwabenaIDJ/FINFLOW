@@ -494,6 +494,20 @@
     }
   }
 
+  window.openLegalModal = function(modalId) {
+    const modal = document.getElementById(modalId);
+    if (modal) {
+      modal.classList.add('active');
+    }
+  };
+
+  window.closeLegalModal = function(modalId) {
+    const modal = document.getElementById(modalId);
+    if (modal) {
+      modal.classList.remove('active');
+    }
+  };
+
   /**
    * Dynamic category options populator based on whether the transaction is an Income or Expense.
    */
