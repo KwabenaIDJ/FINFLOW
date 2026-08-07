@@ -200,10 +200,10 @@
         <svg style="width: 18px; height: 18px; fill: #f1c40f; flex-shrink: 0;"><use href="#icon-crown"></use></svg>
         <span>Go Premium</span>
       </button>
-      <a class="nav-item" id="sidebarHelpBtn" onclick="document.getElementById('appSidebar').classList.remove('active'); document.getElementById('sidebarBackdrop').classList.remove('active'); document.body.classList.remove('no-scroll');" style="cursor: pointer;">
+      <button type="button" class="nav-item" id="sidebarHelpBtn" onclick="window.startTour(); document.getElementById('appSidebar').classList.remove('active'); document.getElementById('sidebarBackdrop').classList.remove('active'); document.body.classList.remove('no-scroll');" style="cursor: pointer; background: transparent; border: none; width: 100%; text-align: left; font-family: inherit; font-size: inherit; color: inherit; display: flex; align-items: center; gap: 10px; padding: 10px 14px;">
         <svg><use href="#icon-help"></use></svg>
         <span>Help Tour</span>
-      </a>
+      </button>
     </nav>
 
     <div class="sidebar-footer">
@@ -1430,7 +1430,7 @@
           </li>
         </ul>
 
-        <button class="btn btn-primary" id="upgradeCheckoutBtn" style="width: 100%; padding: 14px; font-size: 1rem; font-weight: 800; background: linear-gradient(135deg, #f1c40f, #f39c12); color: #0b0f19; border: none; border-radius: var(--border-radius-sm); cursor: pointer; box-shadow: 0 4px 15px rgba(241, 196, 15, 0.4);">
+        <button class="btn btn-primary" id="upgradeCheckoutBtn" onclick="window.triggerPaystackCheckout()" style="width: 100%; padding: 14px; font-size: 1rem; font-weight: 800; background: linear-gradient(135deg, #f1c40f, #f39c12); color: #0b0f19; border: none; border-radius: var(--border-radius-sm); cursor: pointer; box-shadow: 0 4px 15px rgba(241, 196, 15, 0.4);">
           Unlock Premium ($1.99)
         </button>
 
@@ -1736,6 +1736,22 @@
         <h4 style="color: var(--text-main); margin-top: 14px; margin-bottom: 6px;">4. Subscription Cancellation</h4>
         <p>You may cancel your Premium subscription or delete your account at any time directly in your app settings with zero cancellation fees.</p>
       </div>
+    </div>
+  </div>
+
+  <!-- ==================== ONBOARDING TOUR TOOLTIP & OVERLAY ==================== -->
+  <div id="tourOverlay" style="display: none; position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; background: rgba(0,0,0,0.6); z-index: 10001; pointer-events: none; transition: all 0.3s ease;"></div>
+  
+  <div id="tourTooltip" style="display: none; position: fixed; width: 310px; background: var(--bg-card); border: 1.5px solid var(--color-primary); border-radius: var(--border-radius-md); box-shadow: 0 12px 30px rgba(0,0,0,0.6); padding: 18px; z-index: 10003; pointer-events: auto; font-family: inherit; transition: all 0.25s ease;">
+    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px;">
+      <span id="tourStepBadge" style="background: var(--color-primary-glow); color: var(--color-primary); font-size: 0.72rem; font-weight: 700; padding: 4px 10px; border-radius: 20px;">Step 1 of 5</span>
+      <button id="tourSkipBtn" onclick="window.endTour()" style="background: none; border: none; color: var(--text-muted); font-size: 0.78rem; cursor: pointer; font-weight: 600;">Skip Tour</button>
+    </div>
+    <h4 id="tourTitle" style="font-size: 0.98rem; margin-bottom: 8px; font-weight: 700; color: var(--text-main);">Guided Tour</h4>
+    <p id="tourText" style="font-size: 0.82rem; color: var(--text-muted); line-height: 1.5; margin-bottom: 18px;">Learn how to manage your financial dashboard.</p>
+    <div style="display: flex; justify-content: space-between; align-items: center;">
+      <button id="tourPrevBtn" class="btn btn-secondary btn-sm" style="font-size: 0.75rem; padding: 6px 14px;">Back</button>
+      <button id="tourNextBtn" class="btn btn-primary btn-sm" style="font-size: 0.75rem; padding: 6px 14px; background: var(--color-primary); color: #fff;">Next</button>
     </div>
   </div>
 

@@ -522,6 +522,43 @@
     }
   };
 
+  window.triggerPaystackCheckout = function() {
+    const settings = window.AppStore ? window.AppStore.getSettings() : {};
+    const paystackKey = atob('cGtfdGVzdF84Y2FmYmRhM2RiMGI1ZTIwMWYyOTQ0ZDJmZmMxMWJiNzMxOWYwM2Rj');
+    
+    if (typeof PaystackPop === 'undefined') {
+      alert('Paystack SDK is loading or blocked. Check your internet connection.');
+      return;
+    }
+    
+    const liveUsdRate = (settings.exchangeRates && settings.exchangeRates['$']) ? Number(settings.exchangeRates['$']) : 15.5;
+    const amountVal = Math.max(100, Math.round(1.99 * liveUsdRate * 100)); // amount in pesewas
+    
+    const currencyCode = 'GHS';
+    const emailAddress = 'customer_' + (settings.userName || 'User').toLowerCase().replace(/\s+/g, '_') + '@financialdashboard.com';
+
+    try {
+      const handler = PaystackPop.setup({
+        key: paystackKey,
+        email: emailAddress,
+        amount: amountVal,
+        currency: currencyCode,
+        callback: function(response) {
+          if (window.AppStore) window.AppStore.setPremiumStatus(true);
+          window.closePremiumModal();
+          if (typeof triggerConfetti === 'function') triggerConfetti();
+          alert('Congratulations! Payment Successful! Reference: ' + response.reference + '. Welcome to Premium Membership! 🏆');
+        },
+        onClose: function() {
+          alert('Payment window closed. Upgrade cancelled.');
+        }
+      });
+      handler.openIframe();
+    } catch(err) {
+      alert('Failed to launch Paystack checkout: ' + err.message);
+    }
+  };
+
   /**
    * Dynamic category options populator based on whether the transaction is an Income or Expense.
    */
@@ -3648,19 +3685,26 @@ Ask me specific financial questions like:
 
   function startTour() {
     activeTourStep = 0;
-    elements.tourOverlay.style.display = 'block';
-    elements.tourTooltip.style.display = 'block';
+    const overlay = document.getElementById('tourOverlay');
+    const tooltip = document.getElementById('tourTooltip');
+    if (overlay) overlay.style.display = 'block';
+    if (tooltip) tooltip.style.display = 'block';
     showTourStep(0);
   }
+  window.startTour = startTour;
 
   function endTour() {
-    elements.tourOverlay.style.display = 'none';
-    elements.tourTooltip.style.display = 'none';
+    const overlay = document.getElementById('tourOverlay');
+    const tooltip = document.getElementById('tourTooltip');
+    if (overlay) overlay.style.display = 'none';
+    if (tooltip) tooltip.style.display = 'none';
     
     // Reset tooltip styling properties
-    elements.tourTooltip.style.position = 'absolute';
-    elements.tourTooltip.style.transform = 'none';
-    elements.tourTooltip.style.bottom = 'auto';
+    if (tooltip) {
+      tooltip.style.position = 'fixed';
+      tooltip.style.transform = 'none';
+      tooltip.style.bottom = 'auto';
+    }
     
     // Remove inline highlighting on elements
     document.querySelectorAll('.tour-highlighted').forEach(el => {
