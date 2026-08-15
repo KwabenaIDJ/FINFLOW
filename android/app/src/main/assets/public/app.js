@@ -524,7 +524,7 @@
 
   window.triggerPaystackCheckout = function() {
     const settings = window.AppStore ? window.AppStore.getSettings() : {};
-    const paystackKey = atob('cGtfdGVzdF84Y2FmYmRhM2RiMGI1ZTIwMWYyOTQ0ZDJmZmMxMWJiNzMxOWYwM2Rj');
+    const paystackKey = 'pk_live_3bb03f9209cfe3ac12fe324b73167807ef9bbac8';
     
     if (typeof PaystackPop === 'undefined') {
       alert('Paystack SDK is loading or blocked. Check your internet connection.');
@@ -2355,13 +2355,6 @@
     const budgets = store.getBudgets() || [];
     const goals = store.getGoals() || [];
 
-    // Use hardcoded key or store settings key
-    const apiKey = HARDCODED_GEMINI_API_KEY || settings.geminiApiKey || '';
-    if (!apiKey) {
-      // If no Gemini API key set, use local calculation response engine
-      return generateAiCoachResponse(userPrompt);
-    }
-
     const systemPrompt = `You are Finflow AI Coach, an empathetic, highly intelligent personal financial advisor.
 User's Financial Profile:
 - Active Currency: ${currency}
@@ -2377,28 +2370,40 @@ Directives:
 3. If the user asks about Ghanaian or African financial topics (Cedis, MoMo, Bank of Ghana Treasury Bills/T-Bills, PAYE tax, Tier-3 pension), provide accurate, localized advice.
 4. Keep your answer encouraging, practical, and under 250 words.`;
 
-    const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${apiKey}`;
-
-    const res = await fetch(url, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        contents: [
-          {
-            role: 'user',
-            parts: [{ text: systemPrompt + '\n\nUser Question: ' + userPrompt }]
-          }
-        ]
-      })
-    });
-
-    if (!res.ok) {
-      throw new Error(`Gemini API HTTP Error: ${res.status}`);
+    // 1. Try Vercel Serverless Function (/api/ai-coach) to keep Gemini API Key 100% hidden & secure
+    try {
+      const apiRes = await fetch('/api/ai-coach', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ prompt: userPrompt, systemPrompt })
+      });
+      if (apiRes.ok) {
+        const apiData = await apiRes.json();
+        if (apiData.text) {
+          return apiData.text;
+        }
+      }
+    } catch (e) {
+      console.warn('Vercel /api/ai-coach serverless proxy bypassed or offline, falling back...', e);
     }
 
-    const data = await res.json();
-    if (data.candidates && data.candidates[0] && data.candidates[0].content && data.candidates[0].content.parts) {
-      return data.candidates[0].content.parts.map(p => p.text).join('\n');
+    // 2. Direct API key fallback if set in settings or hardcoded
+    const apiKey = HARDCODED_GEMINI_API_KEY || settings.geminiApiKey || '';
+    if (apiKey) {
+      try {
+        const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${apiKey}`;
+        const res = await fetch(url, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            contents: [{ role: 'user', parts: [{ text: systemPrompt + '\n\nUser Question: ' + userPrompt }] }]
+          })
+        });
+        if (res.ok) {
+          const data = await res.json();
+          if (data.candidates?.[0]?.content?.parts?.[0]?.text) {
+            return data.candidates[0].content.parts[0].text;
+          }
     }
 
     throw new Error('Invalid Gemini API response format');
@@ -3481,8 +3486,7 @@ Ask me specific financial questions like:
     if (elements.upgradeCheckoutBtn) {
       elements.upgradeCheckoutBtn.addEventListener('click', () => {
         const settings = window.AppStore.getSettings();
-        // Deobfuscate key to prevent casual inspection in source code
-        const paystackKey = atob('cGtfdGVzdF84Y2FmYmRhM2RiMGI1ZTIwMWYyOTQ0ZDJmZmMxMWJiNzMxOWYwM2Rj');
+        const paystackKey = 'pk_live_3bb03f9209cfe3ac12fe324b73167807ef9bbac8';
         
         if (typeof PaystackPop === 'undefined') {
           alert('Paystack SDK is loading or blocked. Check your internet connection.');
