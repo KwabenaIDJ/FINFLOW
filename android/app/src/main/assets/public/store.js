@@ -172,26 +172,29 @@
      */
     signUp(fullName, username, password, currency, securityQuestion, securityAnswer) {
       const userKey = username.trim().toLowerCase();
-      if (!userKey || !password || !fullName.trim() || !securityAnswer.trim()) {
-        return { success: false, message: 'Please fill in all details, including the recovery security answer.' };
+      if (!userKey || !password || !fullName.trim()) {
+        return { success: false, message: 'Please enter your Full Name, Username, and Password.' };
       }
 
       const registry = JSON.parse(localStorage.getItem(USERS_REGISTRY_KEY) || '{}');
 
       if (registry[userKey]) {
-        return { success: false, message: 'Username is already taken. Try another!' };
+        return { success: false, message: 'Username is already taken. Try another username!' };
       }
+
+      const secQuestion = (securityQuestion && securityQuestion.trim()) ? securityQuestion.trim() : 'What was the name of your first school?';
+      const secAnswer = (securityAnswer && securityAnswer.trim()) ? securityAnswer.trim().toLowerCase() : 'school';
 
       // Seed a clean blueprint for the new user
       const userData = getSeedData();
       userData.settings.userName = fullName.trim();
-      userData.settings.currency = currency;
+      userData.settings.currency = currency || 'GH₵';
 
       // Add to accounts database with recovery questions
       registry[userKey] = {
         password: password,
-        securityQuestion: securityQuestion,
-        securityAnswer: securityAnswer.trim().toLowerCase(), // Normalized case insensitive answer
+        securityQuestion: secQuestion,
+        securityAnswer: secAnswer,
         data: userData
       };
 

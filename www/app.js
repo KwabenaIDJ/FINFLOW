@@ -3942,22 +3942,25 @@ Ask me specific financial questions like:
       const password = elements.authPassword.value;
       
       if (authState === 'signup') {
-        const fullName = elements.authFullName.value.trim();
-        const confirmPass = elements.authConfirmPassword.value;
-        const currency = elements.authCurrency.value;
-        const securityQuestion = elements.authSecurityQuestion.value;
-        const securityAnswer = elements.authSecurityAnswer.value;
+        const fullName = elements.authFullName ? elements.authFullName.value.trim() : '';
+        const confirmPass = elements.authConfirmPassword ? elements.authConfirmPassword.value : '';
+        const currency = elements.authCurrency ? elements.authCurrency.value : 'GH₵';
+        const securityQuestion = elements.authSecurityQuestion ? elements.authSecurityQuestion.value : 'What was the name of your first school?';
+        const securityAnswer = elements.authSecurityAnswer ? elements.authSecurityAnswer.value : 'school';
         
-        if (password !== confirmPass) {
+        if (confirmPass && password !== confirmPass) {
           alert('Passwords do not match! Please check again.');
           return;
         }
         
         const res = store.signUp(fullName, username, password, currency, securityQuestion, securityAnswer);
         if (res.success) {
-          elements.authPanel.style.display = 'none';
+          if (elements.authPanel) {
+            elements.authPanel.classList.add('auth-hidden');
+            elements.authPanel.style.setProperty('display', 'none', 'important');
+          }
           elements.body.style.overflow = 'auto';
-          window.location.reload(); // Refresh to clean and populate user data!
+          window.location.reload();
         } else {
           alert(res.message);
         }
@@ -3966,9 +3969,12 @@ Ask me specific financial questions like:
         // Sign In Flow
         const res = store.signIn(username, password);
         if (res.success) {
-          elements.authPanel.style.display = 'none';
+          if (elements.authPanel) {
+            elements.authPanel.classList.add('auth-hidden');
+            elements.authPanel.style.setProperty('display', 'none', 'important');
+          }
           elements.body.style.overflow = 'auto';
-          window.location.reload(); // Refresh page context to load user profile
+          window.location.reload();
         } else {
           alert(res.message);
         }
