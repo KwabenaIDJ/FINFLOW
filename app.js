@@ -2785,13 +2785,15 @@ Ask me specific financial questions like:
       }
     });
 
-    // Update panel active states toggles
+    // Update panel active states toggles with explicit display properties
     const panels = document.querySelectorAll('.view-panel');
     panels.forEach(panel => {
       if (panel.id === `${targetTab}-panel`) {
         panel.classList.add('active');
+        panel.style.setProperty('display', 'flex', 'important');
       } else {
         panel.classList.remove('active');
+        panel.style.setProperty('display', 'none', 'important');
       }
     });
   }
@@ -2817,12 +2819,18 @@ Ask me specific financial questions like:
 
   window.openModalById = function(modalId) {
     const modal = document.getElementById(modalId);
-    if (modal) modal.classList.add('active');
+    if (modal) {
+      modal.classList.add('active');
+      modal.style.setProperty('display', 'flex', 'important');
+    }
   };
 
   window.closeModalById = function(modalId) {
     const modal = document.getElementById(modalId);
-    if (modal) modal.classList.remove('active');
+    if (modal) {
+      modal.classList.remove('active');
+      modal.style.setProperty('display', 'none', 'important');
+    }
   };
 
   window.handleLogout = function(e) {
