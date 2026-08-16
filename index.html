@@ -168,39 +168,39 @@
     </div>
 
     <nav id="appNavigation">
-      <a class="nav-item active" data-target="dashboard" onclick="document.getElementById('appSidebar').classList.remove('active'); document.getElementById('sidebarBackdrop').classList.remove('active'); document.body.classList.remove('no-scroll');">
+      <a class="nav-item active" data-target="dashboard" onclick="window.switchTab('dashboard'); closeMobileSidebar();">
         <svg><use href="#icon-dashboard"></use></svg>
         <span>Overview</span>
       </a>
-      <a class="nav-item" data-target="budgets" onclick="document.getElementById('appSidebar').classList.remove('active'); document.getElementById('sidebarBackdrop').classList.remove('active'); document.body.classList.remove('no-scroll');">
+      <a class="nav-item" data-target="budgets" onclick="window.switchTab('budgets'); closeMobileSidebar();">
         <svg><use href="#icon-wallet"></use></svg>
         <span>Budgets</span>
       </a>
-      <a class="nav-item" data-target="goals" onclick="document.getElementById('appSidebar').classList.remove('active'); document.getElementById('sidebarBackdrop').classList.remove('active'); document.body.classList.remove('no-scroll');">
+      <a class="nav-item" data-target="goals" onclick="window.switchTab('goals'); closeMobileSidebar();">
         <svg><use href="#icon-target"></use></svg>
         <span>Savings Goals</span>
       </a>
-      <a class="nav-item" data-target="todos" onclick="document.getElementById('appSidebar').classList.remove('active'); document.getElementById('sidebarBackdrop').classList.remove('active'); document.body.classList.remove('no-scroll');">
+      <a class="nav-item" data-target="todos" onclick="window.switchTab('todos'); closeMobileSidebar();">
         <svg><use href="#icon-todo"></use></svg>
         <span>Tasks Checklist</span>
       </a>
-      <a class="nav-item" data-target="guide" onclick="document.getElementById('appSidebar').classList.remove('active'); document.getElementById('sidebarBackdrop').classList.remove('active'); document.body.classList.remove('no-scroll');">
+      <a class="nav-item" data-target="guide" onclick="window.switchTab('guide'); closeMobileSidebar();">
         <svg><use href="#icon-book"></use></svg>
         <span>Financial Guide</span>
       </a>
-      <a class="nav-item" data-target="settings" onclick="document.getElementById('appSidebar').classList.remove('active'); document.getElementById('sidebarBackdrop').classList.remove('active'); document.body.classList.remove('no-scroll');">
+      <a class="nav-item" data-target="settings" onclick="window.switchTab('settings'); closeMobileSidebar();">
         <svg><use href="#icon-settings"></use></svg>
         <span>Settings</span>
       </a>
-      <a class="nav-item" id="logoutNavBtn" onclick="document.getElementById('appSidebar').classList.remove('active'); document.getElementById('sidebarBackdrop').classList.remove('active'); document.body.classList.remove('no-scroll');" style="cursor: pointer; color: var(--color-danger);">
+      <a class="nav-item" id="logoutNavBtn" onclick="window.handleLogout(event); closeMobileSidebar();" style="cursor: pointer; color: var(--color-danger);">
         <svg style="stroke: var(--color-danger); fill: none;"><use href="#icon-logout"></use></svg>
         <span style="color: var(--color-danger); font-weight: 600;">Log Out</span>
       </a>
-      <button type="button" class="nav-item upgrade-nav-item" id="sidebarUpgradeBtn" onclick="window.openPremiumModal(); document.getElementById('appSidebar').classList.remove('active'); document.getElementById('sidebarBackdrop').classList.remove('active'); document.body.classList.remove('no-scroll');" style="width: calc(100% - 24px); border: 1px solid rgba(243, 156, 18, 0.4); background: linear-gradient(135deg, rgba(241, 196, 15, 0.2), rgba(243, 156, 18, 0.2)); color: #f1c40f; margin: 8px 12px; padding: 12px 14px; font-weight: 800; font-size: 0.9rem; font-family: inherit; border-radius: var(--border-radius-sm); cursor: pointer; display: flex; align-items: center; gap: 10px; text-align: left;">
+      <button type="button" class="nav-item upgrade-nav-item" id="sidebarUpgradeBtn" onclick="window.openPremiumModal(); closeMobileSidebar();" style="width: calc(100% - 24px); border: 1px solid rgba(243, 156, 18, 0.4); background: linear-gradient(135deg, rgba(241, 196, 15, 0.2), rgba(243, 156, 18, 0.2)); color: #f1c40f; margin: 8px 12px; padding: 12px 14px; font-weight: 800; font-size: 0.9rem; font-family: inherit; border-radius: var(--border-radius-sm); cursor: pointer; display: flex; align-items: center; gap: 10px; text-align: left;">
         <svg style="width: 18px; height: 18px; fill: #f1c40f; flex-shrink: 0;"><use href="#icon-crown"></use></svg>
         <span>Go Premium</span>
       </button>
-      <button type="button" class="nav-item" id="sidebarHelpBtn" onclick="window.startTour(); document.getElementById('appSidebar').classList.remove('active'); document.getElementById('sidebarBackdrop').classList.remove('active'); document.body.classList.remove('no-scroll');" style="cursor: pointer; background: transparent; border: none; width: 100%; text-align: left; font-family: inherit; font-size: inherit; color: inherit; display: flex; align-items: center; gap: 10px; padding: 10px 14px;">
+      <button type="button" class="nav-item" id="sidebarHelpBtn" onclick="window.startTour(); closeMobileSidebar();" style="cursor: pointer; background: transparent; border: none; width: 100%; text-align: left; font-family: inherit; font-size: inherit; color: inherit; display: flex; align-items: center; gap: 10px; padding: 10px 14px;">
         <svg><use href="#icon-help"></use></svg>
         <span>Help Tour</span>
       </button>
@@ -277,8 +277,10 @@
           </select>
 
           <!-- Timeframe Selector -->
-          <select id="timeframeSelector" style="background: var(--bg-card); border: 1px solid var(--color-border); color: var(--text-main); border-radius: var(--border-radius-sm); padding: 10px 14px; font-family: inherit; font-size: 0.88rem; outline: none; cursor: pointer; transition: all var(--transition-fast); margin-right: 6px;">
-            <!-- Populated in JS -->
+          <select id="timeframeSelector" title="Filter timeframe" style="background: var(--bg-card); border: 1px solid var(--color-border); color: var(--text-main); border-radius: var(--border-radius-sm); padding: 10px 14px; font-family: inherit; font-size: 0.88rem; outline: none; cursor: pointer; transition: all var(--transition-fast); margin-right: 6px; min-width: 140px; font-weight: 600;">
+            <option value="current">Current Month</option>
+            <option value="year">Full Year</option>
+            <option value="all_time">All Time</option>
           </select>
         </div>
 
