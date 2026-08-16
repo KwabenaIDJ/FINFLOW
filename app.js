@@ -482,44 +482,50 @@
   }
 
   // --- Modal Utilities ---
-  function openModal(modal) {
+  window.openModal = function(modal) {
+    if (typeof modal === 'string') modal = document.getElementById(modal);
     if (modal) {
       modal.classList.add('active'); // Slide/fade in modal backdrop
+      modal.style.setProperty('display', 'flex', 'important');
+      modal.style.setProperty('pointer-events', 'auto', 'important');
     }
+  };
+
+  window.closeModal = function(modal) {
+    if (typeof modal === 'string') modal = document.getElementById(modal);
+    if (modal) {
+      modal.classList.remove('active'); // Hide modal backdrop
+      modal.style.setProperty('display', 'none', 'important');
+      modal.style.setProperty('pointer-events', 'none', 'important');
+    }
+  };
+
+  function openModal(modal) {
+    window.openModal(modal);
   }
 
   function closeModal(modal) {
-    if (modal) {
-      modal.classList.remove('active'); // Hide modal backdrop
-    }
+    window.closeModal(modal);
   }
 
   window.openLegalModal = function(modalId) {
     const modal = document.getElementById(modalId);
-    if (modal) {
-      modal.classList.add('active');
-    }
+    if (modal) openModal(modal);
   };
 
   window.closeLegalModal = function(modalId) {
     const modal = document.getElementById(modalId);
-    if (modal) {
-      modal.classList.remove('active');
-    }
+    if (modal) closeModal(modal);
   };
 
   window.openPremiumModal = function() {
     const modal = document.getElementById('premiumUpgradeModal');
-    if (modal) {
-      modal.classList.add('active');
-    }
+    if (modal) openModal(modal);
   };
 
   window.closePremiumModal = function() {
     const modal = document.getElementById('premiumUpgradeModal');
-    if (modal) {
-      modal.classList.remove('active');
-    }
+    if (modal) closeModal(modal);
   };
 
   window.triggerPaystackCheckout = function() {
@@ -2823,28 +2829,18 @@ Ask me specific financial questions like:
 
   window.openModalById = function(modalId) {
     const modal = document.getElementById(modalId);
-    if (modal) {
-      modal.classList.add('active');
-      modal.style.setProperty('display', 'flex', 'important');
-      modal.style.setProperty('pointer-events', 'auto', 'important');
-    }
+    if (modal) openModal(modal);
   };
 
   window.closeModalById = function(modalId) {
     const modal = document.getElementById(modalId);
-    if (modal) {
-      modal.classList.remove('active');
-      modal.style.setProperty('display', 'none', 'important');
-      modal.style.setProperty('pointer-events', 'none', 'important');
-    }
+    if (modal) closeModal(modal);
   };
 
   window.openAiCoachModal = function() {
     const modal = document.getElementById('aiCoachModal');
     if (modal) {
-      modal.classList.add('active');
-      modal.style.setProperty('display', 'flex', 'important');
-      modal.style.setProperty('pointer-events', 'auto', 'important');
+      openModal(modal);
       if (typeof updateAiCoachModalStatus === 'function') updateAiCoachModalStatus();
       if (typeof renderAiChatThread === 'function') renderAiChatThread();
     }
@@ -2852,11 +2848,7 @@ Ask me specific financial questions like:
 
   window.closeAiCoachModal = function() {
     const modal = document.getElementById('aiCoachModal');
-    if (modal) {
-      modal.classList.remove('active');
-      modal.style.setProperty('display', 'none', 'important');
-      modal.style.setProperty('pointer-events', 'none', 'important');
-    }
+    if (modal) closeModal(modal);
   };
 
   window.handleLogout = function(e) {
@@ -4138,6 +4130,14 @@ Ask me specific financial questions like:
     });
 
     document.addEventListener('click', (e) => {
+      const cancelOrCloseBtn = e.target.closest('.modal-close-btn, .btn-cancel-modal');
+      if (cancelOrCloseBtn) {
+        e.preventDefault();
+        const modal = cancelOrCloseBtn.closest('.modal-overlay');
+        if (modal) closeModal(modal);
+        return;
+      }
+
       const navTarget = e.target.closest('[data-target]');
       if (navTarget && !navTarget.classList.contains('toggle-password-btn')) {
         const targetTab = navTarget.getAttribute('data-target');
@@ -4198,6 +4198,13 @@ Ask me specific financial questions like:
       if (refundBtn) {
         e.preventDefault();
         openModal(elements.refundModal);
+      }
+    });
+
+    document.addEventListener('keydown', (e) => {
+      if (e.key === 'Escape') {
+        const activeModal = document.querySelector('.modal-overlay.active, .modal-overlay[style*="display: flex"]');
+        if (activeModal) closeModal(activeModal);
       }
     });
   }

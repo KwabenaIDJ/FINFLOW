@@ -156,11 +156,13 @@ aside {
   z-index: 9999;
   opacity: 0;
   visibility: hidden;
+  pointer-events: none !important;
   transition: opacity var(--transition-normal), visibility var(--transition-normal);
 }
 .sidebar-backdrop.active {
   opacity: 1;
   visibility: visible;
+  pointer-events: auto !important;
 }
 
 #menuToggleBtn,
@@ -1079,6 +1081,7 @@ header {
   backdrop-filter: var(--glass-blur);
   -webkit-backdrop-filter: var(--glass-blur);
   display: none;
+  pointer-events: none !important;
   align-items: center;
   justify-content: center;
   z-index: 1000;
@@ -1086,7 +1089,8 @@ header {
 }
 
 .modal-overlay.active {
-  display: flex;
+  display: flex !important;
+  pointer-events: auto !important;
   animation: fadeIn var(--transition-fast);
 }
 
@@ -1138,6 +1142,12 @@ header {
   stroke: currentColor;
   stroke-width: 2;
   fill: none;
+  pointer-events: none;
+}
+
+.modal-close-btn *,
+.btn-cancel-modal * {
+  pointer-events: none;
 }
 
 .modal-footer {
