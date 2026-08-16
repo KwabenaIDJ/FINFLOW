@@ -3960,7 +3960,7 @@ Ask me specific financial questions like:
             elements.authPanel.style.setProperty('display', 'none', 'important');
           }
           elements.body.style.overflow = 'auto';
-          window.location.reload();
+          syncUI();
         } else {
           alert(res.message);
         }
@@ -3974,7 +3974,7 @@ Ask me specific financial questions like:
             elements.authPanel.style.setProperty('display', 'none', 'important');
           }
           elements.body.style.overflow = 'auto';
-          window.location.reload();
+          syncUI();
         } else {
           alert(res.message);
         }

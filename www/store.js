@@ -139,7 +139,10 @@
      * Checks if a user is currently logged in.
      */
     isLoggedIn() {
-      return localStorage.getItem(SESSION_KEY) !== null;
+      const currentUser = localStorage.getItem(SESSION_KEY);
+      if (!currentUser) return false;
+      const registry = JSON.parse(localStorage.getItem(USERS_REGISTRY_KEY) || '{}');
+      return !!(registry[currentUser] || currentUser === 'demo_user');
     },
 
     /**
@@ -342,7 +345,7 @@
       document.body.style.overflow = 'auto';
 
       if (window.syncUI) window.syncUI();
-      window.location.reload();
+      window.dispatchEvent(new CustomEvent('store-updated'));
     },
 
     /**
