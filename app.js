@@ -4077,7 +4077,7 @@ Ask me specific financial questions like:
       else if (authState === 'recovery_question') {
         // Answer challenge
         const answer = elements.authSecurityAnswer.value.trim();
-        const testRes = store.resetPassword(recoveryUsername, answer, 'dummy_test_pass');
+        const testRes = store.verifySecurityAnswer(recoveryUsername, answer);
         if (testRes.success) {
           recoveryAnswer = answer; // Cache the valid recovery answer!
           toggleAuthMode('recovery_reset'); // Transition to reset input
@@ -4095,7 +4095,7 @@ Ask me specific financial questions like:
           return;
         }
         
-        const res = store.resetPassword(recoveryUsername, recoveryAnswer, newPass); // Use cached answer
+        const res = await store.resetPassword(recoveryUsername, recoveryAnswer, newPass); // Use cached answer
         if (res.success) {
           alert('Password reset successfully! Please sign in with your new credentials.');
           toggleAuthMode('login');

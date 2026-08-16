@@ -234,15 +234,14 @@
 
           if (error) {
             console.warn('Supabase Auth signup notice:', error.message);
-            if (error.message && error.message.toLowerCase().includes('already registered')) {
-              return { success: false, message: 'An account with this username already exists in Supabase. Please log in!' };
-            }
+            return { success: false, message: 'Supabase Cloud Auth Error: ' + error.message };
           } else if (data && data.user) {
             supabaseUser = data.user;
             console.log('Supabase Auth signup success:', supabaseUser.id);
           }
         } catch (err) {
           console.warn('Supabase Auth signup exception:', err);
+          return { success: false, message: 'Cloud connection error: ' + (err.message || err) };
         }
       }
 
@@ -293,9 +292,27 @@
     },
 
     /**
+     * Verifies security answer without changing password.
+     */
+    verifySecurityAnswer(username, answer) {
+      const userKey = username.trim().toLowerCase();
+      const registry = JSON.parse(localStorage.getItem(USERS_REGISTRY_KEY) || '{}');
+      if (!registry[userKey]) {
+        return { success: false, message: 'Username not found in registry.' };
+      }
+
+      const storedAnswer = registry[userKey].securityAnswer || '';
+      if (storedAnswer.toLowerCase() !== answer.trim().toLowerCase()) {
+        return { success: false, message: 'Incorrect security answer! Verification failed.' };
+      }
+
+      return { success: true };
+    },
+
+    /**
      * Checks answer and resets password if verified.
      */
-    resetPassword(username, answer, newPassword) {
+    async resetPassword(username, answer, newPassword) {
       const userKey = username.trim().toLowerCase();
       const registry = JSON.parse(localStorage.getItem(USERS_REGISTRY_KEY) || '{}');
       if (!registry[userKey]) {
@@ -305,6 +322,10 @@
       const storedAnswer = registry[userKey].securityAnswer || '';
       if (storedAnswer.toLowerCase() !== answer.trim().toLowerCase()) {
         return { success: false, message: 'Incorrect security answer! Reset failed.' };
+      }
+
+      if (newPassword.length < 6) {
+        return { success: false, message: 'Password must be at least 6 characters long.' };
       }
 
       // Apply new password
