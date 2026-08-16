@@ -482,44 +482,50 @@
   }
 
   // --- Modal Utilities ---
-  function openModal(modal) {
+  window.openModal = function(modal) {
+    if (typeof modal === 'string') modal = document.getElementById(modal);
     if (modal) {
       modal.classList.add('active'); // Slide/fade in modal backdrop
+      modal.style.setProperty('display', 'flex', 'important');
+      modal.style.setProperty('pointer-events', 'auto', 'important');
     }
+  };
+
+  window.closeModal = function(modal) {
+    if (typeof modal === 'string') modal = document.getElementById(modal);
+    if (modal) {
+      modal.classList.remove('active'); // Hide modal backdrop
+      modal.style.setProperty('display', 'none', 'important');
+      modal.style.setProperty('pointer-events', 'none', 'important');
+    }
+  };
+
+  function openModal(modal) {
+    window.openModal(modal);
   }
 
   function closeModal(modal) {
-    if (modal) {
-      modal.classList.remove('active'); // Hide modal backdrop
-    }
+    window.closeModal(modal);
   }
 
   window.openLegalModal = function(modalId) {
     const modal = document.getElementById(modalId);
-    if (modal) {
-      modal.classList.add('active');
-    }
+    if (modal) openModal(modal);
   };
 
   window.closeLegalModal = function(modalId) {
     const modal = document.getElementById(modalId);
-    if (modal) {
-      modal.classList.remove('active');
-    }
+    if (modal) closeModal(modal);
   };
 
   window.openPremiumModal = function() {
     const modal = document.getElementById('premiumUpgradeModal');
-    if (modal) {
-      modal.classList.add('active');
-    }
+    if (modal) openModal(modal);
   };
 
   window.closePremiumModal = function() {
     const modal = document.getElementById('premiumUpgradeModal');
-    if (modal) {
-      modal.classList.remove('active');
-    }
+    if (modal) closeModal(modal);
   };
 
   window.triggerPaystackCheckout = function() {
@@ -2823,28 +2829,18 @@ Ask me specific financial questions like:
 
   window.openModalById = function(modalId) {
     const modal = document.getElementById(modalId);
-    if (modal) {
-      modal.classList.add('active');
-      modal.style.setProperty('display', 'flex', 'important');
-      modal.style.setProperty('pointer-events', 'auto', 'important');
-    }
+    if (modal) openModal(modal);
   };
 
   window.closeModalById = function(modalId) {
     const modal = document.getElementById(modalId);
-    if (modal) {
-      modal.classList.remove('active');
-      modal.style.setProperty('display', 'none', 'important');
-      modal.style.setProperty('pointer-events', 'none', 'important');
-    }
+    if (modal) closeModal(modal);
   };
 
   window.openAiCoachModal = function() {
     const modal = document.getElementById('aiCoachModal');
     if (modal) {
-      modal.classList.add('active');
-      modal.style.setProperty('display', 'flex', 'important');
-      modal.style.setProperty('pointer-events', 'auto', 'important');
+      openModal(modal);
       if (typeof updateAiCoachModalStatus === 'function') updateAiCoachModalStatus();
       if (typeof renderAiChatThread === 'function') renderAiChatThread();
     }
@@ -2852,18 +2848,23 @@ Ask me specific financial questions like:
 
   window.closeAiCoachModal = function() {
     const modal = document.getElementById('aiCoachModal');
-    if (modal) {
-      modal.classList.remove('active');
-      modal.style.setProperty('display', 'none', 'important');
-      modal.style.setProperty('pointer-events', 'none', 'important');
-    }
+    if (modal) closeModal(modal);
   };
 
+  let isLoggingOut = false;
   window.handleLogout = function(e) {
-    if (e && e.preventDefault) e.preventDefault();
-    if (confirm('Are you sure you want to log out of FinFlow?')) {
-      if (window.AppStore) window.AppStore.logout();
-      window.location.reload();
+    if (e) {
+      if (typeof e.preventDefault === 'function') e.preventDefault();
+      if (typeof e.stopPropagation === 'function') e.stopPropagation();
+    }
+    if (isLoggingOut) return;
+    isLoggingOut = true;
+    try {
+      if (confirm('Are you sure you want to log out of FinFlow?')) {
+        if (window.AppStore) window.AppStore.logout();
+      }
+    } finally {
+      setTimeout(() => { isLoggingOut = false; }, 500);
     }
   };
 
@@ -3996,7 +3997,7 @@ Ask me specific financial questions like:
     });
 
     // Form Submit Listener (handles login / signup / recovery flows)
-    elements.authForm.addEventListener('submit', (e) => {
+    elements.authForm.addEventListener('submit', async (e) => {
       e.preventDefault();
       
       const username = elements.authUsername.value.trim();
@@ -4013,31 +4014,61 @@ Ask me specific financial questions like:
           alert('Passwords do not match! Please check again.');
           return;
         }
+
+        const originalBtnText = elements.authSubmitBtn ? elements.authSubmitBtn.textContent : 'Sign Up';
+        if (elements.authSubmitBtn) {
+          elements.authSubmitBtn.disabled = true;
+          elements.authSubmitBtn.textContent = 'Connecting to Supabase...';
+        }
         
-        const res = store.signUp(fullName, username, password, currency, securityQuestion, securityAnswer);
-        if (res.success) {
-          if (elements.authPanel) {
-            elements.authPanel.classList.add('auth-hidden');
-            elements.authPanel.style.setProperty('display', 'none', 'important');
+        try {
+          const res = await store.signUp(fullName, username, password, currency, securityQuestion, securityAnswer);
+          if (res.success) {
+            if (elements.authPanel) {
+              elements.authPanel.classList.add('auth-hidden');
+              elements.authPanel.style.setProperty('display', 'none', 'important');
+            }
+            elements.body.style.overflow = 'auto';
+            syncUI();
+          } else {
+            alert(res.message);
           }
-          elements.body.style.overflow = 'auto';
-          syncUI();
-        } else {
-          alert(res.message);
+        } catch (err) {
+          alert('Sign up error: ' + (err.message || err));
+        } finally {
+          if (elements.authSubmitBtn) {
+            elements.authSubmitBtn.disabled = false;
+            elements.authSubmitBtn.textContent = originalBtnText;
+          }
         }
       } 
       else if (authState === 'login') {
         // Sign In Flow
-        const res = store.signIn(username, password);
-        if (res.success) {
-          if (elements.authPanel) {
-            elements.authPanel.classList.add('auth-hidden');
-            elements.authPanel.style.setProperty('display', 'none', 'important');
+        const originalBtnText = elements.authSubmitBtn ? elements.authSubmitBtn.textContent : 'Log In';
+        if (elements.authSubmitBtn) {
+          elements.authSubmitBtn.disabled = true;
+          elements.authSubmitBtn.textContent = 'Signing In...';
+        }
+
+        try {
+          const res = await store.signIn(username, password);
+          if (res.success) {
+            if (elements.authPanel) {
+              elements.authPanel.classList.add('auth-hidden');
+              elements.authPanel.style.setProperty('display', 'none', 'important');
+            }
+            elements.body.style.overflow = 'auto';
+            syncUI();
+          } else {
+            alert(res.message);
           }
-          elements.body.style.overflow = 'auto';
-          syncUI();
-        } else {
-          alert(res.message);
+        } catch (err) {
+          alert('Sign in error: ' + (err.message || err));
+        } finally {
+          if (elements.authSubmitBtn) {
+            elements.authSubmitBtn.disabled = false;
+            elements.authSubmitBtn.textContent = originalBtnText;
+          }
         }
       }
       else if (authState === 'recovery_username') {
@@ -4055,7 +4086,7 @@ Ask me specific financial questions like:
       else if (authState === 'recovery_question') {
         // Answer challenge
         const answer = elements.authSecurityAnswer.value.trim();
-        const testRes = store.resetPassword(recoveryUsername, answer, 'dummy_test_pass');
+        const testRes = store.verifySecurityAnswer(recoveryUsername, answer);
         if (testRes.success) {
           recoveryAnswer = answer; // Cache the valid recovery answer!
           toggleAuthMode('recovery_reset'); // Transition to reset input
@@ -4073,7 +4104,7 @@ Ask me specific financial questions like:
           return;
         }
         
-        const res = store.resetPassword(recoveryUsername, recoveryAnswer, newPass); // Use cached answer
+        const res = await store.resetPassword(recoveryUsername, recoveryAnswer, newPass); // Use cached answer
         if (res.success) {
           alert('Password reset successfully! Please sign in with your new credentials.');
           toggleAuthMode('login');
@@ -4083,18 +4114,7 @@ Ask me specific financial questions like:
       }
     });
 
-    // Logout Button Trigger
-    const handleLogout = () => {
-      if (confirm('Are you sure you want to log out of your session?')) {
-        store.logout();
-      }
-    };
-    if (elements.logoutBtn) {
-      elements.logoutBtn.addEventListener('click', handleLogout);
-    }
-    if (elements.logoutNavBtn) {
-      elements.logoutNavBtn.addEventListener('click', handleLogout);
-    }
+    // Logout events are delegated to window.handleLogout
 
     // AI Coach Event Bindings
     if (elements.openAiCoachModalBtn) {
@@ -4138,6 +4158,14 @@ Ask me specific financial questions like:
     });
 
     document.addEventListener('click', (e) => {
+      const cancelOrCloseBtn = e.target.closest('.modal-close-btn, .btn-cancel-modal');
+      if (cancelOrCloseBtn) {
+        e.preventDefault();
+        const modal = cancelOrCloseBtn.closest('.modal-overlay');
+        if (modal) closeModal(modal);
+        return;
+      }
+
       const navTarget = e.target.closest('[data-target]');
       if (navTarget && !navTarget.classList.contains('toggle-password-btn')) {
         const targetTab = navTarget.getAttribute('data-target');
@@ -4198,6 +4226,13 @@ Ask me specific financial questions like:
       if (refundBtn) {
         e.preventDefault();
         openModal(elements.refundModal);
+      }
+    });
+
+    document.addEventListener('keydown', (e) => {
+      if (e.key === 'Escape') {
+        const activeModal = document.querySelector('.modal-overlay.active, .modal-overlay[style*="display: flex"]');
+        if (activeModal) closeModal(activeModal);
       }
     });
   }

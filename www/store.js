@@ -148,10 +148,29 @@
     /**
      * Authenticates a user and sets up the active session.
      */
-    signIn(username, password) {
-      const userKey = username.trim().toLowerCase();
-      // Load user accounts registry
+    async signIn(username, password) {
+      const rawUsername = username.trim();
+      const userKey = rawUsername.toLowerCase();
       const registry = JSON.parse(localStorage.getItem(USERS_REGISTRY_KEY) || '{}');
+
+      // Attempt Supabase Auth Cloud Login
+      const client = getSupabaseClient();
+      if (client) {
+        try {
+          const authEmail = rawUsername.includes('@') ? rawUsername : `${userKey}@gmail.com`;
+          const { data, error } = await client.auth.signInWithPassword({
+            email: authEmail,
+            password: password
+          });
+          if (data && data.user) {
+            console.log('Supabase Auth sign-in success:', data.user.id);
+          } else if (error) {
+            console.warn('Supabase Auth sign-in notice:', error.message);
+          }
+        } catch (err) {
+          console.warn('Supabase Auth signin exception:', err);
+        }
+      }
 
       if (!registry[userKey]) {
         return { success: false, message: 'Account not found. Please sign up first!' };
@@ -169,22 +188,68 @@
       localStorage.setItem(STORAGE_KEY, JSON.stringify(this.data));
       window.dispatchEvent(new CustomEvent('store-updated'));
       
+      // Sync cloud data if available
+      this.fetchFromCloud();
+
       return { success: true };
     },
 
     /**
      * Registers a new user profile with clean workspace seed values and recovery questions.
      */
-    signUp(fullName, username, password, currency, securityQuestion, securityAnswer) {
-      const userKey = username.trim().toLowerCase();
+    async signUp(fullName, username, password, currency, securityQuestion, securityAnswer) {
+      const rawUsername = username.trim();
+      const userKey = rawUsername.toLowerCase();
       if (!userKey || !password || !fullName.trim()) {
         return { success: false, message: 'Please enter your Full Name, Username, and Password.' };
+      }
+
+      if (password.length < 6) {
+        return { success: false, message: 'Password must be at least 6 characters long for cloud security.' };
       }
 
       const registry = JSON.parse(localStorage.getItem(USERS_REGISTRY_KEY) || '{}');
 
       if (registry[userKey]) {
         return { success: false, message: 'Username is already taken. Try another username!' };
+      }
+
+      // Attempt Supabase Cloud Auth Signup
+      const client = getSupabaseClient();
+      if (!client) {
+        return { 
+          success: false, 
+          message: 'Supabase Client SDK is not loaded. Please check your internet connection and reload the page.' 
+        };
+      }
+
+      let supabaseUser = null;
+      try {
+        const authEmail = rawUsername.includes('@') ? rawUsername : `${userKey}@gmail.com`;
+        const { data, error } = await client.auth.signUp({
+          email: authEmail,
+          password: password,
+          options: {
+            data: {
+              full_name: fullName.trim(),
+              username: rawUsername,
+              currency: currency || 'GH₵'
+            }
+          }
+        });
+
+        if (error) {
+          console.warn('Supabase Auth signup notice:', error.message);
+          return { success: false, message: 'Supabase Cloud Auth Error: ' + error.message };
+        } else if (data && data.user) {
+          supabaseUser = data.user;
+          console.log('Supabase Auth signup success:', supabaseUser.id);
+        } else {
+          return { success: false, message: 'Supabase Auth did not return a user object. Check your Supabase settings.' };
+        }
+      } catch (err) {
+        console.warn('Supabase Auth signup exception:', err);
+        return { success: false, message: 'Cloud connection error: ' + (err.message || err) };
       }
 
       const secQuestion = (securityQuestion && securityQuestion.trim()) ? securityQuestion.trim() : 'What was the name of your first school?';
@@ -195,11 +260,13 @@
       userData.settings.userName = fullName.trim();
       userData.settings.currency = currency || 'GH₵';
 
-      // Add to accounts database with recovery questions
+      // Add to accounts database with recovery questions & supabaseId
       registry[userKey] = {
+        username: rawUsername,
         password: password,
         securityQuestion: secQuestion,
         securityAnswer: secAnswer,
+        supabaseId: supabaseUser ? supabaseUser.id : null,
         data: userData
       };
 
@@ -212,6 +279,9 @@
       // Save active session data
       localStorage.setItem(STORAGE_KEY, JSON.stringify(this.data));
       window.dispatchEvent(new CustomEvent('store-updated'));
+
+      // Push initial workspace data to Supabase cloud
+      this.syncToCloud();
 
       return { success: true };
     },
@@ -229,9 +299,27 @@
     },
 
     /**
+     * Verifies security answer without changing password.
+     */
+    verifySecurityAnswer(username, answer) {
+      const userKey = username.trim().toLowerCase();
+      const registry = JSON.parse(localStorage.getItem(USERS_REGISTRY_KEY) || '{}');
+      if (!registry[userKey]) {
+        return { success: false, message: 'Username not found in registry.' };
+      }
+
+      const storedAnswer = registry[userKey].securityAnswer || '';
+      if (storedAnswer.toLowerCase() !== answer.trim().toLowerCase()) {
+        return { success: false, message: 'Incorrect security answer! Verification failed.' };
+      }
+
+      return { success: true };
+    },
+
+    /**
      * Checks answer and resets password if verified.
      */
-    resetPassword(username, answer, newPassword) {
+    async resetPassword(username, answer, newPassword) {
       const userKey = username.trim().toLowerCase();
       const registry = JSON.parse(localStorage.getItem(USERS_REGISTRY_KEY) || '{}');
       if (!registry[userKey]) {
@@ -241,6 +329,10 @@
       const storedAnswer = registry[userKey].securityAnswer || '';
       if (storedAnswer.toLowerCase() !== answer.trim().toLowerCase()) {
         return { success: false, message: 'Incorrect security answer! Reset failed.' };
+      }
+
+      if (newPassword.length < 6) {
+        return { success: false, message: 'Password must be at least 6 characters long.' };
       }
 
       // Apply new password
@@ -467,6 +559,10 @@
       } catch (cloudErr) {
         console.warn('Supabase cloud sync background error:', cloudErr);
       }
+    },
+
+    async saveToCloud() {
+      return this.syncToCloud();
     },
 
     /**

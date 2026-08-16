@@ -18,7 +18,8 @@
     };
   </script>
   <!-- Supabase JS Client Library -->
-  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2" onerror="console.warn('Supabase CDN unavailable. Running in local storage mode.')"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="https://unpkg.com/@supabase/supabase-js@2"></script>
 </head>
 <body>
 
@@ -1139,7 +1140,7 @@
     <div class="modal-content">
       <div class="modal-header">
         <h3 class="modal-title">Record Transaction</h3>
-        <button class="modal-close-btn" aria-label="Close dialog"><svg><use href="#icon-close"></use></svg></button>
+        <button class="modal-close-btn" onclick="window.closeModal(this.closest('.modal-overlay'))" aria-label="Close dialog"><svg><use href="#icon-close"></use></svg></button>
       </div>
       <form id="addTxForm">
         <div class="form-group">
@@ -1180,7 +1181,7 @@
         </div>
 
         <div class="modal-footer">
-          <button type="button" class="btn btn-secondary btn-cancel-modal">Cancel</button>
+          <button type="button" class="btn btn-secondary btn-cancel-modal" onclick="window.closeModal(this.closest('.modal-overlay'))">Cancel</button>
           <button type="submit" class="btn btn-primary">Save Transaction</button>
         </div>
       </form>
@@ -1192,7 +1193,7 @@
     <div class="modal-content">
       <div class="modal-header">
         <h3 class="modal-title">Create Category Budget</h3>
-        <button class="modal-close-btn" aria-label="Close dialog"><svg><use href="#icon-close"></use></svg></button>
+        <button class="modal-close-btn" onclick="window.closeModal(this.closest('.modal-overlay'))" aria-label="Close dialog"><svg><use href="#icon-close"></use></svg></button>
       </div>
       <form id="addBudgetForm">
         <div class="form-group">
@@ -1206,7 +1207,7 @@
         </div>
 
         <div class="modal-footer">
-          <button type="button" class="btn btn-secondary btn-cancel-modal">Cancel</button>
+          <button type="button" class="btn btn-secondary btn-cancel-modal" onclick="window.closeModal(this.closest('.modal-overlay'))">Cancel</button>
           <button type="submit" class="btn btn-primary">Create Budget</button>
         </div>
       </form>
@@ -1218,7 +1219,7 @@
     <div class="modal-content">
       <div class="modal-header">
         <h3 class="modal-title">Adjust Category Budget</h3>
-        <button class="modal-close-btn" aria-label="Close dialog"><svg><use href="#icon-close"></use></svg></button>
+        <button class="modal-close-btn" onclick="window.closeModal(this.closest('.modal-overlay'))" aria-label="Close dialog"><svg><use href="#icon-close"></use></svg></button>
       </div>
       <form id="editBudgetForm">
         <div class="form-group">
@@ -1232,7 +1233,7 @@
         </div>
 
         <div class="modal-footer">
-          <button type="button" class="btn btn-secondary btn-cancel-modal">Cancel</button>
+          <button type="button" class="btn btn-secondary btn-cancel-modal" onclick="window.closeModal(this.closest('.modal-overlay'))">Cancel</button>
           <button type="submit" class="btn btn-primary">Update Budget</button>
         </div>
       </form>
@@ -1244,7 +1245,7 @@
     <div class="modal-content">
       <div class="modal-header">
         <h3 class="modal-title">Create Savings Goal</h3>
-        <button class="modal-close-btn" aria-label="Close dialog"><svg><use href="#icon-close"></use></svg></button>
+        <button class="modal-close-btn" onclick="window.closeModal(this.closest('.modal-overlay'))" aria-label="Close dialog"><svg><use href="#icon-close"></use></svg></button>
       </div>
       <form id="addGoalForm">
         <div class="form-group">
@@ -1283,7 +1284,7 @@
         </div>
 
         <div class="modal-footer">
-          <button type="button" class="btn btn-secondary btn-cancel-modal">Cancel</button>
+          <button type="button" class="btn btn-secondary btn-cancel-modal" onclick="window.closeModal(this.closest('.modal-overlay'))">Cancel</button>
           <button type="submit" class="btn btn-primary">Create Goal</button>
         </div>
       </form>
@@ -1295,7 +1296,7 @@
     <div class="modal-content">
       <div class="modal-header">
         <h3 class="modal-title" id="goalFundTitle">Adjust Goal Funds</h3>
-        <button class="modal-close-btn" aria-label="Close dialog"><svg><use href="#icon-close"></use></svg></button>
+        <button class="modal-close-btn" onclick="window.closeModal(this.closest('.modal-overlay'))" aria-label="Close dialog"><svg><use href="#icon-close"></use></svg></button>
       </div>
       <form id="goalFundForm">
         <input type="hidden" id="goalFundType">
@@ -1307,7 +1308,7 @@
         </div>
 
         <div class="modal-footer">
-          <button type="button" class="btn btn-secondary btn-cancel-modal">Cancel</button>
+          <button type="button" class="btn btn-secondary btn-cancel-modal" onclick="window.closeModal(this.closest('.modal-overlay'))">Cancel</button>
           <button type="submit" class="btn btn-primary">Submit</button>
         </div>
       </form>
@@ -1319,7 +1320,7 @@
     <div class="modal-content" style="max-width: 480px;">
       <div class="modal-header">
         <h3 class="modal-title">Share Dashboard Summary</h3>
-        <button type="button" class="modal-close-btn">&times;</button>
+        <button type="button" class="modal-close-btn" onclick="window.closeModal(this.closest('.modal-overlay'))">&times;</button>
       </div>
       <div class="modal-body" style="padding-top: 15px;">
         <p style="color: var(--text-muted); font-size: 0.85rem; line-height: 1.5; margin-bottom: 20px;">
@@ -1771,9 +1772,9 @@
   <!-- ==================== CHART JS, PAYSTACK SDK & SCRIPTS ==================== -->
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
   <script src="https://js.paystack.co/v1/inline.js"></script>
-  <script src="store.js"></script>
-  <script src="charts.js"></script>
-  <script src="app.js"></script>
+  <script src="store.js?v=1.0.2"></script>
+  <script src="charts.js?v=1.0.2"></script>
+  <script src="app.js?v=1.0.2"></script>
   <!-- CONFETTI CANVAS FOR SAVINGS CELEBRATIONS -->
   <canvas id="confettiCanvas" style="position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; pointer-events: none; z-index: 10010; display: none;"></canvas>
 </body>
