@@ -216,33 +216,40 @@
 
       // Attempt Supabase Cloud Auth Signup
       const client = getSupabaseClient();
-      let supabaseUser = null;
-      if (client) {
-        try {
-          const authEmail = rawUsername.includes('@') ? rawUsername : `${userKey}@gmail.com`;
-          const { data, error } = await client.auth.signUp({
-            email: authEmail,
-            password: password,
-            options: {
-              data: {
-                full_name: fullName.trim(),
-                username: rawUsername,
-                currency: currency || 'GH₵'
-              }
-            }
-          });
+      if (!client) {
+        return { 
+          success: false, 
+          message: 'Supabase Client SDK is not loaded. Please check your internet connection and reload the page.' 
+        };
+      }
 
-          if (error) {
-            console.warn('Supabase Auth signup notice:', error.message);
-            return { success: false, message: 'Supabase Cloud Auth Error: ' + error.message };
-          } else if (data && data.user) {
-            supabaseUser = data.user;
-            console.log('Supabase Auth signup success:', supabaseUser.id);
+      let supabaseUser = null;
+      try {
+        const authEmail = rawUsername.includes('@') ? rawUsername : `${userKey}@gmail.com`;
+        const { data, error } = await client.auth.signUp({
+          email: authEmail,
+          password: password,
+          options: {
+            data: {
+              full_name: fullName.trim(),
+              username: rawUsername,
+              currency: currency || 'GH₵'
+            }
           }
-        } catch (err) {
-          console.warn('Supabase Auth signup exception:', err);
-          return { success: false, message: 'Cloud connection error: ' + (err.message || err) };
+        });
+
+        if (error) {
+          console.warn('Supabase Auth signup notice:', error.message);
+          return { success: false, message: 'Supabase Cloud Auth Error: ' + error.message };
+        } else if (data && data.user) {
+          supabaseUser = data.user;
+          console.log('Supabase Auth signup success:', supabaseUser.id);
+        } else {
+          return { success: false, message: 'Supabase Auth did not return a user object. Check your Supabase settings.' };
         }
+      } catch (err) {
+        console.warn('Supabase Auth signup exception:', err);
+        return { success: false, message: 'Cloud connection error: ' + (err.message || err) };
       }
 
       const secQuestion = (securityQuestion && securityQuestion.trim()) ? securityQuestion.trim() : 'What was the name of your first school?';
