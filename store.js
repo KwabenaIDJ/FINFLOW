@@ -275,7 +275,7 @@
       window.dispatchEvent(new CustomEvent('store-updated'));
 
       // Push initial workspace data to Supabase cloud
-      this.saveToCloud();
+      this.syncToCloud();
 
       return { success: true };
     },
@@ -531,6 +531,10 @@
       } catch (cloudErr) {
         console.warn('Supabase cloud sync background error:', cloudErr);
       }
+    },
+
+    async saveToCloud() {
+      return this.syncToCloud();
     },
 
     /**
