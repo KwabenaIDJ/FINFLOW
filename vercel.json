@@ -1,8 +1,9 @@
 {
+  "buildCommand": "node copy-assets.js",
   "outputDirectory": "www",
   "rewrites": [
     {
-      "source": "/(.*)",
+      "source": "/((?!.*\\.).*)",
       "destination": "/index.html"
     }
   ]
