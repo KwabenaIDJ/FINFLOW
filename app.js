@@ -2776,7 +2776,8 @@ Ask me specific financial questions like:
     activeTab = targetTab;
     
     // Update navigation sidebar active class configurations
-    elements.navItems.forEach(item => {
+    const navItems = document.querySelectorAll('.nav-item');
+    navItems.forEach(item => {
       if (item.getAttribute('data-target') === targetTab) {
         item.classList.add('active');
       } else {
@@ -2785,7 +2786,8 @@ Ask me specific financial questions like:
     });
 
     // Update panel active states toggles
-    elements.panels.forEach(panel => {
+    const panels = document.querySelectorAll('.view-panel');
+    panels.forEach(panel => {
       if (panel.id === `${targetTab}-panel`) {
         panel.classList.add('active');
       } else {
@@ -2793,18 +2795,43 @@ Ask me specific financial questions like:
       }
     });
   }
+  window.switchTab = switchTab;
 
   function openMobileSidebar() {
-    if (elements.appSidebar) elements.appSidebar.classList.add('active');
-    if (elements.sidebarBackdrop) elements.sidebarBackdrop.classList.add('active');
+    const sidebar = document.getElementById('appSidebar');
+    const backdrop = document.getElementById('sidebarBackdrop');
+    if (sidebar) sidebar.classList.add('active');
+    if (backdrop) backdrop.classList.add('active');
     document.body.classList.add('no-scroll');
   }
+  window.openMobileSidebar = openMobileSidebar;
 
   function closeMobileSidebar() {
-    if (elements.appSidebar) elements.appSidebar.classList.remove('active');
-    if (elements.sidebarBackdrop) elements.sidebarBackdrop.classList.remove('active');
+    const sidebar = document.getElementById('appSidebar');
+    const backdrop = document.getElementById('sidebarBackdrop');
+    if (sidebar) sidebar.classList.remove('active');
+    if (backdrop) backdrop.classList.remove('active');
     document.body.classList.remove('no-scroll');
   }
+  window.closeMobileSidebar = closeMobileSidebar;
+
+  window.openModalById = function(modalId) {
+    const modal = document.getElementById(modalId);
+    if (modal) modal.classList.add('active');
+  };
+
+  window.closeModalById = function(modalId) {
+    const modal = document.getElementById(modalId);
+    if (modal) modal.classList.remove('active');
+  };
+
+  window.handleLogout = function(e) {
+    if (e && e.preventDefault) e.preventDefault();
+    if (confirm('Are you sure you want to log out of FinFlow?')) {
+      if (window.AppStore) window.AppStore.logout();
+      window.location.reload();
+    }
+  };
 
   // --- Bind Form Events & UI Event Listeners ---
   function registerEvents() {
@@ -4077,14 +4104,39 @@ Ask me specific financial questions like:
     });
 
     document.addEventListener('click', (e) => {
+      const navTarget = e.target.closest('[data-target]');
+      if (navTarget && !navTarget.classList.contains('toggle-password-btn')) {
+        const targetTab = navTarget.getAttribute('data-target');
+        if (targetTab && (targetTab === 'dashboard' || targetTab === 'budgets' || targetTab === 'goals' || targetTab === 'todos' || targetTab === 'guide' || targetTab === 'settings')) {
+          e.preventDefault();
+          window.switchTab(targetTab);
+          window.closeMobileSidebar();
+          return;
+        }
+      }
+
+      const logoutTrigger = e.target.closest('#logoutBtn, #logoutNavBtn');
+      if (logoutTrigger) {
+        e.preventDefault();
+        window.handleLogout(e);
+        return;
+      }
+
+      const modalTrigger = e.target.closest('#addTxBtn, #addBudgetBtn, #editBudgetBtn, #addGoalBtn');
+      if (modalTrigger) {
+        e.preventDefault();
+        const targetId = modalTrigger.id;
+        if (targetId === 'addTxBtn') window.openModalById('addTxModal');
+        if (targetId === 'addBudgetBtn') window.openModalById('addBudgetModal');
+        if (targetId === 'editBudgetBtn') window.openModalById('editBudgetModal');
+        if (targetId === 'addGoalBtn') window.openModalById('addGoalModal');
+        return;
+      }
+
       const upgradeBtn = e.target.closest('#sidebarUpgradeBtn, .upgrade-nav-item, .upgrade-trigger-btn');
       if (upgradeBtn) {
         e.preventDefault();
-        const sidebar = document.getElementById('appSidebar');
-        const backdrop = document.getElementById('sidebarBackdrop');
-        if (sidebar) sidebar.classList.remove('active');
-        if (backdrop) backdrop.classList.remove('active');
-        document.body.classList.remove('no-scroll');
+        window.closeMobileSidebar();
         window.openPremiumModal();
       }
 
