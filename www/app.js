@@ -4298,13 +4298,14 @@ Ask me specific financial questions like:
 
     cacheElements();             // Map visual DOM nodes
     initTheme();                 // Configure active theme layouts
+    registerEvents();            // Bind all form submit and button click listeners
     initAuth();                  // Handle sign-in/sign-up authentication checks
     
-    // Only initialize charts, events, and sync layouts if a user session is active
+    // Always initialize dashboard views and layout components
+    window.AppCharts.init();     // Initialize Charts.js default configurations
+    syncUI();                    // Redraw all UI elements
+    
     if (window.AppStore.isLoggedIn()) {
-      window.AppCharts.init();     // Initialize Charts.js default configurations
-      registerEvents();            // Bind forms and button click actions listeners
-      syncUI();                    // Redraw all UI elements
       initLocalNotifications();    // Setup local notifications reminders
 
       // Fetch fresh FX rates in the background to update conversions in real-time

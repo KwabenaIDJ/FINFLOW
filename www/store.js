@@ -126,6 +126,8 @@
         if (!this.data || !this.data.settings) {
           this.data = getSeedData();
           this.save();
+        } else {
+          this.checkPremiumExpiry();
         }
       } else {
         // No active session: fallback to default mock seeder data so components don't crash
@@ -329,7 +331,7 @@
         this.signInDemo();
       } catch (err) {
         console.error('Demo click error:', err);
-        localStorage.setItem('CURRENT_USER_SESSION', 'demo_user');
+        localStorage.setItem(SESSION_KEY, 'demo_user');
       }
       
       const authPanel = document.getElementById('authPanel');
@@ -339,9 +341,8 @@
       }
       document.body.style.overflow = 'auto';
 
-      setTimeout(() => {
-        window.location.reload();
-      }, 50);
+      if (window.syncUI) window.syncUI();
+      window.location.reload();
     },
 
     /**
@@ -828,9 +829,26 @@
     // --- Settings API ---
 
     /**
+     * Verifies if monthly subscription is still active (30 days) or expired.
+     */
+    checkPremiumExpiry() {
+      if (!this.data || !this.data.settings) return;
+      if (this.data.settings.isPremium) {
+        const expiry = this.data.settings.premiumExpiryDate;
+        // If 30-day period has elapsed, expire premium status
+        if (expiry && Date.now() > Number(expiry)) {
+          this.data.settings.isPremium = false;
+          this.data.settings.premiumExpiryDate = null;
+          this.save();
+        }
+      }
+    },
+
+    /**
      * Returns the settings configuration object from memory.
      */
     getSettings() {
+      this.checkPremiumExpiry();
       return this.data.settings;
     },
 
@@ -847,12 +865,18 @@
     },
 
     /**
-     * Toggles user premium status.
+     * Sets user premium status with a 30-day monthly subscription expiration timestamp.
      */
     setPremiumStatus(isPremium) {
-      // Save state snapshot for Undo
       this.pushState();
-      this.data.settings.isPremium = !!isPremium;
+      if (isPremium) {
+        this.data.settings.isPremium = true;
+        // 30 days expiration timestamp in milliseconds (30 days * 24h * 60m * 60s * 1000ms)
+        this.data.settings.premiumExpiryDate = Date.now() + (30 * 24 * 60 * 60 * 1000);
+      } else {
+        this.data.settings.isPremium = false;
+        this.data.settings.premiumExpiryDate = null;
+      }
       this.save();
     },
 
