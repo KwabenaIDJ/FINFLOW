@@ -3988,7 +3988,7 @@ Ask me specific financial questions like:
     });
 
     // Form Submit Listener (handles login / signup / recovery flows)
-    elements.authForm.addEventListener('submit', (e) => {
+    elements.authForm.addEventListener('submit', async (e) => {
       e.preventDefault();
       
       const username = elements.authUsername.value.trim();
@@ -4005,31 +4005,61 @@ Ask me specific financial questions like:
           alert('Passwords do not match! Please check again.');
           return;
         }
+
+        const originalBtnText = elements.authSubmitBtn ? elements.authSubmitBtn.textContent : 'Sign Up';
+        if (elements.authSubmitBtn) {
+          elements.authSubmitBtn.disabled = true;
+          elements.authSubmitBtn.textContent = 'Connecting to Supabase...';
+        }
         
-        const res = store.signUp(fullName, username, password, currency, securityQuestion, securityAnswer);
-        if (res.success) {
-          if (elements.authPanel) {
-            elements.authPanel.classList.add('auth-hidden');
-            elements.authPanel.style.setProperty('display', 'none', 'important');
+        try {
+          const res = await store.signUp(fullName, username, password, currency, securityQuestion, securityAnswer);
+          if (res.success) {
+            if (elements.authPanel) {
+              elements.authPanel.classList.add('auth-hidden');
+              elements.authPanel.style.setProperty('display', 'none', 'important');
+            }
+            elements.body.style.overflow = 'auto';
+            syncUI();
+          } else {
+            alert(res.message);
           }
-          elements.body.style.overflow = 'auto';
-          syncUI();
-        } else {
-          alert(res.message);
+        } catch (err) {
+          alert('Sign up error: ' + (err.message || err));
+        } finally {
+          if (elements.authSubmitBtn) {
+            elements.authSubmitBtn.disabled = false;
+            elements.authSubmitBtn.textContent = originalBtnText;
+          }
         }
       } 
       else if (authState === 'login') {
         // Sign In Flow
-        const res = store.signIn(username, password);
-        if (res.success) {
-          if (elements.authPanel) {
-            elements.authPanel.classList.add('auth-hidden');
-            elements.authPanel.style.setProperty('display', 'none', 'important');
+        const originalBtnText = elements.authSubmitBtn ? elements.authSubmitBtn.textContent : 'Log In';
+        if (elements.authSubmitBtn) {
+          elements.authSubmitBtn.disabled = true;
+          elements.authSubmitBtn.textContent = 'Signing In...';
+        }
+
+        try {
+          const res = await store.signIn(username, password);
+          if (res.success) {
+            if (elements.authPanel) {
+              elements.authPanel.classList.add('auth-hidden');
+              elements.authPanel.style.setProperty('display', 'none', 'important');
+            }
+            elements.body.style.overflow = 'auto';
+            syncUI();
+          } else {
+            alert(res.message);
           }
-          elements.body.style.overflow = 'auto';
-          syncUI();
-        } else {
-          alert(res.message);
+        } catch (err) {
+          alert('Sign in error: ' + (err.message || err));
+        } finally {
+          if (elements.authSubmitBtn) {
+            elements.authSubmitBtn.disabled = false;
+            elements.authSubmitBtn.textContent = originalBtnText;
+          }
         }
       }
       else if (authState === 'recovery_username') {

@@ -148,10 +148,29 @@
     /**
      * Authenticates a user and sets up the active session.
      */
-    signIn(username, password) {
-      const userKey = username.trim().toLowerCase();
-      // Load user accounts registry
+    async signIn(username, password) {
+      const rawUsername = username.trim();
+      const userKey = rawUsername.toLowerCase();
       const registry = JSON.parse(localStorage.getItem(USERS_REGISTRY_KEY) || '{}');
+
+      // Attempt Supabase Auth Cloud Login
+      const client = getSupabaseClient();
+      if (client) {
+        try {
+          const authEmail = rawUsername.includes('@') ? rawUsername : `${userKey}@gmail.com`;
+          const { data, error } = await client.auth.signInWithPassword({
+            email: authEmail,
+            password: password
+          });
+          if (data && data.user) {
+            console.log('Supabase Auth sign-in success:', data.user.id);
+          } else if (error) {
+            console.warn('Supabase Auth sign-in notice:', error.message);
+          }
+        } catch (err) {
+          console.warn('Supabase Auth signin exception:', err);
+        }
+      }
 
       if (!registry[userKey]) {
         return { success: false, message: 'Account not found. Please sign up first!' };
@@ -169,22 +188,62 @@
       localStorage.setItem(STORAGE_KEY, JSON.stringify(this.data));
       window.dispatchEvent(new CustomEvent('store-updated'));
       
+      // Sync cloud data if available
+      this.fetchFromCloud();
+
       return { success: true };
     },
 
     /**
      * Registers a new user profile with clean workspace seed values and recovery questions.
      */
-    signUp(fullName, username, password, currency, securityQuestion, securityAnswer) {
-      const userKey = username.trim().toLowerCase();
+    async signUp(fullName, username, password, currency, securityQuestion, securityAnswer) {
+      const rawUsername = username.trim();
+      const userKey = rawUsername.toLowerCase();
       if (!userKey || !password || !fullName.trim()) {
         return { success: false, message: 'Please enter your Full Name, Username, and Password.' };
+      }
+
+      if (password.length < 6) {
+        return { success: false, message: 'Password must be at least 6 characters long for cloud security.' };
       }
 
       const registry = JSON.parse(localStorage.getItem(USERS_REGISTRY_KEY) || '{}');
 
       if (registry[userKey]) {
         return { success: false, message: 'Username is already taken. Try another username!' };
+      }
+
+      // Attempt Supabase Cloud Auth Signup
+      const client = getSupabaseClient();
+      let supabaseUser = null;
+      if (client) {
+        try {
+          const authEmail = rawUsername.includes('@') ? rawUsername : `${userKey}@gmail.com`;
+          const { data, error } = await client.auth.signUp({
+            email: authEmail,
+            password: password,
+            options: {
+              data: {
+                full_name: fullName.trim(),
+                username: rawUsername,
+                currency: currency || 'GH₵'
+              }
+            }
+          });
+
+          if (error) {
+            console.warn('Supabase Auth signup notice:', error.message);
+            if (error.message && error.message.toLowerCase().includes('already registered')) {
+              return { success: false, message: 'An account with this username already exists in Supabase. Please log in!' };
+            }
+          } else if (data && data.user) {
+            supabaseUser = data.user;
+            console.log('Supabase Auth signup success:', supabaseUser.id);
+          }
+        } catch (err) {
+          console.warn('Supabase Auth signup exception:', err);
+        }
       }
 
       const secQuestion = (securityQuestion && securityQuestion.trim()) ? securityQuestion.trim() : 'What was the name of your first school?';
@@ -195,11 +254,13 @@
       userData.settings.userName = fullName.trim();
       userData.settings.currency = currency || 'GH₵';
 
-      // Add to accounts database with recovery questions
+      // Add to accounts database with recovery questions & supabaseId
       registry[userKey] = {
+        username: rawUsername,
         password: password,
         securityQuestion: secQuestion,
         securityAnswer: secAnswer,
+        supabaseId: supabaseUser ? supabaseUser.id : null,
         data: userData
       };
 
@@ -212,6 +273,9 @@
       // Save active session data
       localStorage.setItem(STORAGE_KEY, JSON.stringify(this.data));
       window.dispatchEvent(new CustomEvent('store-updated'));
+
+      // Push initial workspace data to Supabase cloud
+      this.saveToCloud();
 
       return { success: true };
     },
