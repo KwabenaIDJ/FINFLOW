@@ -366,8 +366,10 @@
       localStorage.removeItem(SESSION_KEY);
       localStorage.removeItem(STORAGE_KEY);
       
-      // Reload page context to force routing back to authOverlay
-      window.location.reload();
+      // Reload page context to force routing back to authOverlay if in browser
+      if (typeof window !== 'undefined' && window.location && typeof window.location.reload === 'function') {
+        window.location.reload();
+      }
     },
 
     /**
@@ -620,6 +622,7 @@
      * of the header Undo and Redo toolbar buttons.
      */
     updateButtonsUI() {
+      if (typeof document === 'undefined') return;
       // Grab button element nodes from the document tree
       const undoBtn = document.getElementById('undoBtn');
       const redoBtn = document.getElementById('redoBtn');
