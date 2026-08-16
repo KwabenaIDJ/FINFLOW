@@ -2851,11 +2851,20 @@ Ask me specific financial questions like:
     if (modal) closeModal(modal);
   };
 
+  let isLoggingOut = false;
   window.handleLogout = function(e) {
-    if (e && e.preventDefault) e.preventDefault();
-    if (confirm('Are you sure you want to log out of FinFlow?')) {
-      if (window.AppStore) window.AppStore.logout();
-      window.location.reload();
+    if (e) {
+      if (typeof e.preventDefault === 'function') e.preventDefault();
+      if (typeof e.stopPropagation === 'function') e.stopPropagation();
+    }
+    if (isLoggingOut) return;
+    isLoggingOut = true;
+    try {
+      if (confirm('Are you sure you want to log out of FinFlow?')) {
+        if (window.AppStore) window.AppStore.logout();
+      }
+    } finally {
+      setTimeout(() => { isLoggingOut = false; }, 500);
     }
   };
 
@@ -4105,18 +4114,7 @@ Ask me specific financial questions like:
       }
     });
 
-    // Logout Button Trigger
-    const handleLogout = () => {
-      if (confirm('Are you sure you want to log out of your session?')) {
-        store.logout();
-      }
-    };
-    if (elements.logoutBtn) {
-      elements.logoutBtn.addEventListener('click', handleLogout);
-    }
-    if (elements.logoutNavBtn) {
-      elements.logoutNavBtn.addEventListener('click', handleLogout);
-    }
+    // Logout events are delegated to window.handleLogout
 
     // AI Coach Event Bindings
     if (elements.openAiCoachModalBtn) {
