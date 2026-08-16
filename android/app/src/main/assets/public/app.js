@@ -2404,6 +2404,10 @@ Directives:
           if (data.candidates?.[0]?.content?.parts?.[0]?.text) {
             return data.candidates[0].content.parts[0].text;
           }
+        }
+      } catch (directErr) {
+        console.warn('Direct Gemini API fetch error:', directErr);
+      }
     }
 
     throw new Error('Invalid Gemini API response format');
@@ -2822,6 +2826,7 @@ Ask me specific financial questions like:
     if (modal) {
       modal.classList.add('active');
       modal.style.setProperty('display', 'flex', 'important');
+      modal.style.setProperty('pointer-events', 'auto', 'important');
     }
   };
 
@@ -2830,6 +2835,27 @@ Ask me specific financial questions like:
     if (modal) {
       modal.classList.remove('active');
       modal.style.setProperty('display', 'none', 'important');
+      modal.style.setProperty('pointer-events', 'none', 'important');
+    }
+  };
+
+  window.openAiCoachModal = function() {
+    const modal = document.getElementById('aiCoachModal');
+    if (modal) {
+      modal.classList.add('active');
+      modal.style.setProperty('display', 'flex', 'important');
+      modal.style.setProperty('pointer-events', 'auto', 'important');
+      if (typeof updateAiCoachModalStatus === 'function') updateAiCoachModalStatus();
+      if (typeof renderAiChatThread === 'function') renderAiChatThread();
+    }
+  };
+
+  window.closeAiCoachModal = function() {
+    const modal = document.getElementById('aiCoachModal');
+    if (modal) {
+      modal.classList.remove('active');
+      modal.style.setProperty('display', 'none', 'important');
+      modal.style.setProperty('pointer-events', 'none', 'important');
     }
   };
 
