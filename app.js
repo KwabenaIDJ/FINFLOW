@@ -532,7 +532,7 @@
         monthlyCard.style.background = 'linear-gradient(135deg, rgba(241, 196, 15, 0.1), rgba(243, 156, 18, 0.15))';
         annualCard.style.border = '2px solid var(--color-border)';
         annualCard.style.background = 'var(--bg-secondary)';
-        checkoutBtn.innerText = 'Unlock Monthly Access ($1.50/mo)';
+        checkoutBtn.innerText = 'Unlock Monthly Access ($1.49/mo)';
       } else {
         annualCard.style.border = '2px solid #f1c40f';
         annualCard.style.background = 'linear-gradient(135deg, rgba(241, 196, 15, 0.1), rgba(243, 156, 18, 0.15))';
@@ -566,7 +566,7 @@
     }
     
     const isMonthly = activePremiumPlan === 'monthly';
-    const usdPrice = isMonthly ? 1.50 : 9.99;
+    const usdPrice = isMonthly ? 1.49 : 9.99;
     const liveUsdRate = (settings.exchangeRates && settings.exchangeRates['$']) ? Number(settings.exchangeRates['$']) : 15.5;
     const amountVal = Math.max(100, Math.round(usdPrice * liveUsdRate * 100)); // amount in pesewas
     
