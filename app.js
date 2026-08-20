@@ -246,6 +246,7 @@
     // 1. Dynamic Year Options
     const yearsSet = new Set();
     yearsSet.add(currentYear);
+    yearsSet.add(currentYear - 1); // Baseline previous year (e.g. 2025 alongside 2026)
     transactions.forEach(tx => {
       if (tx.date) {
         const y = parseInt(tx.date.split('-')[0], 10);
