@@ -1348,9 +1348,16 @@ header {
 
   .header-dropdowns-row > select,
   .header-main-buttons-row > button {
-    flex: 1 !important;
     width: 100% !important;
     margin-right: 0 !important;
+  }
+
+  .header-dropdowns-row #headerCurrencySelector {
+    flex: 0.8 !important;
+  }
+
+  .header-dropdowns-row #timeframeSelector {
+    flex: 1.2 !important;
   }
 
   .header-utilities {

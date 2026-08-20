@@ -210,6 +210,10 @@
       } else if (timeframe === 'year') {
         // Return all entries matching the current year
         return txYear === today.getFullYear();
+      } else if (timeframe.startsWith('year_')) {
+        // Return entries for a specific historical year (e.g. year_2025)
+        const targetYear = parseInt(timeframe.replace('year_', ''), 10);
+        return txYear === targetYear;
       } else if (timeframe === 'all_time') {
         // Bypass filtering
         return true;
@@ -239,22 +243,41 @@
     const optCurrent = document.createElement('option');
     optCurrent.value = 'current';
     const currentMonthLabel = today.toLocaleString('default', { month: 'long' });
-    optCurrent.textContent = `Current Month (${currentMonthLabel})`;
+    optCurrent.textContent = `Current (${currentMonthLabel})`;
     selector.appendChild(optCurrent);
 
-    // 2. Render Full Year Option
+    // 2. Render Full Year Option for Current Year
     const optYear = document.createElement('option');
     optYear.value = 'year';
     optYear.textContent = `Full Year (${today.getFullYear()})`;
     selector.appendChild(optYear);
 
-    // 3. Render All Time Option
+    // 3. Render Historical Full Years if any exist in data
+    const uniqueYears = new Set();
+    transactions.forEach(tx => {
+      if (tx.date) {
+        const y = parseInt(tx.date.split('-')[0], 10);
+        if (y && y !== today.getFullYear()) {
+          uniqueYears.add(y);
+        }
+      }
+    });
+
+    const sortedYears = Array.from(uniqueYears).sort((a, b) => b - a);
+    sortedYears.forEach(y => {
+      const opt = document.createElement('option');
+      opt.value = `year_${y}`;
+      opt.textContent = `Full Year (${y})`;
+      selector.appendChild(opt);
+    });
+
+    // 4. Render All Time Option
     const optAll = document.createElement('option');
     optAll.value = 'all_time';
     optAll.textContent = 'All Months (All Time)';
     selector.appendChild(optAll);
 
-    // 4. Compile list of months containing historical transactions
+    // 5. Compile list of months containing historical transactions
     const uniqueMonths = new Set();
     transactions.forEach(tx => {
       if (tx.date) {
