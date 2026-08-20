@@ -625,9 +625,9 @@
           }
         }
 
-        // Fetch Transactions
+        // Fetch Transactions (Cloud is authoritative)
         const { data: cloudTxs } = await client.from('transactions').select('*').eq('user_id', userId).order('date', { ascending: false });
-        if (cloudTxs && cloudTxs.length > 0) {
+        if (cloudTxs) {
           this.data.transactions = cloudTxs.map(t => ({
             id: t.id,
             date: t.date,
@@ -649,7 +649,7 @@
           this.data.budgets = budgetObj;
         }
 
-        // Fetch Goals
+        // Fetch Goals (Cloud is authoritative)
         const { data: cloudGoals } = await client.from('savings_goals').select('*').eq('user_id', userId);
         if (cloudGoals) {
           this.data.goals = cloudGoals.map(g => ({
