@@ -2829,30 +2829,39 @@ Ask me specific financial questions like:
 
   // --- Router / Tab controller ---
   function switchTab(targetTab) {
+    if (!targetTab) targetTab = 'dashboard';
+    if (targetTab === 'overview') targetTab = 'dashboard';
     activeTab = targetTab;
     
     // Update navigation sidebar active class configurations
     const navItems = document.querySelectorAll('.nav-item');
     navItems.forEach(item => {
-      if (item.getAttribute('data-target') === targetTab) {
+      const target = item.getAttribute('data-target');
+      if (target === targetTab || (targetTab === 'dashboard' && target === 'overview')) {
         item.classList.add('active');
       } else {
         item.classList.remove('active');
       }
     });
 
-    // Update panel active states toggles with explicit flex column display properties
+    // Update panel active states toggles with explicit display properties
     const panels = document.querySelectorAll('.view-panel');
     panels.forEach(panel => {
-      if (panel.id === `${targetTab}-panel`) {
+      const isTarget = (panel.id === `${targetTab}-panel`) || (targetTab === 'dashboard' && panel.id === 'dashboard-panel');
+      if (isTarget) {
         panel.classList.add('active');
-        panel.style.setProperty('display', 'flex', 'important');
-        panel.style.setProperty('flex-direction', 'column', 'important');
+        panel.style.setProperty('display', 'block', 'important');
       } else {
         panel.classList.remove('active');
         panel.style.setProperty('display', 'none', 'important');
       }
     });
+
+    if (targetTab === 'dashboard' && window.AppCharts && typeof window.AppCharts.updateCharts === 'function') {
+      setTimeout(() => {
+        window.AppCharts.updateCharts();
+      }, 50);
+    }
   }
   window.switchTab = switchTab;
 
