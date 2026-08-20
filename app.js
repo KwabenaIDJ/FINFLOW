@@ -4443,6 +4443,13 @@ Ask me specific financial questions like:
     syncUI();                    // Redraw all UI elements
     
     if (window.AppStore.isLoggedIn()) {
+      // Pull latest profile picture, settings, and ledger data from Supabase Cloud on startup
+      window.AppStore.fetchFromCloud().then(synced => {
+        if (synced) {
+          syncUI();
+        }
+      });
+
       initLocalNotifications();    // Setup local notifications reminders
 
       // Fetch fresh FX rates in the background to update conversions in real-time
@@ -4460,6 +4467,17 @@ Ask me specific financial questions like:
           }
         }, 1000);
       }
+    }
+  });
+
+  // Auto-sync from Supabase Cloud when user switches back to the browser tab
+  document.addEventListener('visibilitychange', () => {
+    if (document.visibilityState === 'visible' && window.AppStore && window.AppStore.isLoggedIn()) {
+      window.AppStore.fetchFromCloud().then(synced => {
+        if (synced) {
+          syncUI();
+        }
+      });
     }
   });
 
