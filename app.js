@@ -1717,8 +1717,8 @@
 
     premiumTools.forEach(tool => {
       if (tool) {
+        tool.removeAttribute('disabled');
         if (isPremium) {
-          tool.removeAttribute('disabled');
           tool.style.opacity = '1';
           tool.style.cursor = 'pointer';
           if (tool.id === 'exportCsvBtn') tool.title = 'Export transactions to CSV';
@@ -1731,20 +1731,22 @@
           }
         } else {
           if (tool.id === 'exportPdfBtn' && freePdfUsed === 0) {
-            tool.removeAttribute('disabled');
             tool.style.opacity = '1';
             tool.style.cursor = 'pointer';
             tool.title = '🎁 Free Trial: 1 PDF statement export remaining';
             tool.innerHTML = '<svg style="width: 14px; height: 14px; fill: none; stroke: currentColor; stroke-width: 2; margin-right: 6px; vertical-align: middle;"><use href="#icon-print"></use></svg>PDF Report (1 Free)';
           } else {
-            tool.setAttribute('disabled', 'true');
-            tool.style.opacity = '0.5';
-            tool.style.cursor = 'not-allowed';
+            tool.style.opacity = '0.75';
+            tool.style.cursor = 'pointer';
             if (tool.id === 'exportPdfBtn') {
-              tool.title = '🔒 Premium Feature: PDF Report Export';
+              tool.title = '🔒 Premium Feature: Click to upgrade to Premium';
               tool.innerHTML = '🔒 PDF Report';
+            } else if (tool.id === 'exportCsvBtn') {
+              tool.title = '🔒 Premium Feature: Click to unlock CSV Export';
+            } else if (tool.id === 'importCsvBtn') {
+              tool.title = '🔒 Premium Feature: Click to unlock CSV Import';
             } else {
-              tool.title = '🔒 Premium Feature: Upgrade to CSV/Backup tools';
+              tool.title = '🔒 Premium Feature: Click to upgrade to Premium';
             }
           }
         }
@@ -2976,7 +2978,23 @@ Ask me specific financial questions like:
     // Export PDF Financial Statement Listener
     const exportPdfBtn = document.getElementById('exportPdfBtn');
     if (exportPdfBtn) {
-      exportPdfBtn.addEventListener('click', () => {
+      exportPdfBtn.addEventListener('click', (e) => {
+        const store = window.AppStore;
+        const settings = store ? store.getSettings() : {};
+        const isPremium = settings.isPremium;
+        const freePdfUsed = settings.freePdfExportsUsed || 0;
+
+        if (!isPremium && freePdfUsed > 0) {
+          if (e) e.preventDefault();
+          window.openPremiumModal();
+          alert('🔒 PDF Report Export is a Premium feature. Upgrade to Premium for GH₵13.99/mo to generate unlimited PDF reports!');
+          return;
+        }
+
+        if (!isPremium && freePdfUsed === 0) {
+          store.updateSettings({ freePdfExportsUsed: 1 });
+        }
+
         exportPdfStatement();
       });
     }
@@ -3329,7 +3347,14 @@ Ask me specific financial questions like:
     });
 
     // 13. Export ledger history into CSV file
-    elements.exportCsvBtn.addEventListener('click', () => {
+    elements.exportCsvBtn.addEventListener('click', (e) => {
+      const isPremium = window.AppStore ? window.AppStore.getSettings().isPremium : false;
+      if (!isPremium) {
+        if (e) e.preventDefault();
+        window.openPremiumModal();
+        alert('🔒 CSV Export is a Premium Feature. Upgrade to Premium for GH₵13.99/mo to download your ledger records!');
+        return;
+      }
       const csvContent = window.AppStore.exportToCSV();
       const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
       const url = URL.createObjectURL(blob);
@@ -3342,7 +3367,14 @@ Ask me specific financial questions like:
     });
 
     // 14. Trigger CSV file selector dialogue
-    elements.importCsvBtn.addEventListener('click', () => {
+    elements.importCsvBtn.addEventListener('click', (e) => {
+      const isPremium = window.AppStore ? window.AppStore.getSettings().isPremium : false;
+      if (!isPremium) {
+        if (e) e.preventDefault();
+        window.openPremiumModal();
+        alert('🔒 CSV Import is a Premium Feature. Upgrade to Premium for GH₵13.99/mo to import transaction spreadsheets!');
+        return;
+      }
       elements.csvFileInput.click();
     });
 
