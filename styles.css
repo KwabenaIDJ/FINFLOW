@@ -345,6 +345,18 @@ main {
   min-width: 0; /* Prevents overflow from expanding grid column */
 }
 
+.view-panel {
+  display: none !important;
+  width: 100%;
+}
+
+.view-panel.active {
+  display: flex !important;
+  flex-direction: column !important;
+  gap: 24px !important;
+  width: 100% !important;
+}
+
 header {
   display: flex;
   flex-direction: column;
@@ -452,6 +464,8 @@ header {
   justify-content: space-between;
   align-items: center;
   margin-bottom: 12px;
+  gap: 8px;
+  width: 100%;
 }
 
 .kpi-title {
@@ -460,6 +474,11 @@ header {
   color: var(--text-muted);
   text-transform: uppercase;
   letter-spacing: 0.5px;
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .kpi-icon {
@@ -470,6 +489,7 @@ header {
   display: flex;
   align-items: center;
   justify-content: center;
+  flex-shrink: 0;
 }
 
 .kpi-card.cash { --card-accent-glow: var(--color-primary-glow); }
@@ -1390,6 +1410,11 @@ header {
 
   .kpi-grid {
     grid-template-columns: 1fr;
+  }
+
+  .kpi-card {
+    padding: 18px !important;
+    overflow: hidden !important;
   }
 
   .tx-filters {

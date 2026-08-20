@@ -2841,12 +2841,13 @@ Ask me specific financial questions like:
       }
     });
 
-    // Update panel active states toggles with explicit display properties
+    // Update panel active states toggles with explicit flex column display properties
     const panels = document.querySelectorAll('.view-panel');
     panels.forEach(panel => {
       if (panel.id === `${targetTab}-panel`) {
         panel.classList.add('active');
         panel.style.setProperty('display', 'flex', 'important');
+        panel.style.setProperty('flex-direction', 'column', 'important');
       } else {
         panel.classList.remove('active');
         panel.style.setProperty('display', 'none', 'important');
