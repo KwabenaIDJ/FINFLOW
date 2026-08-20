@@ -969,14 +969,16 @@
     /**
      * Sets user premium status with a 30-day monthly subscription expiration timestamp.
      */
-    setPremiumStatus(isPremium) {
+    setPremiumStatus(isPremium, planType) {
       this.pushState();
       if (isPremium) {
         this.data.settings.isPremium = true;
-        // 30 days expiration timestamp in milliseconds (30 days * 24h * 60m * 60s * 1000ms)
-        this.data.settings.premiumExpiryDate = Date.now() + (30 * 24 * 60 * 60 * 1000);
+        this.data.settings.premiumPlanType = planType || 'annual';
+        const durationDays = (planType === 'monthly') ? 30 : 365;
+        this.data.settings.premiumExpiryDate = Date.now() + (durationDays * 24 * 60 * 60 * 1000);
       } else {
         this.data.settings.isPremium = false;
+        this.data.settings.premiumPlanType = null;
         this.data.settings.premiumExpiryDate = null;
       }
       this.save();

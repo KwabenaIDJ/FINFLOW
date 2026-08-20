@@ -344,16 +344,16 @@
       <div id="aiInsightsBanner" class="card ai-insights-card" style="margin-bottom: 24px; background: linear-gradient(135deg, rgba(99, 102, 241, 0.12), rgba(168, 85, 247, 0.12)); border: 1px solid rgba(168, 85, 247, 0.3); border-radius: var(--border-radius-lg); padding: 18px 22px; position: relative; overflow: hidden; box-shadow: 0 4px 20px rgba(168, 85, 247, 0.12);">
         <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 14px; flex-wrap: wrap; gap: 10px;">
           <div style="display: flex; align-items: center; gap: 10px;">
-            <div style="width: 34px; height: 34px; border-radius: 50%; background: linear-gradient(135deg, var(--color-primary), #a855f7); display: flex; align-items: center; justify-content: center; color: #fff; font-size: 1rem; font-weight: 800; box-shadow: 0 0 12px rgba(168, 85, 247, 0.4);">💡</div>
+            <div style="width: 34px; height: 34px; border-radius: 50%; background: linear-gradient(135deg, var(--color-primary), #a855f7); display: flex; align-items: center; justify-content: center; color: #fff; font-size: 1rem; font-weight: 800; box-shadow: 0 0 12px rgba(168, 85, 247, 0.4);">⚡</div>
             <div>
               <h4 style="font-size: 0.98rem; font-weight: 800; color: var(--text-main); margin: 0; display: flex; align-items: center; gap: 6px;">
-                Proactive AI Insights <span style="background: linear-gradient(135deg, #a855f7, #ec4899); color: #fff; font-size: 0.64rem; font-weight: 800; padding: 2px 6px; border-radius: 10px; text-transform: uppercase;">Smart Admin</span>
+                Proactive AI Financial Diagnostics <span style="background: linear-gradient(135deg, #a855f7, #ec4899); color: #fff; font-size: 0.64rem; font-weight: 800; padding: 2px 6px; border-radius: 10px; text-transform: uppercase;">Smart Scanner</span>
               </h4>
-              <span style="font-size: 0.74rem; color: var(--text-muted);">Real-time background money analysis & proactive alerts</span>
+              <span style="font-size: 0.74rem; color: var(--text-muted);">Automated spending leak detection & 90-day predictive cash flow runway</span>
             </div>
           </div>
-          <button type="button" class="btn btn-secondary btn-sm" id="openAiCoachModalBtn" onclick="window.openAiCoachModal()" style="font-size: 0.78rem; font-weight: 700; background: linear-gradient(135deg, var(--color-primary), #a855f7); border: none; color: #ffffff; padding: 6px 14px; border-radius: 20px; display: flex; align-items: center; gap: 6px; cursor: pointer; box-shadow: 0 4px 12px rgba(99, 102, 241, 0.3);">
-            💬 Ask AI Coach
+          <button type="button" class="btn btn-secondary btn-sm" onclick="window.openPremiumModal()" style="font-size: 0.78rem; font-weight: 700; background: linear-gradient(135deg, #f1c40f, #f39c12); border: none; color: #0b0f19; padding: 6px 14px; border-radius: 20px; display: flex; align-items: center; gap: 6px; cursor: pointer; box-shadow: 0 4px 12px rgba(241, 196, 15, 0.3);">
+            ✨ Upgrade Premium
           </button>
         </div>
 
@@ -1350,105 +1350,78 @@
     </div>
   </div>
 
-  <!-- Floating Action Button: AI Coach Chat -->
-  <button id="floatingAiCoachFab" class="ai-fab-button" onclick="window.openAiCoachModal()" title="Ask Finflow AI Coach" aria-label="Open AI Financial Coach">
-    <div class="ai-fab-icon">✨</div>
-    <span class="ai-fab-label">AI Coach</span>
-  </button>
-
-  <!-- ==================== OVERLAY: FINFLOW AI COACH CHAT MODAL ==================== -->
-  <div class="modal-overlay" id="aiCoachModal">
-    <div class="modal-content ai-coach-modal-content" style="max-width: 540px; width: 95%; height: 85vh; max-height: 680px; display: flex; flex-direction: column; padding: 0; overflow: hidden; border: 1px solid rgba(168, 85, 247, 0.4); box-shadow: 0 10px 40px rgba(168, 85, 247, 0.25);">
-      <!-- Header -->
-      <div class="modal-header" style="padding: 16px 20px; border-bottom: 1px solid var(--color-border); background: linear-gradient(135deg, rgba(99, 102, 241, 0.15), rgba(168, 85, 247, 0.15)); display: flex; align-items: center; justify-content: space-between;">
-        <div style="display: flex; align-items: center; gap: 12px;">
-          <div style="width: 38px; height: 38px; border-radius: 50%; background: linear-gradient(135deg, #6366f1, #a855f7); display: flex; align-items: center; justify-content: center; color: #fff; font-size: 1.2rem;">
-            🤖
-          </div>
-          <div>
-            <h3 class="modal-title" style="font-size: 1.1rem; margin: 0; display: flex; align-items: center; gap: 8px;">
-              Finflow AI Coach
-              <span style="font-size: 0.65rem; font-weight: 800; background: linear-gradient(135deg, #ec4899, #a855f7); color: #fff; padding: 2px 8px; border-radius: 10px; text-transform: uppercase;">PRO</span>
-            </h3>
-            <span id="aiCoachStatusText" style="font-size: 0.74rem; color: var(--color-success); display: flex; align-items: center; gap: 4px;">
-              🟢 Online • Gemini 1.5 Flash AI
-            </span>
-          </div>
-        </div>
-        <button class="modal-close-btn" id="closeAiCoachModalBtn" onclick="window.closeAiCoachModal()" aria-label="Close dialog"><svg><use href="#icon-close"></use></svg></button>
-      </div>
-
-      <!-- Quick Prompt Suggestions Pills -->
-      <div style="padding: 10px 16px; border-bottom: 1px solid var(--color-border); background: var(--bg-secondary); display: flex; gap: 8px; overflow-x: auto; white-space: nowrap;">
-        <button class="ai-prompt-pill" data-prompt="How much did I spend on Food this month?">🍔 Food Spend</button>
-        <button class="ai-prompt-pill" data-prompt="Can I afford a trip to Kumasi next month if I save GHS 200 weekly?">✈️ Trip Affordability</button>
-        <button class="ai-prompt-pill" data-prompt="Explain T-Bills like I'm 15">📈 Explain T-Bills</button>
-        <button class="ai-prompt-pill" data-prompt="Give me 3 ways to save money this month">💡 3 Savings Tips</button>
-      </div>
-
-      <!-- Messages Thread -->
-      <div id="aiChatThread" class="ai-chat-thread" style="flex-grow: 1; padding: 18px 20px; overflow-y: auto; display: flex; flex-direction: column; gap: 14px; background: var(--bg-primary);">
-        <!-- Dynamically rendered bubbles -->
-      </div>
-
-      <!-- Footer Input Area -->
-      <div style="padding: 14px 16px; border-top: 1px solid var(--color-border); background: var(--bg-card); display: flex; align-items: center; gap: 10px;">
-        <input type="text" id="aiChatInput" placeholder="Ask Finflow anything about your money..." style="flex-grow: 1; padding: 12px 16px; border-radius: 24px; border: 1px solid var(--color-border); background: var(--bg-secondary); color: var(--text-main); font-family: inherit; font-size: 0.88rem; outline: none; transition: border-color var(--transition-fast);">
-        <button type="button" id="sendAiChatBtn" class="btn btn-primary" style="padding: 10px 18px; border-radius: 24px; font-weight: 700; background: linear-gradient(135deg, var(--color-primary), #a855f7); border: none; font-size: 0.88rem; display: flex; align-items: center; gap: 6px;">
-          Send
-        </button>
-      </div>
-    </div>
-  </div>
-
   <!-- ==================== OVERLAY: PREMIUM UPGRADE MODAL ==================== -->
   <div class="modal-overlay" id="premiumUpgradeModal">
-    <div class="modal-content" style="max-width: 440px; border: 2px solid #f1c40f; box-shadow: 0 0 30px rgba(241, 196, 15, 0.25);">
-      <div class="modal-header" style="border-bottom: 1px solid var(--color-border); padding-bottom: 15px;">
-        <h3 class="modal-title" style="color: #f1c40f; display: flex; align-items: center; gap: 8px;">
-          <svg style="width: 22px; height: 22px; fill: #f1c40f;"><use href="#icon-crown"></use></svg>
-          Unlock FinFlow Premium
+    <div class="modal-content" style="max-width: 480px; width: 95%; border: 2px solid #f1c40f; box-shadow: 0 0 35px rgba(241, 196, 15, 0.3);">
+      <div class="modal-header" style="border-bottom: 1px solid var(--color-border); padding-bottom: 14px;">
+        <h3 class="modal-title" style="color: #f1c40f; display: flex; align-items: center; gap: 8px; font-size: 1.2rem;">
+          <svg style="width: 24px; height: 24px; fill: #f1c40f;"><use href="#icon-crown"></use></svg>
+          FinFlow VIP Premium Access
         </h3>
         <button class="modal-close-btn" onclick="window.closePremiumModal()" aria-label="Close dialog"><svg><use href="#icon-close"></use></svg></button>
       </div>
       
-      <div style="padding-top: 15px; text-align: center;">
-        <p style="font-size: 0.9rem; color: var(--text-muted); line-height: 1.5; margin-bottom: 20px;">
-          Take complete control of your finances. Upgrade today for a one-time purchase of just <strong style="color: #f1c40f; font-size: 1.1rem;">$1.99</strong>.
+      <div style="padding-top: 16px; text-align: center;">
+        <p style="font-size: 0.88rem; color: var(--text-muted); line-height: 1.4; margin-bottom: 18px;">
+          Unlock advanced money diagnostics, automated 90-day cash flow projections, and unlimited PDF exports.
         </p>
 
-        <ul style="text-align: left; list-style: none; padding: 0; margin: 0 0 24px 0; display: flex; flex-direction: column; gap: 12px; font-size: 0.88rem;">
-          <li style="display: flex; align-items: flex-start; gap: 10px;">
-            <span style="color: #f1c40f; font-size: 1rem;">✨</span>
-            <span><strong>Finflow AI Coach:</strong> Unlimited 24/7 personal money coaching & chats.</span>
-          </li>
-          <li style="display: flex; align-items: flex-start; gap: 10px;">
-            <span style="color: var(--color-success); font-size: 1rem;">✓</span>
-            <span><strong>Ad-Free Experience:</strong> Hides all sponsored banner ads.</span>
-          </li>
-          <li style="display: flex; align-items: flex-start; gap: 10px;">
-            <span style="color: var(--color-success); font-size: 1rem;">✓</span>
-            <span><strong>Deep Financial Insights:</strong> Fully unlock smart diagnostic details.</span>
-          </li>
-          <li style="display: flex; align-items: flex-start; gap: 10px;">
-            <span style="color: var(--color-success); font-size: 1rem;">✓</span>
-            <span><strong>Custom Themes:</strong> Select custom dashboard colors & dark/light palettes.</span>
-          </li>
-          <li style="display: flex; align-items: flex-start; gap: 10px;">
-            <span style="color: var(--color-success); font-size: 1rem;">✓</span>
-            <span><strong>CSV Import / Export:</strong> Enable ledger downloads & json backups.</span>
-          </li>
-          <li style="display: flex; align-items: flex-start; gap: 10px;">
-            <span style="color: var(--color-success); font-size: 1rem;">✓</span>
-            <span><strong>Gold Crown Badge:</strong> Standout profile status styling.</span>
-          </li>
-        </ul>
+        <!-- PRICING TIER SELECTOR -->
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 20px;">
+          <div id="planOptionMonthly" onclick="window.selectPremiumPlan('monthly')" style="border: 2px solid var(--color-border); border-radius: var(--border-radius-md); padding: 14px 10px; cursor: pointer; text-align: center; transition: all 0.2s; background: var(--bg-secondary);">
+            <div style="font-size: 0.76rem; color: var(--text-muted); text-transform: uppercase; font-weight: 700; margin-bottom: 4px;">Monthly Access</div>
+            <div style="font-size: 1.3rem; font-weight: 800; color: var(--text-main);">$1.50 <span style="font-size: 0.75rem; font-weight: 600; color: var(--text-muted);">/mo</span></div>
+            <div style="font-size: 0.7rem; color: var(--text-muted); margin-top: 4px;">~GH₵ 20 / month</div>
+          </div>
+
+          <div id="planOptionAnnual" onclick="window.selectPremiumPlan('annual')" style="border: 2px solid #f1c40f; border-radius: var(--border-radius-md); padding: 14px 10px; cursor: pointer; text-align: center; transition: all 0.2s; background: linear-gradient(135deg, rgba(241, 196, 15, 0.1), rgba(243, 156, 18, 0.15)); position: relative;">
+            <span style="position: absolute; top: -10px; right: 10px; background: linear-gradient(135deg, #f1c40f, #f39c12); color: #0b0f19; font-size: 0.62rem; font-weight: 800; padding: 2px 8px; border-radius: 10px; text-transform: uppercase;">Save 44%</span>
+            <div style="font-size: 0.76rem; color: #f1c40f; text-transform: uppercase; font-weight: 800; margin-bottom: 4px;">Annual VIP Pass</div>
+            <div style="font-size: 1.3rem; font-weight: 800; color: #f1c40f;">$9.99 <span style="font-size: 0.75rem; font-weight: 600; color: var(--text-muted);">/yr</span></div>
+            <div style="font-size: 0.7rem; color: var(--text-muted); margin-top: 4px;">~GH₵ 120 / year</div>
+          </div>
+        </div>
+
+        <!-- FEATURES COMPARISON LIST -->
+        <div style="background: var(--bg-secondary); border: 1px solid var(--color-border); border-radius: var(--border-radius-md); padding: 14px 16px; margin-bottom: 20px; text-align: left;">
+          <div style="font-size: 0.8rem; font-weight: 800; color: var(--text-main); margin-bottom: 10px; text-transform: uppercase; letter-spacing: 0.5px;">✨ What's Included in VIP:</div>
+          <ul style="list-style: none; padding: 0; margin: 0; display: flex; flex-direction: column; gap: 9px; font-size: 0.84rem;">
+            <li style="display: flex; align-items: center; gap: 8px;">
+              <span style="color: #f1c40f; font-weight: 800;">🔮</span>
+              <span><strong>90-Day Cash Flow Runway:</strong> 3-month predictive balance chart.</span>
+            </li>
+            <li style="display: flex; align-items: center; gap: 8px;">
+              <span style="color: #f1c40f; font-weight: 800;">⚡</span>
+              <span><strong>AI Spending Leak Scanner:</strong> Automated subscription trap alerts.</span>
+            </li>
+            <li style="display: flex; align-items: center; gap: 8px;">
+              <span style="color: var(--color-success); font-weight: 800;">✓</span>
+              <span><strong>Unlimited PDF Exports:</strong> High-precision bank verification statements.</span>
+            </li>
+            <li style="display: flex; align-items: center; gap: 8px;">
+              <span style="color: var(--color-success); font-weight: 800;">✓</span>
+              <span><strong>CSV & JSON Backups:</strong> Full ledger export & import capabilities.</span>
+            </li>
+            <li style="display: flex; align-items: center; gap: 8px;">
+              <span style="color: var(--color-success); font-weight: 800;">✓</span>
+              <span><strong>All 6 VIP Themes:</strong> Royal Gold, Dark Neon, Emerald, Cyberpunk.</span>
+            </li>
+            <li style="display: flex; align-items: center; gap: 8px;">
+              <span style="color: var(--color-success); font-weight: 800;">✓</span>
+              <span><strong>Gold Crown Profile Badge:</strong> VIP status badge on profile headers.</span>
+            </li>
+          </ul>
+        </div>
 
         <button class="btn btn-primary" id="upgradeCheckoutBtn" onclick="window.triggerPaystackCheckout()" style="width: 100%; padding: 14px; font-size: 1rem; font-weight: 800; background: linear-gradient(135deg, #f1c40f, #f39c12); color: #0b0f19; border: none; border-radius: var(--border-radius-sm); cursor: pointer; box-shadow: 0 4px 15px rgba(241, 196, 15, 0.4);">
-          Unlock Premium ($1.99)
+          Unlock VIP Access ($9.99/yr)
         </button>
 
-        <button type="button" class="btn btn-secondary modal-close-action" onclick="window.closePremiumModal()" style="margin-top: 10px; width: 100%; border: none; background: transparent; color: var(--text-muted);">
+        <div style="margin-top: 10px; font-size: 0.72rem; color: var(--text-muted); display: flex; align-items: center; justify-content: center; gap: 6px;">
+          <span>🔒 SSL Encrypted</span> • <span>Instant Activation via Paystack & MoMo</span>
+        </div>
+
+        <button type="button" class="btn btn-secondary modal-close-action" onclick="window.closePremiumModal()" style="margin-top: 10px; width: 100%; border: none; background: transparent; color: var(--text-muted); font-size: 0.84rem;">
           Maybe Later
         </button>
       </div>

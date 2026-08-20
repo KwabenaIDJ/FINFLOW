@@ -518,9 +518,37 @@
     if (modal) closeModal(modal);
   };
 
+  let activePremiumPlan = 'annual'; // 'monthly' ($1.50) or 'annual' ($9.99)
+
+  window.selectPremiumPlan = function(plan) {
+    activePremiumPlan = plan || 'annual';
+    const monthlyCard = document.getElementById('planOptionMonthly');
+    const annualCard = document.getElementById('planOptionAnnual');
+    const checkoutBtn = document.getElementById('upgradeCheckoutBtn');
+
+    if (monthlyCard && annualCard && checkoutBtn) {
+      if (plan === 'monthly') {
+        monthlyCard.style.border = '2px solid #f1c40f';
+        monthlyCard.style.background = 'linear-gradient(135deg, rgba(241, 196, 15, 0.1), rgba(243, 156, 18, 0.15))';
+        annualCard.style.border = '2px solid var(--color-border)';
+        annualCard.style.background = 'var(--bg-secondary)';
+        checkoutBtn.innerText = 'Unlock Monthly Access ($1.50/mo)';
+      } else {
+        annualCard.style.border = '2px solid #f1c40f';
+        annualCard.style.background = 'linear-gradient(135deg, rgba(241, 196, 15, 0.1), rgba(243, 156, 18, 0.15))';
+        monthlyCard.style.border = '2px solid var(--color-border)';
+        monthlyCard.style.background = 'var(--bg-secondary)';
+        checkoutBtn.innerText = 'Unlock VIP Access ($9.99/yr)';
+      }
+    }
+  };
+
   window.openPremiumModal = function() {
     const modal = document.getElementById('premiumUpgradeModal');
-    if (modal) openModal(modal);
+    if (modal) {
+      openModal(modal);
+      window.selectPremiumPlan('annual');
+    }
   };
 
   window.closePremiumModal = function() {
@@ -537,8 +565,10 @@
       return;
     }
     
+    const isMonthly = activePremiumPlan === 'monthly';
+    const usdPrice = isMonthly ? 1.50 : 9.99;
     const liveUsdRate = (settings.exchangeRates && settings.exchangeRates['$']) ? Number(settings.exchangeRates['$']) : 15.5;
-    const amountVal = Math.max(100, Math.round(1.99 * liveUsdRate * 100)); // amount in pesewas
+    const amountVal = Math.max(100, Math.round(usdPrice * liveUsdRate * 100)); // amount in pesewas
     
     const currencyCode = 'GHS';
     const emailAddress = 'customer_' + (settings.userName || 'User').toLowerCase().replace(/\s+/g, '_') + '@financialdashboard.com';
@@ -550,10 +580,10 @@
         amount: amountVal,
         currency: currencyCode,
         callback: function(response) {
-          if (window.AppStore) window.AppStore.setPremiumStatus(true);
+          if (window.AppStore) window.AppStore.setPremiumStatus(true, activePremiumPlan);
           window.closePremiumModal();
           if (typeof triggerConfetti === 'function') triggerConfetti();
-          alert('Congratulations! Payment Successful! Reference: ' + response.reference + '. Welcome to Premium Membership! 🏆');
+          alert('Congratulations! Payment Successful! Reference: ' + response.reference + '. Welcome to FinFlow VIP Premium! 🏆');
         },
         onClose: function() {
           alert('Payment window closed. Upgrade cancelled.');
@@ -2838,17 +2868,11 @@ Ask me specific financial questions like:
   };
 
   window.openAiCoachModal = function() {
-    const modal = document.getElementById('aiCoachModal');
-    if (modal) {
-      openModal(modal);
-      if (typeof updateAiCoachModalStatus === 'function') updateAiCoachModalStatus();
-      if (typeof renderAiChatThread === 'function') renderAiChatThread();
-    }
+    window.openPremiumModal();
   };
 
   window.closeAiCoachModal = function() {
-    const modal = document.getElementById('aiCoachModal');
-    if (modal) closeModal(modal);
+    window.closePremiumModal();
   };
 
   let isLoggingOut = false;
