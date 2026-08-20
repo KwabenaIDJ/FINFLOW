@@ -981,7 +981,9 @@
     
     // Set setting inputs value matches
     elements.settingsUserName.value = settings.userName;
-    elements.settingsSavingsGoal.value = Math.round(convertCurrencyAmount(settings.monthlySavingsGoal, settings.currency, 'GH₵'));
+    if (elements.settingsSavingsGoal) {
+      elements.settingsSavingsGoal.value = Math.round(convertCurrencyAmount(settings.monthlySavingsGoal || 0, settings.currency, 'GH₵'));
+    }
     if (elements.settingsGeminiApiKey) {
       elements.settingsGeminiApiKey.value = settings.geminiApiKey || '';
     }
@@ -3393,12 +3395,16 @@ Ask me specific financial questions like:
         activeCurr = elements.settingsCustomCurrency.value.trim();
       }
       
-      // Dynamic conversion of monthlySavingsGoal input value
+      // Dynamic conversion of monthlySavingsGoal input value if field exists
       const oldCurr = elements.settingsCurrency.dataset.lastVal || 'GH₵';
-      const currentVal = parseFloat(elements.settingsSavingsGoal.value) || 0;
-      if (oldCurr !== activeCurr && activeCurr && !isNaN(currentVal)) {
-        const converted = convertCurrencyAmount(currentVal, activeCurr, oldCurr);
-        elements.settingsSavingsGoal.value = Math.round(converted);
+      if (elements.settingsSavingsGoal) {
+        const currentVal = parseFloat(elements.settingsSavingsGoal.value) || 0;
+        if (oldCurr !== activeCurr && activeCurr && !isNaN(currentVal)) {
+          const converted = convertCurrencyAmount(currentVal, activeCurr, oldCurr);
+          elements.settingsSavingsGoal.value = Math.round(converted);
+          elements.settingsCurrency.dataset.lastVal = activeCurr;
+        }
+      } else {
         elements.settingsCurrency.dataset.lastVal = activeCurr;
       }
     };
@@ -3431,7 +3437,6 @@ Ask me specific financial questions like:
         }
       }
       
-      const monthlySavingsGoalRaw = parseFloat(elements.settingsSavingsGoal.value);
       const paystackKey = elements.settingsPaystackKey ? elements.settingsPaystackKey.value.trim() : '';
       const geminiApiKey = elements.settingsGeminiApiKey ? elements.settingsGeminiApiKey.value.trim() : '';
 
@@ -3440,15 +3445,15 @@ Ask me specific financial questions like:
         return;
       }
 
-      if (isNaN(monthlySavingsGoalRaw) || monthlySavingsGoalRaw < 0) {
-        alert('Savings goal must be positive.');
-        return;
+      const settings = window.AppStore.getSettings();
+      let monthlySavingsGoal = settings ? (settings.monthlySavingsGoal || 0) : 0;
+      if (elements.settingsSavingsGoal) {
+        const monthlySavingsGoalRaw = parseFloat(elements.settingsSavingsGoal.value);
+        if (!isNaN(monthlySavingsGoalRaw) && monthlySavingsGoalRaw >= 0) {
+          monthlySavingsGoal = convertCurrencyAmount(monthlySavingsGoalRaw, 'GH₵', currency);
+        }
       }
 
-      // Convert savings goal to base currency GH₵ relative to selected currency
-      const monthlySavingsGoal = convertCurrencyAmount(monthlySavingsGoalRaw, 'GH₵', currency);
-
-      const settings = window.AppStore.getSettings();
       const profilePicToSave = (selectedProfilePic !== null) ? selectedProfilePic : (settings.profilePic || '');
       window.AppStore.updateSettings({ userName, currency, monthlySavingsGoal, paystackKey, profilePic: profilePicToSave });
       selectedProfilePic = null;
@@ -4085,7 +4090,7 @@ Ask me specific financial questions like:
     {
       targetId: 'settings-panel',
       title: 'Settings Configuration ⚙️',
-      text: 'Under settings, customize your profile name, currency symbol, active theme, and monthly savings goal. You can also reset app data, configure your Paystack Key, or upload your profile picture!',
+      text: 'Under settings, customize your profile name, currency symbol, active theme, reset app data, configure your Paystack Key, or upload your profile picture!',
       tab: 'settings'
     }
   ];
