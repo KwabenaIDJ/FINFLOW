@@ -2123,12 +2123,32 @@
 
     const generatedInsights = [];
 
-    // --- 90-DAY PREDICTIVE CASH FLOW FORECAST (PREMIUM) ---
+    // --- AGGREGATE TRANSACTION TOTALS UPFRONT ---
     let totalIncome = 0;
+    let totalExpense = 0;
+    const categoryTotals = {};
+    let airtimeSpend = 0;
+    let streamingSpend = 0;
+
     transactions.forEach(tx => {
-      if (tx.type === 'income') totalIncome += tx.amount;
+      if (tx.type === 'income') {
+        totalIncome += tx.amount;
+      } else if (tx.type === 'expense') {
+        categoryTotals[tx.category] = (categoryTotals[tx.category] || 0) + tx.amount;
+        totalExpense += tx.amount;
+
+        const noteLower = (tx.note || tx.description || '').toLowerCase();
+        const catLower = (tx.category || '').toLowerCase();
+        if (noteLower.includes('airtime') || noteLower.includes('data') || noteLower.includes('mtn') || noteLower.includes('telecel') || noteLower.includes('at')) {
+          airtimeSpend += tx.amount;
+        }
+        if (noteLower.includes('netflix') || noteLower.includes('dstv') || noteLower.includes('showmax') || noteLower.includes('spotify') || catLower.includes('entertainment')) {
+          streamingSpend += tx.amount;
+        }
+      }
     });
 
+    // --- 90-DAY PREDICTIVE CASH FLOW FORECAST (PREMIUM) ---
     const daysInPeriod = Math.max(1, transactions.length > 1 ? Math.round((new Date(transactions[0].date) - new Date(transactions[transactions.length - 1].date)) / (1000 * 60 * 60 * 24)) : 30);
     const avgDailyIncome = totalIncome / daysInPeriod;
     const avgDailyExpense = totalExpense / daysInPeriod;
@@ -2169,26 +2189,6 @@
     }
 
     // --- 1. SPENDING INSIGHTS ("I see you") ---
-    const categoryTotals = {};
-    let totalExpense = 0;
-    let airtimeSpend = 0;
-    let streamingSpend = 0;
-
-    transactions.forEach(tx => {
-      if (tx.type === 'expense') {
-        categoryTotals[tx.category] = (categoryTotals[tx.category] || 0) + tx.amount;
-        totalExpense += tx.amount;
-
-        const noteLower = (tx.note || tx.description || '').toLowerCase();
-        const catLower = (tx.category || '').toLowerCase();
-        if (noteLower.includes('airtime') || noteLower.includes('data') || noteLower.includes('mtn') || noteLower.includes('telecel') || noteLower.includes('at')) {
-          airtimeSpend += tx.amount;
-        }
-        if (noteLower.includes('netflix') || noteLower.includes('dstv') || noteLower.includes('showmax') || noteLower.includes('spotify') || catLower.includes('entertainment')) {
-          streamingSpend += tx.amount;
-        }
-      }
-    });
 
     let topCategory = null;
     let maxExpense = 0;
