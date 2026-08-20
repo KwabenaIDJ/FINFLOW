@@ -571,13 +571,11 @@
     const isMonthly = targetPlan === 'monthly';
     const usdPrice = isMonthly ? 1.49 : 9.99;
 
-    let rate = 15.0; // Standard USD -> GHS conversion rate fallback
-    if (settings.exchangeRates && typeof settings.exchangeRates['$'] === 'number' && settings.exchangeRates['$'] > 5.0 && settings.exchangeRates['$'] < 30.0) {
-      rate = settings.exchangeRates['$'];
-    }
-
-    // Calculate total in pesewas (1 GHS = 100 pesewas)
-    const amountVal = Math.max(100, Math.round(usdPrice * rate * 100));
+    // Use live exchange rate converter engine
+    const ghsAmount = convertCurrencyAmount(usdPrice, 'GH₵', '$');
+    
+    // Amount in pesewas for Paystack API (1 GHS = 100 pesewas)
+    const amountVal = Math.max(100, Math.round(ghsAmount * 100));
     
     const currencyCode = 'GHS';
     const emailAddress = 'customer_' + (settings.userName || 'User').toLowerCase().replace(/\s+/g, '_') + '@financialdashboard.com';
@@ -4404,13 +4402,13 @@ Ask me specific financial questions like:
           }
 
           // Schedule 2 Android mobile notifications:
-          // 1. Daily Ledger Entry & AI Analysis Reminder (8:00 PM)
-          // 2. Proactive AI Insights & Leak Alerts Digest (12:00 PM Noon)
+          // 1. Daily Ledger Entry & Cash Flow Reminder (8:00 PM)
+          // 2. Proactive Money Diagnostics & Leak Alerts Digest (12:00 PM Noon)
           await LocalNotifications.schedule({
             notifications: [
               {
                 title: "✍️ Finflow Daily Check-in",
-                body: "Don't forget to log today's income & expenses so your AI Coach can calculate your spending leaks!",
+                body: "Don't forget to log today's transactions so FinFlow can update your 90-day cash flow runway!",
                 id: 99,
                 schedule: {
                   on: {
@@ -4421,8 +4419,8 @@ Ask me specific financial questions like:
                 }
               },
               {
-                title: "💡 Proactive AI Insights Ready",
-                body: "Your AI Coach has fresh money insights & savings velocity tips ready on your dashboard!",
+                title: "💡 Proactive Money Diagnostics Ready",
+                body: "FinFlow has fresh spending leak alerts & savings velocity tips ready on your dashboard!",
                 id: 100,
                 schedule: {
                   on: {
