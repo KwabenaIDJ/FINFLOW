@@ -3947,15 +3947,12 @@ Ask me specific financial questions like:
         if (file) {
           compressImage(file, (base64) => {
             selectedProfilePic = base64;
-            // Update preview instantly on screen
-            if (elements.settingsAvatarPreview) {
-              elements.settingsAvatarPreview.textContent = '';
-              elements.settingsAvatarPreview.style.backgroundImage = `url(${base64})`;
-              elements.settingsAvatarPreview.style.backgroundSize = 'cover';
-              elements.settingsAvatarPreview.style.backgroundPosition = 'center';
+            // Instantly persist new compressed profile image to AppStore & LocalStorage
+            if (window.AppStore && typeof window.AppStore.updateSettings === 'function') {
+              window.AppStore.updateSettings({ profilePic: base64, profilePicRemoved: false });
             }
-            if (elements.removeAvatarBtn) {
-              elements.removeAvatarBtn.style.display = 'inline-block';
+            if (window.syncUI) {
+              window.syncUI();
             }
           });
         }
@@ -3966,16 +3963,15 @@ Ask me specific financial questions like:
     if (elements.removeAvatarBtn) {
       elements.removeAvatarBtn.addEventListener('click', () => {
         selectedProfilePic = ''; // Set to empty string to indicate deletion
-        if (elements.settingsAvatarPreview) {
-          const store = window.AppStore;
-          const settings = store.getSettings();
-          const initials = settings.userName ? settings.userName.split(' ').map(n => n[0]).join('').toUpperCase().slice(0,2) : 'U';
-          elements.settingsAvatarPreview.textContent = initials;
-          elements.settingsAvatarPreview.style.backgroundImage = 'none';
+        // Instantly persist removal to AppStore & LocalStorage
+        if (window.AppStore && typeof window.AppStore.updateSettings === 'function') {
+          window.AppStore.updateSettings({ profilePic: '', profilePicRemoved: true });
         }
-        elements.removeAvatarBtn.style.display = 'none';
         if (elements.settingsProfilePicInput) {
           elements.settingsProfilePicInput.value = ''; // Reset file input selection
+        }
+        if (window.syncUI) {
+          window.syncUI();
         }
       });
     }

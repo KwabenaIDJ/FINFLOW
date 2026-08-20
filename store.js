@@ -545,17 +545,23 @@
      * Dispatches a custom event to notify all listening UI views to redraw.
      */
     save() {
-      // Stringify the data object and write it into active local storage
-      localStorage.setItem(STORAGE_KEY, JSON.stringify(this.data));
+      // Stringify the data object and write it into active local storage safely
+      try {
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(this.data));
+      } catch (err) {
+        console.warn('localStorage setItem failed:', err);
+      }
       
       // Sync private registry entry if logged in
       const currentUser = localStorage.getItem(SESSION_KEY);
       if (currentUser) {
-        const registry = JSON.parse(localStorage.getItem(USERS_REGISTRY_KEY) || '{}');
-        if (registry[currentUser]) {
-          registry[currentUser].data = this.data;
-          localStorage.setItem(USERS_REGISTRY_KEY, JSON.stringify(registry));
-        }
+        try {
+          const registry = JSON.parse(localStorage.getItem(USERS_REGISTRY_KEY) || '{}');
+          if (registry[currentUser]) {
+            registry[currentUser].data = this.data;
+            localStorage.setItem(USERS_REGISTRY_KEY, JSON.stringify(registry));
+          }
+        } catch (e) {}
       }
 
       // Trigger Cloud Sync if Supabase client is connected
