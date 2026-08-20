@@ -553,27 +553,58 @@
     
     // Fixed price GH₵ 13.99 in pesewas for Paystack API (13.99 * 100 = 1399 pesewas)
     const amountVal = 1399;
-    
     const currencyCode = 'GHS';
-    const emailAddress = 'customer_' + (settings.userName || 'User').toLowerCase().replace(/\s+/g, '_') + '@financialdashboard.com';
+    const cleanUserName = (settings.userName || 'User').trim();
+    const emailAddress = 'customer_' + cleanUserName.toLowerCase().replace(/[^a-z0-9]/g, '_') + '@financialdashboard.com';
 
     try {
-      const handler = PaystackPop.setup({
-        key: paystackKey,
-        email: emailAddress,
-        amount: amountVal,
-        currency: currencyCode,
-        callback: function(response) {
-          if (window.AppStore) window.AppStore.setPremiumStatus(true, 'monthly');
-          window.closePremiumModal();
-          if (typeof triggerConfetti === 'function') triggerConfetti();
-          alert('Congratulations! Payment Successful! Reference: ' + response.reference + '. Welcome to FinFlow Premium! 🏆');
-        },
-        onClose: function() {
-          alert('Payment window closed. Upgrade cancelled.');
-        }
-      });
-      handler.openIframe();
+      if (typeof PaystackPop === 'function' && PaystackPop.prototype && PaystackPop.prototype.newTransaction) {
+        const paystack = new PaystackPop();
+        paystack.newTransaction({
+          key: paystackKey,
+          email: emailAddress,
+          amount: amountVal,
+          currency: currencyCode,
+          channels: ['mobile_money', 'card'],
+          metadata: {
+            custom_fields: [
+              { display_name: "Customer Name", variable_name: "customer_name", value: cleanUserName }
+            ]
+          },
+          onSuccess: function(response) {
+            if (window.AppStore) window.AppStore.setPremiumStatus(true, 'monthly');
+            window.closePremiumModal();
+            if (typeof triggerConfetti === 'function') triggerConfetti();
+            alert('Congratulations! Payment Successful! Reference: ' + response.reference + '. Welcome to FinFlow Premium! 🏆');
+          },
+          onCancel: function() {
+            console.log('Paystack checkout cancelled by user.');
+          }
+        });
+      } else {
+        const handler = PaystackPop.setup({
+          key: paystackKey,
+          email: emailAddress,
+          amount: amountVal,
+          currency: currencyCode,
+          channels: ['mobile_money', 'card'],
+          metadata: {
+            custom_fields: [
+              { display_name: "Customer Name", variable_name: "customer_name", value: cleanUserName }
+            ]
+          },
+          callback: function(response) {
+            if (window.AppStore) window.AppStore.setPremiumStatus(true, 'monthly');
+            window.closePremiumModal();
+            if (typeof triggerConfetti === 'function') triggerConfetti();
+            alert('Congratulations! Payment Successful! Reference: ' + response.reference + '. Welcome to FinFlow Premium! 🏆');
+          },
+          onClose: function() {
+            console.log('Paystack checkout closed.');
+          }
+        });
+        handler.openIframe();
+      }
     } catch(err) {
       alert('Failed to launch Paystack checkout: ' + err.message);
     }
@@ -2214,15 +2245,13 @@
     if (!isPremium) {
       const freeInsight = generatedInsights[0] || {
         title: '💡 Smart Money Tip',
-        desc: 'Keep 1-2 weeks of operational cash on MoMo and route the rest into high-yield savings or T-Bills.',
-        prompt: 'Give me 3 practical financial tips.'
+        desc: 'Keep 1-2 weeks of operational cash on MoMo and route the rest into high-yield savings or T-Bills.'
       };
 
       insightsHTML = `
         <div class="ai-insight-item">
           <div class="insight-title">${freeInsight.title}</div>
           <div class="insight-desc">${freeInsight.desc}</div>
-          <button type="button" class="explain-this-btn" data-explain="${escapeAttr(freeInsight.prompt)}">Explain this 💬</button>
         </div>
 
         <div class="ai-insight-item locked-teaser">
@@ -2231,7 +2260,7 @@
             Unlock background leak detection, idle cash alerts, category spike warnings & Accra benchmark stats with Premium (GH₵13.99/mo).
           </div>
           <button type="button" class="btn btn-primary btn-sm upgrade-trigger-btn" style="background: linear-gradient(135deg, #f1c40f, #f39c12); color: #0b0f19; font-weight: 800; border: none; font-size: 0.76rem; padding: 6px 14px; border-radius: 14px; cursor: pointer;">
-            Unlock All Insights (GH₵13.99)
+            Upgrade to Premium (GH₵13.99)
           </button>
         </div>
       `;
@@ -2240,7 +2269,6 @@
         <div class="ai-insight-item">
           <div class="insight-title">${item.title}</div>
           <div class="insight-desc">${item.desc}</div>
-          <button type="button" class="explain-this-btn" data-explain="${escapeAttr(item.prompt)}">Explain this 💬</button>
         </div>
       `).join('');
     }
@@ -4216,14 +4244,6 @@ Ask me specific financial questions like:
         e.preventDefault();
         window.closeMobileSidebar();
         window.openPremiumModal();
-      }
-
-      const explainBtn = e.target.closest('.explain-this-btn');
-      if (explainBtn) {
-        const promptText = explainBtn.getAttribute('data-explain');
-        openModal(elements.aiCoachModal);
-        updateAiCoachModalStatus();
-        handleSendAiChatMessage(promptText);
       }
 
       const termsBtn = e.target.closest('.open-terms-modal-btn');
