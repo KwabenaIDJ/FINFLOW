@@ -238,7 +238,7 @@
     // 1. Render Current Month Option
     const optCurrent = document.createElement('option');
     optCurrent.value = 'current';
-    const currentMonthLabel = today.toLocaleString('default', { month: 'long', year: 'numeric' });
+    const currentMonthLabel = today.toLocaleString('default', { month: 'long' });
     optCurrent.textContent = `Current Month (${currentMonthLabel})`;
     selector.appendChild(optCurrent);
 
