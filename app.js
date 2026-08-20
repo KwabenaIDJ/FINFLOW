@@ -521,7 +521,7 @@
   let activePremiumPlan = 'annual'; // 'monthly' ($1.49) or 'annual' ($9.99)
 
   window.selectPremiumPlan = function(plan) {
-    activePremiumPlan = plan || 'annual';
+    activePremiumPlan = (plan === 'monthly') ? 'monthly' : 'annual';
     const monthlyCard = document.getElementById('planOptionMonthly');
     const annualCard = document.getElementById('planOptionAnnual');
     const checkoutBtn = document.getElementById('upgradeCheckoutBtn');
@@ -532,12 +532,14 @@
         monthlyCard.style.background = 'linear-gradient(135deg, rgba(241, 196, 15, 0.15), rgba(243, 156, 18, 0.2))';
         annualCard.style.border = '2px solid var(--color-border)';
         annualCard.style.background = 'var(--bg-secondary)';
+        checkoutBtn.setAttribute('data-plan', 'monthly');
         checkoutBtn.innerText = 'Unlock Monthly Access ($1.49/mo)';
       } else {
         annualCard.style.border = '2px solid #f1c40f';
         annualCard.style.background = 'linear-gradient(135deg, rgba(241, 196, 15, 0.15), rgba(243, 156, 18, 0.2))';
         monthlyCard.style.border = '2px solid var(--color-border)';
         monthlyCard.style.background = 'var(--bg-secondary)';
+        checkoutBtn.setAttribute('data-plan', 'annual');
         checkoutBtn.innerText = 'Unlock VIP Access ($9.99/yr)';
       }
     }
@@ -557,7 +559,15 @@
   };
 
   window.triggerPaystackCheckout = function(overridePlan) {
-    const targetPlan = overridePlan || activePremiumPlan || 'annual';
+    const checkoutBtn = document.getElementById('upgradeCheckoutBtn');
+    let targetPlan = (typeof overridePlan === 'string') ? overridePlan : null;
+    if (!targetPlan && checkoutBtn) {
+      targetPlan = checkoutBtn.getAttribute('data-plan');
+    }
+    if (!targetPlan) {
+      targetPlan = activePremiumPlan || 'annual';
+    }
+
     activePremiumPlan = targetPlan;
 
     const settings = window.AppStore ? window.AppStore.getSettings() : {};
@@ -571,7 +581,7 @@
     const isMonthly = targetPlan === 'monthly';
     const usdPrice = isMonthly ? 1.49 : 9.99;
 
-    // Use live exchange rate converter engine
+    // Use live exchange rate converter engine to get exact GHS amount from USD
     const ghsAmount = convertCurrencyAmount(usdPrice, 'GH₵', '$');
     
     // Amount in pesewas for Paystack API (1 GHS = 100 pesewas)
