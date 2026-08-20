@@ -875,7 +875,7 @@
     /**
      * Deletes a transaction from the ledger using its unique string ID.
      */
-    deleteTransaction(id) {
+    async deleteTransaction(id) {
       // Save snapshot for Undo
       this.pushState();
       // Locate index position of transaction matching ID
@@ -885,6 +885,16 @@
         this.data.transactions.splice(index, 1);
         // Persist update state
         this.save();
+
+        const client = getSupabaseClient();
+        if (client) {
+          try {
+            const { data: { session } } = await client.auth.getSession();
+            if (session && session.user) {
+              await client.from('transactions').delete().eq('id', id).eq('user_id', session.user.id);
+            }
+          } catch (e) {}
+        }
         return true; // Return successful status
       }
       return false; // Transaction matching ID not found
@@ -914,13 +924,23 @@
     /**
      * Removes a category budget limit completely.
      */
-    deleteBudget(category) {
+    async deleteBudget(category) {
       // Save state snapshot for Undo
       this.pushState();
       // Delete budget category key from map
       delete this.data.budgets[category];
       // Persist values to localStorage
       this.save();
+
+      const client = getSupabaseClient();
+      if (client) {
+        try {
+          const { data: { session } } = await client.auth.getSession();
+          if (session && session.user) {
+            await client.from('budgets').delete().eq('category', category).eq('user_id', session.user.id);
+          }
+        } catch (e) {}
+      }
     },
 
     // --- Savings Goals API ---

@@ -4787,15 +4787,30 @@ Ask me specific financial questions like:
     }
   });
 
-  // Auto-sync from Supabase Cloud when user switches back to the browser tab
-  document.addEventListener('visibilitychange', () => {
-    if (document.visibilityState === 'visible' && window.AppStore && window.AppStore.isLoggedIn()) {
+  // Auto-sync from Supabase Cloud when user switches back to the browser tab or focuses app
+  const triggerCloudSyncCheck = () => {
+    if (window.AppStore && window.AppStore.isLoggedIn()) {
       window.AppStore.fetchFromCloud().then(synced => {
-        if (synced) {
-          syncUI();
+        if (synced && window.syncUI) {
+          window.syncUI();
         }
       });
     }
+  };
+
+  document.addEventListener('visibilitychange', () => {
+    if (document.visibilityState === 'visible') {
+      triggerCloudSyncCheck();
+    }
   });
+
+  window.addEventListener('focus', triggerCloudSyncCheck);
+
+  // Automatic background cloud sync every 10 seconds for real-time multi-device sync
+  setInterval(() => {
+    if (document.visibilityState === 'visible') {
+      triggerCloudSyncCheck();
+    }
+  }, 10000);
 
 })(window);
