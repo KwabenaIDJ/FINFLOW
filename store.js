@@ -503,6 +503,52 @@
     },
 
     /**
+     * Resets all user ledger transactions, budgets, goals, and tasks locally and in Supabase Cloud.
+     * Preserves profile name, currency, profile picture, and Premium membership status.
+     */
+    async resetAccountData() {
+      const currentUserName = (this.data && this.data.settings && this.data.settings.userName) ? this.data.settings.userName : 'User';
+      const currentCurrency = (this.data && this.data.settings && this.data.settings.currency) ? this.data.settings.currency : 'GH₵';
+      const isPremium = (this.data && this.data.settings && this.data.settings.isPremium) || false;
+      const profilePic = (this.data && this.data.settings && this.data.settings.profilePic) || null;
+
+      const cleanData = getSeedData();
+      cleanData.settings.userName = currentUserName;
+      cleanData.settings.currency = currentCurrency;
+      cleanData.settings.isPremium = isPremium;
+      cleanData.settings.profilePic = profilePic;
+
+      this.data = cleanData;
+      this.save();
+
+      // Clear cloud database tables for this user if connected
+      const client = getSupabaseClient();
+      if (client) {
+        try {
+          const { data: { session } } = await client.auth.getSession();
+          if (session && session.user) {
+            const userId = session.user.id;
+            await Promise.all([
+              client.from('transactions').delete().eq('user_id', userId),
+              client.from('budgets').delete().eq('user_id', userId),
+              client.from('savings_goals').delete().eq('user_id', userId)
+            ]);
+          }
+        } catch (err) {
+          console.warn('Supabase cloud reset notice:', err);
+        }
+      }
+
+      localStorage.removeItem('GUIDE_LESSONS_COMPLETED');
+      localStorage.removeItem('GUIDE_BOOKS_COMPLETED');
+      localStorage.removeItem('FINANCIAL_DASHBOARD_TOUR_DONE');
+
+      window.dispatchEvent(new CustomEvent('store-updated'));
+      if (window.syncUI) window.syncUI();
+      return true;
+    },
+
+    /**
      * Serializes and writes the in-memory data object back to localStorage.
      * Dispatches a custom event to notify all listening UI views to redraw.
      */

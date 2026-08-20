@@ -3369,15 +3369,17 @@ Ask me specific financial questions like:
     });
 
     // 12. Reset App Data Verification Challenge
-    elements.resetAppDataBtn.addEventListener('click', () => {
-      if (confirm('Are you sure you want to reset all your data? This will permanently delete all transactions, budgets, goals, and settings.')) {
+    elements.resetAppDataBtn.addEventListener('click', async () => {
+      if (confirm('Are you sure you want to reset all your data? This will permanently delete all transactions, budgets, goals, and tasks.')) {
         const userInput = prompt('To confirm resetting your dashboard data, please type the word "RESET" in the box below:');
-        if (userInput === 'RESET') {
-          localStorage.removeItem('FINANCIAL_DASHBOARD_DATA_CLEAN');
-          localStorage.removeItem('GUIDE_LESSONS_COMPLETED');
-          localStorage.removeItem('GUIDE_BOOKS_COMPLETED');
-          localStorage.removeItem('FINANCIAL_DASHBOARD_TOUR_DONE');
-          window.location.reload();
+        if (userInput && userInput.trim() === 'RESET') {
+          if (window.AppStore && typeof window.AppStore.resetAccountData === 'function') {
+            await window.AppStore.resetAccountData();
+            alert('Your dashboard data has been successfully reset!');
+          } else {
+            localStorage.removeItem('FINANCIAL_DASHBOARD_DATA_CLEAN');
+            window.location.reload();
+          }
         } else {
           alert('Validation failed. App data reset was cancelled.');
         }
