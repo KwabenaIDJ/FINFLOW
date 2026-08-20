@@ -194,122 +194,111 @@
   function getFilteredTransactions() {
     const store = window.AppStore;
     const transactions = store.getTransactions();
-    // Default to 'current' if elements have not loaded yet
-    const timeframe = elements.timeframeSelector ? elements.timeframeSelector.value : 'current';
     const today = new Date();
+
+    const yearVal = elements.yearSelector ? elements.yearSelector.value : String(today.getFullYear());
+    const monthVal = elements.monthSelector ? elements.monthSelector.value : 'current';
 
     return transactions.filter(tx => {
       if (!tx.date) return false;
       const parts = tx.date.split('-');
       const txYear = parseInt(parts[0], 10);
-      const txMonth = parseInt(parts[1], 10) - 1; // Align to 0-indexed JS month arrays
+      const txMonth = parseInt(parts[1], 10); // 1-indexed
 
-      if (timeframe === 'current') {
-        // Return entries matching current year and current calendar month
-        return txYear === today.getFullYear() && txMonth === today.getMonth();
-      } else if (timeframe === 'year') {
-        // Return all entries matching the current year
-        return txYear === today.getFullYear();
-      } else if (timeframe.startsWith('year_')) {
-        // Return entries for a specific historical year (e.g. year_2025)
-        const targetYear = parseInt(timeframe.replace('year_', ''), 10);
-        return txYear === targetYear;
-      } else if (timeframe === 'all_time') {
-        // Bypass filtering
-        return true;
+      // --- Year Matching ---
+      let matchesYear = false;
+      if (yearVal === 'all') {
+        matchesYear = true;
       } else {
-        // Explicit selection in format "YYYY-MM"
-        const [selYear, selMonth] = timeframe.split('-').map(Number);
-        return txYear === selYear && (txMonth + 1) === selMonth;
+        matchesYear = (txYear === parseInt(yearVal, 10));
+      }
+
+      if (!matchesYear) return false;
+
+      // --- Month Matching ---
+      if (monthVal === 'all') {
+        return true;
+      } else if (monthVal === 'current') {
+        const currentMonthNum = today.getMonth() + 1; // 1-indexed
+        return txMonth === currentMonthNum;
+      } else {
+        const targetMonthNum = parseInt(monthVal, 10);
+        return txMonth === targetMonthNum;
       }
     });
   }
 
   /**
-   * Populates the timeframe selector options list based on active transaction history.
+   * Populates the Year and Month selectors dynamically based on active transaction history.
    */
   function populateTimeframeOptions() {
     const store = window.AppStore;
     const transactions = store.getTransactions();
     const today = new Date();
-    const selector = elements.timeframeSelector;
-    if (!selector) return;
+    const yearSel = elements.yearSelector;
+    const monthSel = elements.monthSelector;
+    if (!yearSel || !monthSel) return;
 
-    // Cache the previous selection to prevent resetting user filters
-    const previousSelection = selector.value || 'current';
-    selector.innerHTML = ''; // Wipe options structure
+    const currentYear = today.getFullYear();
+    const prevYear = yearSel.value || String(currentYear);
+    const prevMonth = monthSel.value || 'current';
 
-    // 1. Render Current Month Option
-    const optCurrent = document.createElement('option');
-    optCurrent.value = 'current';
-    const currentMonthLabel = today.toLocaleString('default', { month: 'long' });
-    optCurrent.textContent = `Current (${currentMonthLabel})`;
-    selector.appendChild(optCurrent);
-
-    // 2. Render Full Year Option for Current Year
-    const optYear = document.createElement('option');
-    optYear.value = 'year';
-    optYear.textContent = `Full Year (${today.getFullYear()})`;
-    selector.appendChild(optYear);
-
-    // 3. Render Historical Full Years if any exist in data
-    const uniqueYears = new Set();
+    // 1. Dynamic Year Options
+    const yearsSet = new Set();
+    yearsSet.add(currentYear);
     transactions.forEach(tx => {
       if (tx.date) {
         const y = parseInt(tx.date.split('-')[0], 10);
-        if (y && y !== today.getFullYear()) {
-          uniqueYears.add(y);
-        }
+        if (y) yearsSet.add(y);
       }
     });
 
-    const sortedYears = Array.from(uniqueYears).sort((a, b) => b - a);
+    const sortedYears = Array.from(yearsSet).sort((a, b) => b - a);
+
+    yearSel.innerHTML = '';
     sortedYears.forEach(y => {
       const opt = document.createElement('option');
-      opt.value = `year_${y}`;
-      opt.textContent = `Full Year (${y})`;
-      selector.appendChild(opt);
+      opt.value = String(y);
+      opt.textContent = String(y);
+      yearSel.appendChild(opt);
     });
 
-    // 4. Render All Time Option
-    const optAll = document.createElement('option');
-    optAll.value = 'all_time';
-    optAll.textContent = 'All Months (All Time)';
-    selector.appendChild(optAll);
+    const optAllYears = document.createElement('option');
+    optAllYears.value = 'all';
+    optAllYears.textContent = 'All Years';
+    yearSel.appendChild(optAllYears);
 
-    // 5. Compile list of months containing historical transactions
-    const uniqueMonths = new Set();
-    transactions.forEach(tx => {
-      if (tx.date) {
-        const parts = tx.date.split('-');
-        const year = parts[0];
-        const monthNum = parseInt(parts[1], 10) - 1;
-        const d = new Date(year, monthNum, 1);
-        const key = `${year}-${parts[1]}`;
-        const label = d.toLocaleString('default', { month: 'long', year: 'numeric' });
-        uniqueMonths.add(JSON.stringify({ key, label }));
-      }
+    yearSel.value = prevYear;
+    if (!yearSel.value) yearSel.value = String(currentYear);
+
+    // 2. Dynamic Month Options
+    monthSel.innerHTML = '';
+
+    const currentMonthName = today.toLocaleString('default', { month: 'long' });
+    const optCurrent = document.createElement('option');
+    optCurrent.value = 'current';
+    optCurrent.textContent = `Current (${currentMonthName})`;
+    monthSel.appendChild(optCurrent);
+
+    const optAllMonths = document.createElement('option');
+    optAllMonths.value = 'all';
+    optAllMonths.textContent = 'All Months';
+    monthSel.appendChild(optAllMonths);
+
+    const monthNames = [
+      'January', 'February', 'March', 'April', 'May', 'June',
+      'July', 'August', 'September', 'October', 'November', 'December'
+    ];
+
+    monthNames.forEach((mName, idx) => {
+      const opt = document.createElement('option');
+      opt.value = String(idx + 1); // 1-12
+      opt.textContent = mName;
+      monthSel.appendChild(opt);
     });
 
-    // Sort unique months list in descending YYYY-MM order
-    const sortedMonths = Array.from(uniqueMonths)
-      .map(item => JSON.parse(item))
-      .sort((a, b) => b.key.localeCompare(a.key));
-
-    // Append historical months as options
-    sortedMonths.forEach(m => {
-      const currentKey = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, '0')}`;
-      if (m.key !== currentKey) {
-        const opt = document.createElement('option');
-        opt.value = m.key;
-        opt.textContent = m.label;
-        selector.appendChild(opt);
-      }
-    });
-
-    // Reapply user's selection anchor
-    selector.value = previousSelection;
-    if (!selector.value) selector.value = 'current';
+    monthSel.value = prevMonth;
+    if (!monthSel.value) monthSel.value = 'current';
   }
 
   /**
@@ -356,8 +345,9 @@
     elements.addGoalBtn = document.getElementById('addGoalBtn');
     elements.addGoalDestination = document.getElementById('addGoalDestination');
     
-    // Timeframe Selector
-    elements.timeframeSelector = document.getElementById('timeframeSelector');
+    // Timeframe Selectors
+    elements.yearSelector = document.getElementById('yearSelector');
+    elements.monthSelector = document.getElementById('monthSelector');
     elements.headerCurrencySelector = document.getElementById('headerCurrencySelector');
     
     // Settings Form
@@ -657,16 +647,33 @@
     elements.monthlyExpensesValue.title = elements.monthlyExpensesValue.textContent;
 
     // Swap title labels depending on active timeframe filter states
-    const timeframe = elements.timeframeSelector ? elements.timeframeSelector.value : 'current';
+    const today = new Date();
+    const yearVal = elements.yearSelector ? elements.yearSelector.value : String(today.getFullYear());
+    const monthVal = elements.monthSelector ? elements.monthSelector.value : 'current';
     const incLabel = document.querySelector('.kpi-card.income .kpi-title');
     const expLabel = document.querySelector('.kpi-card.expense .kpi-title');
 
-    if (timeframe === 'current') {
-      if (incLabel) incLabel.textContent = 'Monthly Income';
-      if (expLabel) expLabel.textContent = 'Monthly Expenses';
-      
-      // Calculate month-over-month trend changes for visual badge indicators
-      const today = new Date();
+    const monthNames = [
+      'January', 'February', 'March', 'April', 'May', 'June',
+      'July', 'August', 'September', 'October', 'November', 'December'
+    ];
+
+    let labelStr = 'Monthly';
+    if (monthVal === 'current') {
+      const curMonthName = today.toLocaleString('default', { month: 'short' });
+      labelStr = yearVal === 'all' ? `${curMonthName}` : `${curMonthName} ${yearVal}`;
+    } else if (monthVal === 'all') {
+      labelStr = yearVal === 'all' ? 'All-Time' : `${yearVal}`;
+    } else {
+      const mIdx = parseInt(monthVal, 10) - 1;
+      const mName = monthNames[mIdx] ? monthNames[mIdx].slice(0, 3) : '';
+      labelStr = yearVal === 'all' ? `${mName}` : `${mName} ${yearVal}`;
+    }
+
+    if (incLabel) incLabel.textContent = `${labelStr} Income`;
+    if (expLabel) expLabel.textContent = `${labelStr} Expenses`;
+
+    if (monthVal === 'current' && (yearVal === 'all' || yearVal === String(today.getFullYear()))) {
       const prevMonth = new Date(today.getFullYear(), today.getMonth() - 1, 1);
       const prevMonthTotals = store.getMonthlyTotals(prevMonth.getFullYear(), prevMonth.getMonth());
       const currentMonthTotals = store.getMonthlyTotals(today.getFullYear(), today.getMonth());
@@ -688,24 +695,9 @@
       } else {
         elements.expenseTrend.textContent = 'No historical data';
       }
-    } else if (timeframe === 'year') {
-      if (incLabel) incLabel.textContent = 'Yearly Income';
-      if (expLabel) expLabel.textContent = 'Yearly Expenses';
-      elements.incomeTrend.textContent = 'Full year breakdown';
-      elements.expenseTrend.textContent = 'Full year breakdown';
-    } else if (timeframe === 'all_time') {
-      if (incLabel) incLabel.textContent = 'Total Income';
-      if (expLabel) expLabel.textContent = 'Total Expenses';
-      elements.incomeTrend.textContent = 'All-time cumulative';
-      elements.expenseTrend.textContent = 'All-time cumulative';
     } else {
-      const [y, m] = timeframe.split('-').map(Number);
-      const d = new Date(y, m - 1, 1);
-      const label = d.toLocaleString('default', { month: 'short' }) + ' ' + String(y).slice(-2);
-      if (incLabel) incLabel.textContent = `${label} Income`;
-      if (expLabel) expLabel.textContent = `${label} Expenses`;
-      elements.incomeTrend.textContent = `Historical: ${label}`;
-      elements.expenseTrend.textContent = `Historical: ${label}`;
+      elements.incomeTrend.textContent = `${labelStr} breakdown`;
+      elements.expenseTrend.textContent = `${labelStr} breakdown`;
     }
   }
 
@@ -3371,10 +3363,17 @@ Ask me specific financial questions like:
       reader.readAsText(file);
     });
 
-    // Timeframe filter dropdown change triggers updates
-    elements.timeframeSelector.addEventListener('change', () => {
-      syncUI();
-    });
+    // Year & Month filter dropdown change triggers updates
+    if (elements.yearSelector) {
+      elements.yearSelector.addEventListener('change', () => {
+        syncUI();
+      });
+    }
+    if (elements.monthSelector) {
+      elements.monthSelector.addEventListener('change', () => {
+        syncUI();
+      });
+    }
 
     // 16. Print dashboard layouts
     if (elements.printBtn) {

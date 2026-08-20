@@ -1354,10 +1354,17 @@ header {
 
   .header-dropdowns-row #headerCurrencySelector {
     flex: 0.8 !important;
+    min-width: 0 !important;
   }
 
-  .header-dropdowns-row #timeframeSelector {
-    flex: 1.2 !important;
+  .header-dropdowns-row #yearSelector {
+    flex: 0.9 !important;
+    min-width: 0 !important;
+  }
+
+  .header-dropdowns-row #monthSelector {
+    flex: 1.3 !important;
+    min-width: 0 !important;
   }
 
   .header-utilities {
