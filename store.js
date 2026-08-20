@@ -673,10 +673,8 @@
           this.data.settings.monthlySavingsGoal = profile.monthly_savings_goal || this.data.settings.monthlySavingsGoal;
           this.data.settings.isPremium = profile.is_premium ?? this.data.settings.isPremium;
           this.data.settings.aiQueriesCount = profile.ai_queries_count ?? this.data.settings.aiQueriesCount;
-          if (this.data.settings.profilePicRemoved) {
-            this.data.settings.profilePic = '';
-          } else if (profile.profile_pic) {
-            this.data.settings.profilePic = profile.profile_pic;
+          if (profile.profile_pic !== undefined) {
+            this.data.settings.profilePic = profile.profile_pic || '';
           }
           if (profile.free_pdf_exports_used !== undefined && profile.free_pdf_exports_used !== null) {
             this.data.settings.freePdfExportsUsed = profile.free_pdf_exports_used;

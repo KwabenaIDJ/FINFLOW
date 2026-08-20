@@ -3455,8 +3455,7 @@ Ask me specific financial questions like:
       }
 
       const profilePicToSave = (selectedProfilePic !== null) ? selectedProfilePic : (settings.profilePic || '');
-      const profilePicRemoved = (profilePicToSave === '');
-      window.AppStore.updateSettings({ userName, currency, monthlySavingsGoal, paystackKey, profilePic: profilePicToSave, profilePicRemoved: profilePicRemoved });
+      window.AppStore.updateSettings({ userName, currency, monthlySavingsGoal, paystackKey, profilePic: profilePicToSave });
       selectedProfilePic = null;
       alert('Settings updated successfully!');
     });
@@ -3949,7 +3948,7 @@ Ask me specific financial questions like:
             selectedProfilePic = base64;
             // Instantly persist new compressed profile image to AppStore & LocalStorage
             if (window.AppStore && typeof window.AppStore.updateSettings === 'function') {
-              window.AppStore.updateSettings({ profilePic: base64, profilePicRemoved: false });
+              window.AppStore.updateSettings({ profilePic: base64 });
             }
             if (window.syncUI) {
               window.syncUI();
@@ -3965,7 +3964,7 @@ Ask me specific financial questions like:
         selectedProfilePic = ''; // Set to empty string to indicate deletion
         // Instantly persist removal to AppStore & LocalStorage
         if (window.AppStore && typeof window.AppStore.updateSettings === 'function') {
-          window.AppStore.updateSettings({ profilePic: '', profilePicRemoved: true });
+          window.AppStore.updateSettings({ profilePic: '' });
         }
         if (elements.settingsProfilePicInput) {
           elements.settingsProfilePicInput.value = ''; // Reset file input selection
