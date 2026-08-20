@@ -226,17 +226,19 @@
         return { success: false, message: 'Password must be at least 6 characters long for cloud security.' };
       }
 
-      const registry = JSON.parse(localStorage.getItem(USERS_REGISTRY_KEY) || '{}');
-
-      if (registry[userKey]) {
-        return { success: false, message: 'Username is already taken. Try another username!' };
-      }
-
-      // Attempt Supabase Cloud Auth Signup
       const client = getSupabaseClient();
       let supabaseUser = null;
 
       if (client) {
+        // 1. Check if user_name is already registered in Supabase Cloud
+        try {
+          const { data: existingProfile } = await client.from('profiles').select('id').ilike('user_name', rawUsername).maybeSingle();
+          if (existingProfile) {
+            return { success: false, message: 'Username is already taken in cloud database. Try another username!' };
+          }
+        } catch (checkErr) {}
+
+        // 2. Attempt Supabase Auth Signup
         try {
           const authEmail = rawUsername.includes('@') ? rawUsername : `${userKey}@gmail.com`;
           const { data, error } = await client.auth.signUp({
@@ -252,13 +254,22 @@
           });
 
           if (error) {
+            if (error.message && error.message.toLowerCase().includes('already registered')) {
+              return { success: false, message: 'This account already exists in Supabase. Try logging in instead!' };
+            }
             console.warn('Supabase Auth signup notice:', error.message);
           } else if (data && data.user) {
             supabaseUser = data.user;
             console.log('Supabase Auth signup success:', supabaseUser.id);
           }
         } catch (err) {
-          console.warn('Supabase Auth signup exception (proceeding with local setup & background sync):', err);
+          console.warn('Supabase Auth signup exception:', err);
+        }
+      } else {
+        // Offline / No client fallback: check local registry
+        const registry = JSON.parse(localStorage.getItem(USERS_REGISTRY_KEY) || '{}');
+        if (registry[userKey]) {
+          return { success: false, message: 'Username is already taken. Try another username!' };
         }
       }
 
