@@ -406,6 +406,13 @@
         }
       };
 
+      const client = getSupabaseClient();
+      if (client && client.auth) {
+        try {
+          client.auth.signOut();
+        } catch (e) {}
+      }
+
       const registry = JSON.parse(localStorage.getItem(USERS_REGISTRY_KEY) || '{}');
       registry[demoKey] = {
         fullName: 'Demo Account',
@@ -466,6 +473,13 @@
         }
       }
       
+      const client = getSupabaseClient();
+      if (client && client.auth) {
+        try {
+          client.auth.signOut();
+        } catch (e) {}
+      }
+
       // Wipe session variables
       localStorage.removeItem(SESSION_KEY);
       localStorage.removeItem(STORAGE_KEY);
@@ -507,6 +521,9 @@
      * Pushes active local data state to Supabase cloud database if connected.
      */
     async syncToCloud() {
+      const currentUser = localStorage.getItem(SESSION_KEY);
+      if (!currentUser || currentUser === 'demo_user') return;
+
       const client = getSupabaseClient();
       if (!client) return;
 
