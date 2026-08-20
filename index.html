@@ -1353,37 +1353,25 @@
 
   <!-- ==================== OVERLAY: PREMIUM UPGRADE MODAL ==================== -->
   <div class="modal-overlay" id="premiumUpgradeModal">
-    <div class="modal-content" style="max-width: 480px; width: 95%; border: 2px solid #f1c40f; box-shadow: 0 0 35px rgba(241, 196, 15, 0.3);">
+    <div class="modal-content" style="max-width: 440px; width: 95%; border: 2px solid #f1c40f; box-shadow: 0 0 35px rgba(241, 196, 15, 0.3);">
       <div class="modal-header" style="border-bottom: 1px solid var(--color-border); padding-bottom: 14px;">
         <h3 class="modal-title" style="color: #f1c40f; display: flex; align-items: center; gap: 8px; font-size: 1.2rem;">
           <svg style="width: 24px; height: 24px; fill: #f1c40f;"><use href="#icon-crown"></use></svg>
-          FinFlow VIP Premium Access
+          FinFlow Premium Membership
         </h3>
         <button class="modal-close-btn" onclick="window.closePremiumModal()" aria-label="Close dialog"><svg><use href="#icon-close"></use></svg></button>
       </div>
       
       <div style="padding-top: 16px; text-align: center;">
-        <p style="font-size: 0.88rem; color: var(--text-muted); line-height: 1.4; margin-bottom: 18px;">
-          Unlock advanced money diagnostics, automated 90-day cash flow projections, and unlimited PDF exports.
-        </p>
-
-        <!-- PRICING TIER SELECTOR -->
-        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 20px;">
-          <div id="planOptionMonthly" onclick="window.selectPremiumPlan('monthly')" style="border: 2px solid var(--color-border); border-radius: var(--border-radius-md); padding: 14px 10px; cursor: pointer; text-align: center; transition: all 0.2s; background: var(--bg-secondary);">
-            <div style="font-size: 0.76rem; color: var(--text-muted); text-transform: uppercase; font-weight: 700; margin-bottom: 4px;">Monthly Access</div>
-            <div style="font-size: 1.3rem; font-weight: 800; color: var(--text-main);">$1.49 <span style="font-size: 0.75rem; font-weight: 600; color: var(--text-muted);">/mo</span></div>
-          </div>
-
-          <div id="planOptionAnnual" onclick="window.selectPremiumPlan('annual')" style="border: 2px solid #f1c40f; border-radius: var(--border-radius-md); padding: 14px 10px; cursor: pointer; text-align: center; transition: all 0.2s; background: linear-gradient(135deg, rgba(241, 196, 15, 0.1), rgba(243, 156, 18, 0.15)); position: relative;">
-            <span style="position: absolute; top: -10px; right: 10px; background: linear-gradient(135deg, #f1c40f, #f39c12); color: #0b0f19; font-size: 0.62rem; font-weight: 800; padding: 2px 8px; border-radius: 10px; text-transform: uppercase;">Save 44%</span>
-            <div style="font-size: 0.76rem; color: #f1c40f; text-transform: uppercase; font-weight: 800; margin-bottom: 4px;">Annual VIP Pass</div>
-            <div style="font-size: 1.3rem; font-weight: 800; color: #f1c40f;">$9.99 <span style="font-size: 0.75rem; font-weight: 600; color: var(--text-muted);">/yr</span></div>
-          </div>
+        <div style="background: linear-gradient(135deg, rgba(241, 196, 15, 0.15), rgba(243, 156, 18, 0.2)); border: 2px solid #f1c40f; border-radius: var(--border-radius-md); padding: 16px; margin-bottom: 18px;">
+          <div style="font-size: 0.78rem; color: #f1c40f; text-transform: uppercase; font-weight: 800; letter-spacing: 0.5px; margin-bottom: 4px;">Monthly Membership Access</div>
+          <div style="font-size: 1.8rem; font-weight: 900; color: #f1c40f;">$1.49 <span style="font-size: 0.85rem; font-weight: 600; color: var(--text-muted);">/ month</span></div>
+          <div style="font-size: 0.76rem; color: var(--text-muted); margin-top: 4px;">Live market exchange rate calculated automatically at checkout</div>
         </div>
 
         <!-- FEATURES COMPARISON LIST -->
         <div style="background: var(--bg-secondary); border: 1px solid var(--color-border); border-radius: var(--border-radius-md); padding: 14px 16px; margin-bottom: 20px; text-align: left;">
-          <div style="font-size: 0.8rem; font-weight: 800; color: var(--text-main); margin-bottom: 10px; text-transform: uppercase; letter-spacing: 0.5px;">✨ What's Included in VIP:</div>
+          <div style="font-size: 0.8rem; font-weight: 800; color: var(--text-main); margin-bottom: 10px; text-transform: uppercase; letter-spacing: 0.5px;">✨ What's Included in Premium:</div>
           <ul style="list-style: none; padding: 0; margin: 0; display: flex; flex-direction: column; gap: 9px; font-size: 0.84rem;">
             <li style="display: flex; align-items: center; gap: 8px;">
               <span style="color: #f1c40f; font-weight: 800;">🔮</span>
@@ -1413,7 +1401,7 @@
         </div>
 
         <button class="btn btn-primary" id="upgradeCheckoutBtn" onclick="window.triggerPaystackCheckout()" style="width: 100%; padding: 14px; font-size: 1rem; font-weight: 800; background: linear-gradient(135deg, #f1c40f, #f39c12); color: #0b0f19; border: none; border-radius: var(--border-radius-sm); cursor: pointer; box-shadow: 0 4px 15px rgba(241, 196, 15, 0.4);">
-          Unlock VIP Access ($9.99/yr)
+          Unlock Premium Access ($1.49/mo)
         </button>
 
         <div style="margin-top: 10px; font-size: 0.72rem; color: var(--text-muted); display: flex; align-items: center; justify-content: center; gap: 6px;">
@@ -1744,9 +1732,9 @@
   <!-- ==================== CHART JS, PAYSTACK SDK & SCRIPTS ==================== -->
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
   <script src="https://js.paystack.co/v1/inline.js"></script>
-  <script src="store.js?v=1.0.2"></script>
-  <script src="charts.js?v=1.0.2"></script>
-  <script src="app.js?v=1.0.2"></script>
+  <script src="store.js?v=2.0.0"></script>
+  <script src="charts.js?v=2.0.0"></script>
+  <script src="app.js?v=2.0.0"></script>
   <!-- CONFETTI CANVAS FOR SAVINGS CELEBRATIONS -->
   <canvas id="confettiCanvas" style="position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; pointer-events: none; z-index: 10010; display: none;"></canvas>
 </body>

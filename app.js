@@ -518,39 +518,9 @@
     if (modal) closeModal(modal);
   };
 
-  let activePremiumPlan = 'annual'; // 'monthly' ($1.49) or 'annual' ($9.99)
-
-  window.selectPremiumPlan = function(plan) {
-    activePremiumPlan = (plan === 'monthly') ? 'monthly' : 'annual';
-    const monthlyCard = document.getElementById('planOptionMonthly');
-    const annualCard = document.getElementById('planOptionAnnual');
-    const checkoutBtn = document.getElementById('upgradeCheckoutBtn');
-
-    if (monthlyCard && annualCard && checkoutBtn) {
-      if (activePremiumPlan === 'monthly') {
-        monthlyCard.style.border = '2px solid #f1c40f';
-        monthlyCard.style.background = 'linear-gradient(135deg, rgba(241, 196, 15, 0.15), rgba(243, 156, 18, 0.2))';
-        annualCard.style.border = '2px solid var(--color-border)';
-        annualCard.style.background = 'var(--bg-secondary)';
-        checkoutBtn.setAttribute('data-plan', 'monthly');
-        checkoutBtn.innerText = 'Unlock Monthly Access ($1.49/mo)';
-      } else {
-        annualCard.style.border = '2px solid #f1c40f';
-        annualCard.style.background = 'linear-gradient(135deg, rgba(241, 196, 15, 0.15), rgba(243, 156, 18, 0.2))';
-        monthlyCard.style.border = '2px solid var(--color-border)';
-        monthlyCard.style.background = 'var(--bg-secondary)';
-        checkoutBtn.setAttribute('data-plan', 'annual');
-        checkoutBtn.innerText = 'Unlock VIP Access ($9.99/yr)';
-      }
-    }
-  };
-
   window.openPremiumModal = function() {
     const modal = document.getElementById('premiumUpgradeModal');
-    if (modal) {
-      openModal(modal);
-      window.selectPremiumPlan('annual');
-    }
+    if (modal) openModal(modal);
   };
 
   window.closePremiumModal = function() {
@@ -558,18 +528,7 @@
     if (modal) closeModal(modal);
   };
 
-  window.triggerPaystackCheckout = function(overridePlan) {
-    const checkoutBtn = document.getElementById('upgradeCheckoutBtn');
-    let targetPlan = (typeof overridePlan === 'string') ? overridePlan : null;
-    if (!targetPlan && checkoutBtn) {
-      targetPlan = checkoutBtn.getAttribute('data-plan');
-    }
-    if (!targetPlan) {
-      targetPlan = activePremiumPlan || 'annual';
-    }
-
-    activePremiumPlan = targetPlan;
-
+  window.triggerPaystackCheckout = function() {
     const settings = window.AppStore ? window.AppStore.getSettings() : {};
     const paystackKey = 'pk_live_3bb03f9209cfe3ac12fe324b73167807ef9bbac8';
     
@@ -578,8 +537,7 @@
       return;
     }
     
-    const isMonthly = targetPlan === 'monthly';
-    const usdPrice = isMonthly ? 1.49 : 9.99;
+    const usdPrice = 1.49;
 
     // Use live exchange rate converter engine to get exact GHS amount from USD
     const ghsAmount = convertCurrencyAmount(usdPrice, 'GH₵', '$');
@@ -597,10 +555,10 @@
         amount: amountVal,
         currency: currencyCode,
         callback: function(response) {
-          if (window.AppStore) window.AppStore.setPremiumStatus(true, targetPlan);
+          if (window.AppStore) window.AppStore.setPremiumStatus(true, 'monthly');
           window.closePremiumModal();
           if (typeof triggerConfetti === 'function') triggerConfetti();
-          alert('Congratulations! Payment Successful! Reference: ' + response.reference + '. Welcome to FinFlow VIP Premium! 🏆');
+          alert('Congratulations! Payment Successful! Reference: ' + response.reference + '. Welcome to FinFlow Premium! 🏆');
         },
         onClose: function() {
           alert('Payment window closed. Upgrade cancelled.');
