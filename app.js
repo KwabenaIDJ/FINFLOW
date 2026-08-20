@@ -33,7 +33,7 @@
   // Default exchange rates: How many Ghanaian Cedis (GH₵) equal 1 unit of foreign currency
   const DEFAULT_GHS_RATES = {
     'GH₵': 1.0,      // Ghanaian Cedi (Base)
-    '$': 11.59,      // US Dollar
+    '$': 15.50,      // US Dollar
     '€': 12.60,      // Euro
     '£': 14.80,      // British Pound
     '¥': 2.15,       // Chinese Yuan (CNY)
