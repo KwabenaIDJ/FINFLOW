@@ -148,13 +148,18 @@
     /**
      * Authenticates a user and sets up the active session.
      */
+    /**
+     * Authenticates an existing user via Supabase Cloud Auth and local storage.
+     */
     async signIn(username, password) {
       const rawUsername = username.trim();
       const userKey = rawUsername.toLowerCase();
       const registry = JSON.parse(localStorage.getItem(USERS_REGISTRY_KEY) || '{}');
-
-      // Attempt Supabase Auth Cloud Login
       const client = getSupabaseClient();
+
+      let cloudUser = null;
+
+      // 1. Attempt Supabase Cloud Auth Login (Works across all devices!)
       if (client) {
         try {
           const authEmail = rawUsername.includes('@') ? rawUsername : `${userKey}@gmail.com`;
@@ -163,7 +168,8 @@
             password: password
           });
           if (data && data.user) {
-            console.log('Supabase Auth sign-in success:', data.user.id);
+            cloudUser = data.user;
+            console.log('Supabase Auth sign-in success:', cloudUser.id);
           } else if (error) {
             console.warn('Supabase Auth sign-in notice:', error.message);
           }
@@ -172,26 +178,38 @@
         }
       }
 
-      if (!registry[userKey]) {
-        return { success: false, message: 'Account not found. Please sign up first!' };
+      // 2. Validate authentication success (either Cloud Auth or Local Registry match)
+      if (cloudUser || registry[userKey]) {
+        if (!registry[userKey]) {
+          // User signed up on another device! Create local workspace for this authenticated cloud user
+          const userData = getSeedData();
+          userData.settings.userName = rawUsername;
+          registry[userKey] = {
+            username: rawUsername,
+            password: password,
+            supabaseId: cloudUser ? cloudUser.id : null,
+            data: userData
+          };
+          localStorage.setItem(USERS_REGISTRY_KEY, JSON.stringify(registry));
+        } else if (!cloudUser && registry[userKey].password !== password) {
+          return { success: false, message: 'Invalid password. Please try again.' };
+        }
+
+        // Establish active local session
+        localStorage.setItem(SESSION_KEY, userKey);
+        this.data = registry[userKey].data;
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(this.data));
+        window.dispatchEvent(new CustomEvent('store-updated'));
+
+        // Pull full financial history from Supabase Cloud
+        if (client) {
+          await this.fetchFromCloud();
+        }
+
+        return { success: true };
       }
 
-      if (registry[userKey].password !== password) {
-        return { success: false, message: 'Invalid password. Please try again.' };
-      }
-
-      // Establish session
-      localStorage.setItem(SESSION_KEY, userKey);
-      this.data = registry[userKey].data;
-      
-      // Save current active state
-      localStorage.setItem(STORAGE_KEY, JSON.stringify(this.data));
-      window.dispatchEvent(new CustomEvent('store-updated'));
-      
-      // Sync cloud data if available
-      this.fetchFromCloud();
-
-      return { success: true };
+      return { success: false, message: 'Account not found. Please sign up first!' };
     },
 
     /**
@@ -216,38 +234,34 @@
 
       // Attempt Supabase Cloud Auth Signup
       const client = getSupabaseClient();
-      if (!client) {
-        return { 
-          success: false, 
-          message: 'Supabase Client SDK is not loaded. Please check your internet connection and reload the page.' 
-        };
-      }
-
       let supabaseUser = null;
-      try {
-        const authEmail = rawUsername.includes('@') ? rawUsername : `${userKey}@gmail.com`;
-        const { data, error } = await client.auth.signUp({
-          email: authEmail,
-          password: password,
-          options: {
-            data: {
-              full_name: fullName.trim(),
-              username: rawUsername,
-              currency: currency || 'GH₵'
-            }
-          }
-        });
 
-        if (error) {
-          console.warn('Supabase Auth signup notice:', error.message);
-          // If Supabase auth provider has email signups disabled or requires confirmation, fallback to local registration with cloud sync
-        } else if (data && data.user) {
-          supabaseUser = data.user;
-          console.log('Supabase Auth signup success:', supabaseUser.id);
+      if (client) {
+        try {
+          const authEmail = rawUsername.includes('@') ? rawUsername : `${userKey}@gmail.com`;
+          const { data, error } = await client.auth.signUp({
+            email: authEmail,
+            password: password,
+            options: {
+              data: {
+                full_name: fullName.trim(),
+                username: rawUsername,
+                currency: currency || 'GH₵'
+              }
+            }
+          });
+
+          if (error) {
+            console.warn('Supabase Auth signup notice:', error.message);
+            return { success: false, message: 'Supabase Cloud Signup Error: ' + error.message };
+          } else if (data && data.user) {
+            supabaseUser = data.user;
+            console.log('Supabase Auth signup success:', supabaseUser.id);
+          }
+        } catch (err) {
+          console.warn('Supabase Auth signup exception:', err);
+          return { success: false, message: 'Cloud connection error: ' + (err.message || err) };
         }
-      } catch (err) {
-        console.warn('Supabase Auth signup exception:', err);
-        return { success: false, message: 'Cloud connection error: ' + (err.message || err) };
       }
 
       const secQuestion = (securityQuestion && securityQuestion.trim()) ? securityQuestion.trim() : 'What was the name of your first school?';
@@ -278,8 +292,10 @@
       localStorage.setItem(STORAGE_KEY, JSON.stringify(this.data));
       window.dispatchEvent(new CustomEvent('store-updated'));
 
-      // Push initial workspace data to Supabase cloud
-      this.syncToCloud();
+      // Sync initial profile and settings to Supabase Cloud
+      if (client) {
+        await this.syncToCloud();
+      }
 
       return { success: true };
     },
