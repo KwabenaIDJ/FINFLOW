@@ -240,12 +240,10 @@
 
         if (error) {
           console.warn('Supabase Auth signup notice:', error.message);
-          return { success: false, message: 'Supabase Cloud Auth Error: ' + error.message };
+          // If Supabase auth provider has email signups disabled or requires confirmation, fallback to local registration with cloud sync
         } else if (data && data.user) {
           supabaseUser = data.user;
           console.log('Supabase Auth signup success:', supabaseUser.id);
-        } else {
-          return { success: false, message: 'Supabase Auth did not return a user object. Check your Supabase settings.' };
         }
       } catch (err) {
         console.warn('Supabase Auth signup exception:', err);
