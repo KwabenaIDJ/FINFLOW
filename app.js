@@ -518,7 +518,7 @@
     if (modal) closeModal(modal);
   };
 
-  let activePremiumPlan = 'annual'; // 'monthly' ($1.50) or 'annual' ($9.99)
+  let activePremiumPlan = 'annual'; // 'monthly' ($1.49) or 'annual' ($9.99)
 
   window.selectPremiumPlan = function(plan) {
     activePremiumPlan = plan || 'annual';
@@ -527,15 +527,15 @@
     const checkoutBtn = document.getElementById('upgradeCheckoutBtn');
 
     if (monthlyCard && annualCard && checkoutBtn) {
-      if (plan === 'monthly') {
+      if (activePremiumPlan === 'monthly') {
         monthlyCard.style.border = '2px solid #f1c40f';
-        monthlyCard.style.background = 'linear-gradient(135deg, rgba(241, 196, 15, 0.1), rgba(243, 156, 18, 0.15))';
+        monthlyCard.style.background = 'linear-gradient(135deg, rgba(241, 196, 15, 0.15), rgba(243, 156, 18, 0.2))';
         annualCard.style.border = '2px solid var(--color-border)';
         annualCard.style.background = 'var(--bg-secondary)';
         checkoutBtn.innerText = 'Unlock Monthly Access ($1.49/mo)';
       } else {
         annualCard.style.border = '2px solid #f1c40f';
-        annualCard.style.background = 'linear-gradient(135deg, rgba(241, 196, 15, 0.1), rgba(243, 156, 18, 0.15))';
+        annualCard.style.background = 'linear-gradient(135deg, rgba(241, 196, 15, 0.15), rgba(243, 156, 18, 0.2))';
         monthlyCard.style.border = '2px solid var(--color-border)';
         monthlyCard.style.background = 'var(--bg-secondary)';
         checkoutBtn.innerText = 'Unlock VIP Access ($9.99/yr)';
@@ -556,7 +556,10 @@
     if (modal) closeModal(modal);
   };
 
-  window.triggerPaystackCheckout = function() {
+  window.triggerPaystackCheckout = function(overridePlan) {
+    const targetPlan = overridePlan || activePremiumPlan || 'annual';
+    activePremiumPlan = targetPlan;
+
     const settings = window.AppStore ? window.AppStore.getSettings() : {};
     const paystackKey = 'pk_live_3bb03f9209cfe3ac12fe324b73167807ef9bbac8';
     
@@ -565,10 +568,16 @@
       return;
     }
     
-    const isMonthly = activePremiumPlan === 'monthly';
+    const isMonthly = targetPlan === 'monthly';
     const usdPrice = isMonthly ? 1.49 : 9.99;
-    const liveUsdRate = (settings.exchangeRates && settings.exchangeRates['$']) ? Number(settings.exchangeRates['$']) : 15.5;
-    const amountVal = Math.max(100, Math.round(usdPrice * liveUsdRate * 100)); // amount in pesewas
+
+    let rate = 15.0; // Standard USD -> GHS conversion rate fallback
+    if (settings.exchangeRates && typeof settings.exchangeRates['$'] === 'number' && settings.exchangeRates['$'] > 5.0 && settings.exchangeRates['$'] < 30.0) {
+      rate = settings.exchangeRates['$'];
+    }
+
+    // Calculate total in pesewas (1 GHS = 100 pesewas)
+    const amountVal = Math.max(100, Math.round(usdPrice * rate * 100));
     
     const currencyCode = 'GHS';
     const emailAddress = 'customer_' + (settings.userName || 'User').toLowerCase().replace(/\s+/g, '_') + '@financialdashboard.com';
@@ -580,7 +589,7 @@
         amount: amountVal,
         currency: currencyCode,
         callback: function(response) {
-          if (window.AppStore) window.AppStore.setPremiumStatus(true, activePremiumPlan);
+          if (window.AppStore) window.AppStore.setPremiumStatus(true, targetPlan);
           window.closePremiumModal();
           if (typeof triggerConfetti === 'function') triggerConfetti();
           alert('Congratulations! Payment Successful! Reference: ' + response.reference + '. Welcome to FinFlow VIP Premium! 🏆');
