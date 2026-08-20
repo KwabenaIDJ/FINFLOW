@@ -226,6 +226,8 @@
         return { success: false, message: 'Password must be at least 6 characters long for cloud security.' };
       }
 
+      const registry = JSON.parse(localStorage.getItem(USERS_REGISTRY_KEY) || '{}');
+
       const client = getSupabaseClient();
       let supabaseUser = null;
 
@@ -267,7 +269,6 @@
         }
       } else {
         // Offline / No client fallback: check local registry
-        const registry = JSON.parse(localStorage.getItem(USERS_REGISTRY_KEY) || '{}');
         if (registry[userKey]) {
           return { success: false, message: 'Username is already taken. Try another username!' };
         }
