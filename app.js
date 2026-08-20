@@ -537,13 +537,8 @@
       return;
     }
     
-    const usdPrice = 1.49;
-
-    // Use live exchange rate converter engine to get exact GHS amount from USD
-    const ghsAmount = convertCurrencyAmount(usdPrice, 'GH₵', '$');
-    
-    // Amount in pesewas for Paystack API (1 GHS = 100 pesewas)
-    const amountVal = Math.max(100, Math.round(ghsAmount * 100));
+    // Fixed price GH₵ 13.99 in pesewas for Paystack API (13.99 * 100 = 1399 pesewas)
+    const amountVal = 1399;
     
     const currencyCode = 'GHS';
     const emailAddress = 'customer_' + (settings.userName || 'User').toLowerCase().replace(/\s+/g, '_') + '@financialdashboard.com';
