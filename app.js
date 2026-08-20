@@ -2210,10 +2210,10 @@
         <div class="ai-insight-item locked-teaser">
           <div class="insight-title" style="color: #f1c40f; font-weight: 800;">👑 Proactive AI Insights (15+ Active)</div>
           <div class="insight-desc" style="margin-bottom: 8px;">
-            Unlock background leak detection, idle cash alerts, category spike warnings & Accra benchmark stats with Premium ($1.99/mo).
+            Unlock background leak detection, idle cash alerts, category spike warnings & Accra benchmark stats with Premium (GH₵13.99/mo).
           </div>
           <button type="button" class="btn btn-primary btn-sm upgrade-trigger-btn" style="background: linear-gradient(135deg, #f1c40f, #f39c12); color: #0b0f19; font-weight: 800; border: none; font-size: 0.76rem; padding: 6px 14px; border-radius: 14px; cursor: pointer;">
-            Unlock All Insights ($1.99)
+            Unlock All Insights (GH₵13.99)
           </button>
         </div>
       `;
@@ -3541,41 +3541,8 @@ Ask me specific financial questions like:
 
     if (elements.upgradeCheckoutBtn) {
       elements.upgradeCheckoutBtn.addEventListener('click', () => {
-        const settings = window.AppStore.getSettings();
-        const paystackKey = 'pk_live_3bb03f9209cfe3ac12fe324b73167807ef9bbac8';
-        
-        if (typeof PaystackPop === 'undefined') {
-          alert('Paystack SDK is loading or blocked. Check your internet connection.');
-          return;
-        }
-        
-        // Base Premium price is $1.99 USD globally.
-        // Convert $1.99 USD to GHS dynamically using live market exchange rate:
-        const liveUsdRate = (settings.exchangeRates && settings.exchangeRates['$']) ? Number(settings.exchangeRates['$']) : 15.5;
-        const amountVal = Math.max(100, Math.round(1.99 * liveUsdRate * 100)); // amount in pesewas
-        
-        const currencyCode = 'GHS';
-        const emailAddress = 'customer_' + (settings.userName || 'User').toLowerCase().replace(/\s+/g, '_') + '@financialdashboard.com';
-
-        try {
-          const handler = PaystackPop.setup({
-            key: paystackKey,
-            email: emailAddress,
-            amount: amountVal,
-            currency: currencyCode,
-            callback: function(response) {
-              window.AppStore.setPremiumStatus(true);
-              closeModal(elements.premiumUpgradeModal);
-              triggerConfetti();
-              alert('Congratulations! Payment Successful! Reference: ' + response.reference + '. Welcome to Premium Membership! 🏆');
-            },
-            onClose: function() {
-              alert('Payment window closed. Upgrade cancelled.');
-            }
-          });
-          handler.openIframe();
-        } catch(err) {
-          alert('Failed to launch Paystack checkout: ' + err.message);
+        if (typeof window.triggerPaystackCheckout === 'function') {
+          window.triggerPaystackCheckout();
         }
       });
     }
