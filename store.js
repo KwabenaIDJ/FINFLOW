@@ -598,7 +598,7 @@
           monthly_savings_goal: settings.monthlySavingsGoal || 1200,
           is_premium: !!settings.isPremium,
           ai_queries_count: settings.aiQueriesCount || 0,
-          profile_pic: settings.profilePic || null,
+          profile_pic: (settings.profilePic !== undefined && settings.profilePic !== null) ? settings.profilePic : '',
           free_pdf_exports_used: settings.freePdfExportsUsed || 0,
           updated_at: new Date().toISOString()
         });
