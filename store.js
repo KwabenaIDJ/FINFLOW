@@ -253,14 +253,12 @@
 
           if (error) {
             console.warn('Supabase Auth signup notice:', error.message);
-            return { success: false, message: 'Supabase Cloud Signup Error: ' + error.message };
           } else if (data && data.user) {
             supabaseUser = data.user;
             console.log('Supabase Auth signup success:', supabaseUser.id);
           }
         } catch (err) {
-          console.warn('Supabase Auth signup exception:', err);
-          return { success: false, message: 'Cloud connection error: ' + (err.message || err) };
+          console.warn('Supabase Auth signup exception (proceeding with local setup & background sync):', err);
         }
       }
 
@@ -527,6 +525,8 @@
           monthly_savings_goal: settings.monthlySavingsGoal || 1200,
           is_premium: !!settings.isPremium,
           ai_queries_count: settings.aiQueriesCount || 0,
+          profile_pic: settings.profilePic || null,
+          free_pdf_exports_used: settings.freePdfExportsUsed || 0,
           updated_at: new Date().toISOString()
         });
 
@@ -600,6 +600,12 @@
           this.data.settings.monthlySavingsGoal = profile.monthly_savings_goal || this.data.settings.monthlySavingsGoal;
           this.data.settings.isPremium = profile.is_premium ?? this.data.settings.isPremium;
           this.data.settings.aiQueriesCount = profile.ai_queries_count ?? this.data.settings.aiQueriesCount;
+          if (profile.profile_pic) {
+            this.data.settings.profilePic = profile.profile_pic;
+          }
+          if (profile.free_pdf_exports_used !== undefined && profile.free_pdf_exports_used !== null) {
+            this.data.settings.freePdfExportsUsed = profile.free_pdf_exports_used;
+          }
         }
 
         // Fetch Transactions
