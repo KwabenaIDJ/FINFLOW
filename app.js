@@ -2750,6 +2750,48 @@ Ask me specific financial questions like:
       '--text-muted': '#fca5a5',
       '--color-border': 'rgba(239, 68, 68, 0.15)',
       '--color-border-hover': 'rgba(239, 68, 68, 0.3)'
+    },
+    sapphire: {
+      '--bg-primary': '#040d1a',
+      '--bg-secondary': '#09182d',
+      '--bg-card': 'rgba(9, 24, 45, 0.65)',
+      '--bg-card-hover': 'rgba(15, 38, 70, 0.8)',
+      '--bg-glass-sidebar': 'rgba(4, 13, 26, 0.85)',
+      '--color-primary': '#06b6d4',
+      '--color-primary-hover': '#0891b2',
+      '--color-primary-glow': 'rgba(6, 182, 212, 0.25)',
+      '--text-main': '#ecfeff',
+      '--text-muted': '#a5f3fc',
+      '--color-border': 'rgba(6, 182, 212, 0.15)',
+      '--color-border-hover': 'rgba(6, 182, 212, 0.3)'
+    },
+    amethyst: {
+      '--bg-primary': '#0f0919',
+      '--bg-secondary': '#1a0e2e',
+      '--bg-card': 'rgba(26, 14, 46, 0.65)',
+      '--bg-card-hover': 'rgba(45, 24, 80, 0.8)',
+      '--bg-glass-sidebar': 'rgba(15, 9, 25, 0.85)',
+      '--color-primary': '#a855f7',
+      '--color-primary-hover': '#9333ea',
+      '--color-primary-glow': 'rgba(168, 85, 247, 0.25)',
+      '--text-main': '#faf5ff',
+      '--text-muted': '#e9d5ff',
+      '--color-border': 'rgba(168, 85, 247, 0.15)',
+      '--color-border-hover': 'rgba(168, 85, 247, 0.3)'
+    },
+    rose: {
+      '--bg-primary': '#16080d',
+      '--bg-secondary': '#260e17',
+      '--bg-card': 'rgba(38, 14, 23, 0.65)',
+      '--bg-card-hover': 'rgba(65, 24, 40, 0.8)',
+      '--bg-glass-sidebar': 'rgba(22, 8, 13, 0.85)',
+      '--color-primary': '#f43f5e',
+      '--color-primary-hover': '#e11d48',
+      '--color-primary-glow': 'rgba(244, 63, 94, 0.25)',
+      '--text-main': '#fff1f2',
+      '--text-muted': '#fecdd3',
+      '--color-border': 'rgba(244, 63, 94, 0.15)',
+      '--color-border-hover': 'rgba(244, 63, 94, 0.3)'
     }
   };
 

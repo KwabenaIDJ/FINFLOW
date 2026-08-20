@@ -76,26 +76,18 @@
     // Return the default data blueprint
     return {
       transactions: [], // Initialize transactions ledger as an empty array
-      budgets: {
-        Rent: 1400,        // Default category monthly limits
-        Food: 550,
-        Utilities: 250,
-        Shopping: 350,
-        Entertainment: 200,
-        Travel: 300,
-        Other: 150
-      },
-      goals: [],      // Starts with a clean goals list per user request
-      portfolio: [],  // Initialize investments portfolio as an empty array
-      todos: [],      // Tasks checklist
+      budgets: {},      // Clean empty category monthly limits
+      goals: [],        // Clean goals list
+      portfolio: [],    // Clean investments portfolio
+      todos: [],        // Clean tasks checklist
       settings: {
-        userName: 'User',     // Initial user profile display name
-        currency: 'GH₵',       // Initial currency symbol
-        monthlySavingsGoal: 1200, // Monthly savings target
-        paystackKey: '',       // Empty Paystack secret key placeholder
-        geminiApiKey: '',      // Optional Gemini AI API key override
-        aiQueriesCount: 0,     // Free AI Coach queries used counter
-        isPremium: false,      // Default membership tier (Standard)
+        userName: 'User',        // Initial user profile display name
+        currency: 'GH₵',          // Initial currency symbol
+        monthlySavingsGoal: 0,   // Monthly savings target
+        paystackKey: '',         // Empty Paystack secret key placeholder
+        geminiApiKey: '',        // Optional Gemini AI API key override
+        aiQueriesCount: 0,       // Free AI Coach queries used counter
+        isPremium: false,        // Default membership tier (Standard)
         exchangeRates: {...DEFAULT_GHS_RATES}
       }
     };
