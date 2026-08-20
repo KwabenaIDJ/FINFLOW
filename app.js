@@ -3455,7 +3455,8 @@ Ask me specific financial questions like:
       }
 
       const profilePicToSave = (selectedProfilePic !== null) ? selectedProfilePic : (settings.profilePic || '');
-      window.AppStore.updateSettings({ userName, currency, monthlySavingsGoal, paystackKey, profilePic: profilePicToSave });
+      const profilePicRemoved = (profilePicToSave === '');
+      window.AppStore.updateSettings({ userName, currency, monthlySavingsGoal, paystackKey, profilePic: profilePicToSave, profilePicRemoved: profilePicRemoved });
       selectedProfilePic = null;
       alert('Settings updated successfully!');
     });
