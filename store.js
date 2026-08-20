@@ -719,9 +719,8 @@
           }));
         }
 
-        // Write to local storage and refresh views
-        localStorage.setItem(STORAGE_KEY, JSON.stringify(this.data));
-        window.dispatchEvent(new CustomEvent('store-updated'));
+        // Save active state and sync registry across devices
+        this.save();
         return true;
       } catch (err) {
         console.warn('Supabase fetchFromCloud error:', err);
