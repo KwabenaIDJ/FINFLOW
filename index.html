@@ -1127,21 +1127,7 @@
                 Sunset Rose Gold
               </button>
             </div>
-          <!-- Biometric App Lock Option -->
-          <div class="form-group" style="margin-top: 15px; background: var(--bg-secondary); padding: 14px; border-radius: var(--border-radius-sm); border: 1px solid var(--color-border);">
-            <div style="display: flex; align-items: center; justify-content: space-between;">
-              <div>
-                <div style="font-weight: 700; font-size: 0.88rem; color: var(--text-main); display: flex; align-items: center; gap: 6px;">
-                  <span>🔐 Biometric App Lock (Fingerprint / PIN)</span>
-                </div>
-                <div style="font-size: 0.74rem; color: var(--text-muted); margin-top: 2px;">Require Fingerprint, Face ID, or PIN protection when opening the app.</div>
-              </div>
-              <label class="ios-switch-label">
-                <input type="checkbox" id="biometricLockToggle">
-                <span class="ios-switch-slider" id="biometricToggleSlider"></span>
-              </label>
-            </div>
-          </div>
+
 
           <button type="submit" class="btn btn-primary" style="margin-top: 10px;">Save Settings</button>
           <button type="button" class="btn btn-danger" id="resetAppDataBtn" style="margin-top: 10px; margin-left: 10px;">Reset App Data</button>
@@ -1786,29 +1772,7 @@
     </div>
   </div>
 
-  <!-- ==================== OVERLAY: BIOMETRIC APP LOCK ==================== -->
-  <div class="modal-overlay" id="biometricLockModal" style="display: none; background: rgba(11, 15, 25, 0.96); z-index: 100000; align-items: center; justify-content: center;">
-    <div style="background: var(--bg-secondary); border: 1px solid var(--color-border); border-radius: var(--border-radius-lg); padding: 30px 24px; max-width: 380px; width: 90%; text-align: center; box-shadow: var(--shadow-main);">
-      <div id="biometricScannerRing" style="width: 76px; height: 76px; border-radius: 50%; background: var(--color-primary-glow); color: var(--color-primary); display: flex; align-items: center; justify-content: center; font-size: 2.2rem; margin: 0 auto 16px auto; border: 2px dashed var(--color-primary); cursor: pointer; transition: all 0.3s ease;">
-        👆
-      </div>
-      <h3 style="font-size: 1.2rem; font-weight: 800; color: var(--text-main); margin-bottom: 6px;">FinFlow App Locked</h3>
-      <p style="font-size: 0.82rem; color: var(--text-muted); line-height: 1.5; margin-bottom: 16px;">
-        Scan your Fingerprint, Face ID, or enter your device security PIN to access your financial ledger.
-      </p>
-      <div id="biometricStatusText" style="font-size: 0.82rem; font-weight: 700; color: var(--color-primary); margin-bottom: 14px; min-height: 20px;">Touch sensor to authenticate</div>
-      <button type="button" class="btn btn-primary" id="verifyBiometricBtn" style="width: 100%; padding: 12px; font-weight: 800; font-size: 0.92rem; display: flex; align-items: center; justify-content: center; gap: 8px;">
-        <span>👆 Scan Fingerprint / Face ID</span>
-      </button>
-      <div style="margin-top: 14px;">
-        <button type="button" id="biometricPinToggleBtn" style="background: none; border: none; color: var(--color-primary); font-size: 0.78rem; font-weight: 600; cursor: pointer; text-decoration: underline;">Unlock with Account Password</button>
-      </div>
-      <div id="biometricPinContainer" style="display: none; margin-top: 14px; padding-top: 14px; border-top: 1px solid var(--color-border);">
-        <input type="password" id="biometricPinInput" class="form-control" placeholder="Enter account password" style="text-align: center; margin-bottom: 10px; font-size: 0.88rem; padding: 10px;">
-        <button type="button" class="btn btn-secondary" id="verifyBiometricPinBtn" style="width: 100%; font-size: 0.85rem; padding: 10px; font-weight: 700;">Verify & Unlock</button>
-      </div>
-    </div>
-  </div>
+
 
   <!-- ==================== ONBOARDING TOUR TOOLTIP & OVERLAY ==================== -->
   <div id="tourOverlay" style="display: none; position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; background: rgba(0,0,0,0.6); z-index: 10001; pointer-events: none; transition: all 0.3s ease;"></div>
