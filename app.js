@@ -3706,13 +3706,6 @@ Ask me specific financial questions like:
       biometricLockToggle.checked = !!settings.biometricLockEnabled;
 
       biometricLockToggle.addEventListener('change', (e) => {
-        const isPremium = window.AppStore ? window.AppStore.getSettings().isPremium : false;
-        if (!isPremium) {
-          e.target.checked = false;
-          window.openPremiumModal();
-          alert('🔒 Biometric App Lock is a Premium Feature. Upgrade to Premium for GH₵13.99/mo to lock your app with Fingerprint / Face ID!');
-          return;
-        }
         window.AppStore.updateSettings({ biometricLockEnabled: e.target.checked });
         alert(e.target.checked ? '🔐 Biometric App Lock Enabled!' : '🔓 Biometric App Lock Disabled');
       });
@@ -3729,7 +3722,7 @@ Ask me specific financial questions like:
     }
 
     const settings = window.AppStore ? window.AppStore.getSettings() : {};
-    if (settings.isPremium && settings.biometricLockEnabled && biometricLockModal) {
+    if (settings.biometricLockEnabled && biometricLockModal) {
       biometricLockModal.style.display = 'flex';
     }
 
