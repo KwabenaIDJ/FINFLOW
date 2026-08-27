@@ -73,27 +73,9 @@
       return d.toISOString().split('T')[0]; // Extract YYYY-MM-DD
     };
 
-    const defaultAccId = 'acc_default';
-    const defaultAccount = {
-      id: defaultAccId,
-      name: 'Personal Account',
-      type: 'personal',
-      currency: 'GH₵',
-      icon: 'user',
-      transactions: [],
-      budgets: {},
-      goals: [],
-      portfolio: [],
-      todos: []
-    };
-
     // Return the default data blueprint
     return {
-      activeAccountId: defaultAccId,
-      accounts: {
-        [defaultAccId]: defaultAccount
-      },
-      transactions: [], // Initialize active transactions ledger as an empty array
+      transactions: [], // Initialize transactions ledger as an empty array
       budgets: {},      // Clean empty category monthly limits
       goals: [],        // Clean goals list
       portfolio: [],    // Clean investments portfolio
@@ -143,162 +125,6 @@
         // No active session: fallback to default mock seeder data so components don't crash
         this.data = getSeedData();
       }
-      this.ensureAccountStructure();
-    },
-
-    /**
-     * Guarantees that the data object has a valid accounts registry and activeAccountId.
-     */
-    ensureAccountStructure() {
-      if (!this.data) return;
-      if (!this.data.accounts || typeof this.data.accounts !== 'object' || Array.isArray(this.data.accounts)) {
-        const defaultAccId = 'acc_default';
-        this.data.accounts = {
-          [defaultAccId]: {
-            id: defaultAccId,
-            name: 'Personal Account',
-            type: 'personal',
-            currency: (this.data.settings && this.data.settings.currency) ? this.data.settings.currency : 'GH₵',
-            icon: 'user',
-            transactions: this.data.transactions || [],
-            budgets: this.data.budgets || {},
-            goals: this.data.goals || [],
-            portfolio: this.data.portfolio || [],
-            todos: this.data.todos || []
-          }
-        };
-        this.data.activeAccountId = defaultAccId;
-      }
-      if (!this.data.activeAccountId || !this.data.accounts[this.data.activeAccountId]) {
-        const firstKey = Object.keys(this.data.accounts)[0] || 'acc_default';
-        this.data.activeAccountId = firstKey;
-      }
-    },
-
-    /**
-     * Retrieves all accounts configured for the active user.
-     */
-    getAccounts() {
-      this.ensureAccountStructure();
-      return Object.values(this.data.accounts);
-    },
-
-    /**
-     * Retrieves the currently active account object.
-     */
-    getActiveAccount() {
-      this.ensureAccountStructure();
-      return this.data.accounts[this.data.activeAccountId] || Object.values(this.data.accounts)[0];
-    },
-
-    /**
-     * Switches the active account ledger context and re-syncs state.
-     */
-    switchAccount(accountId) {
-      this.ensureAccountStructure();
-      if (!this.data.accounts[accountId]) {
-        return { success: false, message: 'Account not found.' };
-      }
-      
-      // First sync current active ledger into active account entry before switching
-      const curAcc = this.data.accounts[this.data.activeAccountId];
-      if (curAcc) {
-        curAcc.transactions = this.data.transactions || [];
-        curAcc.budgets = this.data.budgets || {};
-        curAcc.goals = this.data.goals || [];
-        curAcc.portfolio = this.data.portfolio || [];
-        curAcc.todos = this.data.todos || [];
-      }
-
-      // Switch active account ID
-      this.data.activeAccountId = accountId;
-      const targetAcc = this.data.accounts[accountId];
-
-      // Load target account ledger into main active state
-      this.data.transactions = targetAcc.transactions || [];
-      this.data.budgets = targetAcc.budgets || {};
-      this.data.goals = targetAcc.goals || [];
-      this.data.portfolio = targetAcc.portfolio || [];
-      this.data.todos = targetAcc.todos || [];
-
-      if (targetAcc.currency && this.data.settings) {
-        this.data.settings.currency = targetAcc.currency;
-      }
-
-      this.save();
-      window.dispatchEvent(new CustomEvent('store-updated'));
-      return { success: true, account: targetAcc };
-    },
-
-    /**
-     * Creates a new account/workspace profile. Gated by Premium membership if user has >= 1 account.
-     */
-    createAccount({ name, type, currency }) {
-      this.ensureAccountStructure();
-      const existingAccounts = Object.values(this.data.accounts);
-      const isPremium = this.data.settings ? !!this.data.settings.isPremium : false;
-
-      // Premium Gate: Free users get 1 account maximum
-      if (!isPremium && existingAccounts.length >= 1) {
-        return {
-          success: false,
-          requiresPremium: true,
-          message: 'Creating multiple accounts is a Premium feature. Upgrade to Premium for GH₵13.99/mo to create unlimited business and personal workspaces!'
-        };
-      }
-
-      const accId = 'acc_' + Date.now();
-      const accName = (name || 'New Account').trim();
-      const accType = type || 'personal';
-      const accCurrency = currency || (this.data.settings ? this.data.settings.currency : 'GH₵');
-      
-      let icon = 'user';
-      if (accType === 'business') icon = 'briefcase';
-      else if (accType === 'side_hustle') icon = 'rocket';
-      else if (accType === 'savings') icon = 'piggy-bank';
-
-      const newAcc = {
-        id: accId,
-        name: accName,
-        type: accType,
-        currency: accCurrency,
-        icon: icon,
-        transactions: [],
-        budgets: {},
-        goals: [],
-        portfolio: [],
-        todos: []
-      };
-
-      this.data.accounts[accId] = newAcc;
-      this.switchAccount(accId);
-      return { success: true, account: newAcc };
-    },
-
-    /**
-     * Deletes a secondary account workspace.
-     */
-    deleteAccount(accountId) {
-      this.ensureAccountStructure();
-      const existingKeys = Object.keys(this.data.accounts);
-      if (existingKeys.length <= 1) {
-        return { success: false, message: 'You cannot delete your only active account!' };
-      }
-      if (!this.data.accounts[accountId]) {
-        return { success: false, message: 'Account not found.' };
-      }
-
-      delete this.data.accounts[accountId];
-      
-      if (this.data.activeAccountId === accountId) {
-        const nextId = Object.keys(this.data.accounts)[0];
-        this.switchAccount(nextId);
-      } else {
-        this.save();
-        window.dispatchEvent(new CustomEvent('store-updated'));
-      }
-
-      return { success: true };
     },
 
     /**
@@ -750,19 +576,6 @@
      * Dispatches a custom event to notify all listening UI views to redraw.
      */
     save() {
-      // Sync active state back into the active account object
-      if (this.data && this.data.accounts && this.data.activeAccountId && this.data.accounts[this.data.activeAccountId]) {
-        const curAcc = this.data.accounts[this.data.activeAccountId];
-        curAcc.transactions = this.data.transactions || [];
-        curAcc.budgets = this.data.budgets || {};
-        curAcc.goals = this.data.goals || [];
-        curAcc.portfolio = this.data.portfolio || [];
-        curAcc.todos = this.data.todos || [];
-        if (this.data.settings && this.data.settings.currency) {
-          curAcc.currency = this.data.settings.currency;
-        }
-      }
-
       // Stringify the data object and write it into active local storage safely
       try {
         localStorage.setItem(STORAGE_KEY, JSON.stringify(this.data));
