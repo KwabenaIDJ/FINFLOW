@@ -1004,6 +1004,7 @@
 
     // Update circular profile avatars text contents or backgrounds
     const avatars = document.querySelectorAll('.profile-avatar');
+    const initials = settings.userName ? settings.userName.split(' ').map(n => n[0]).join('').toUpperCase().slice(0,2) : 'U';
     const activeProfilePic = settings.profilePic || '';
     
     avatars.forEach(avatar => {
