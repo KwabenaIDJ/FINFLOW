@@ -2090,8 +2090,10 @@
     renderBudgetBreachAlerts();
     renderAIInsights();
     
-    // Update charts dimensions and redraw trend curves
-    window.AppCharts.updateAll();
+    // Update charts dimensions and redraw trend curves safely
+    if (window.AppCharts && typeof window.AppCharts.updateAll === 'function') {
+      window.AppCharts.updateAll();
+    }
     
     // Calculate category breakdown sums specifically for charts
     const filteredTxs = getFilteredTransactions();
@@ -2101,7 +2103,9 @@
         categoryBreakdown[tx.category] = (categoryBreakdown[tx.category] || 0) + tx.amount;
       }
     });
-    window.AppCharts.updateCategoryChart(categoryBreakdown);
+    if (window.AppCharts && typeof window.AppCharts.updateCategoryChart === 'function') {
+      window.AppCharts.updateCategoryChart(categoryBreakdown);
+    }
   }
 
   /**
@@ -2913,7 +2917,9 @@ Ask me specific financial questions like:
     }
     
     updateThemeToggleUI(newTheme);
-    window.AppCharts.updateTheme(); // Re-apply grid colors to chart canvas
+    if (window.AppCharts && typeof window.AppCharts.updateTheme === 'function') {
+      window.AppCharts.updateTheme(); // Re-apply grid colors to chart canvas
+    }
   }
 
   // --- Router / Tab controller ---
@@ -4721,8 +4727,9 @@ Ask me specific financial questions like:
     registerEvents();            // Bind all form submit and button click listeners
     initAuth();                  // Handle sign-in/sign-up authentication checks
     
-    // Always initialize dashboard views and layout components
-    window.AppCharts.init();     // Initialize Charts.js default configurations
+    if (window.AppCharts && typeof window.AppCharts.init === 'function') {
+      window.AppCharts.init();     // Initialize Charts.js default configurations
+    }
     syncUI();                    // Redraw all UI elements
     
     if (window.AppStore.isLoggedIn()) {
