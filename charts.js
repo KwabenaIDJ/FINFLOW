@@ -38,12 +38,19 @@
         months.push({ label: monthLabel, year: d.getFullYear(), month: d.getMonth() });
       }
 
-      // Aggregate transaction amounts per month
+      // Aggregate transaction amounts per month safely
       txs.forEach(tx => {
         if (!tx.date) return;
-        const txDate = new Date(tx.date);
-        const txYear = txDate.getFullYear();
-        const txMonth = txDate.getMonth();
+        let txYear = 0, txMonth = 0;
+        if (typeof tx.date === 'string' && tx.date.includes('-')) {
+          const parts = tx.date.split('T')[0].split('-');
+          txYear = parseInt(parts[0], 10);
+          txMonth = parseInt(parts[1], 10) - 1;
+        } else {
+          const d = new Date(tx.date);
+          txYear = d.getFullYear();
+          txMonth = d.getMonth();
+        }
         const amount = Number(tx.amount) || 0;
 
         months.forEach((m, index) => {
@@ -176,7 +183,7 @@
                   label: function(context) {
                     if (labels.length === 0) return ' No expense data yet';
                     const val = context.raw || 0;
-                    return  : ;
+                    return ' ' + context.label + ': ' + val.toLocaleString();
                   }
                 }
               }

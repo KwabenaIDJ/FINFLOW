@@ -744,7 +744,12 @@
           this.data.settings.isPremium = profile.is_premium ?? this.data.settings.isPremium;
           this.data.settings.aiQueriesCount = profile.ai_queries_count ?? this.data.settings.aiQueriesCount;
           if (profile.profile_pic !== undefined && profile.profile_pic !== null) {
-            this.data.settings.profilePic = profile.profile_pic;
+            // Protect removed avatar state from being overwritten by stale cloud data
+            if (this.data.settings.profilePic === '' && profile.profile_pic !== '') {
+              // Local photo was removed by user, preserve removed state
+            } else {
+              this.data.settings.profilePic = profile.profile_pic;
+            }
           }
           if (profile.free_pdf_exports_used !== undefined && profile.free_pdf_exports_used !== null) {
             this.data.settings.freePdfExportsUsed = profile.free_pdf_exports_used;
