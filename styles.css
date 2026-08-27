@@ -1968,6 +1968,7 @@ header {
 
 /* ==================== FINFLOW AI COACH & FAB STYLES ==================== */
 .ai-fab-button {
+  display: none !important;
   position: fixed;
   bottom: 24px;
   right: 24px;
