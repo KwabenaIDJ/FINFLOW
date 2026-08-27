@@ -743,13 +743,8 @@
           this.data.settings.monthlySavingsGoal = profile.monthly_savings_goal || this.data.settings.monthlySavingsGoal;
           this.data.settings.isPremium = profile.is_premium ?? this.data.settings.isPremium;
           this.data.settings.aiQueriesCount = profile.ai_queries_count ?? this.data.settings.aiQueriesCount;
-          if (profile.profile_pic && profile.profile_pic.length > 0) {
+          if (profile.profile_pic !== undefined && profile.profile_pic !== null) {
             this.data.settings.profilePic = profile.profile_pic;
-          } else if (profile.profile_pic === '') {
-            // Explicit deletion from cloud
-            if (!this.data.settings.profilePic || this.data.settings.profilePic === '') {
-              this.data.settings.profilePic = '';
-            }
           }
           if (profile.free_pdf_exports_used !== undefined && profile.free_pdf_exports_used !== null) {
             this.data.settings.freePdfExportsUsed = profile.free_pdf_exports_used;
