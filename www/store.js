@@ -34,7 +34,7 @@
 
   const DEFAULT_GHS_RATES = {
     'GH₵': 1.0,
-    '$': 11.59,
+    '$': 15.50,
     '€': 12.60,
     '£': 14.80,
     '¥': 2.15,
@@ -76,26 +76,18 @@
     // Return the default data blueprint
     return {
       transactions: [], // Initialize transactions ledger as an empty array
-      budgets: {
-        Rent: 1400,        // Default category monthly limits
-        Food: 550,
-        Utilities: 250,
-        Shopping: 350,
-        Entertainment: 200,
-        Travel: 300,
-        Other: 150
-      },
-      goals: [],      // Starts with a clean goals list per user request
-      portfolio: [],  // Initialize investments portfolio as an empty array
-      todos: [],      // Tasks checklist
+      budgets: {},      // Clean empty category monthly limits
+      goals: [],        // Clean goals list
+      portfolio: [],    // Clean investments portfolio
+      todos: [],        // Clean tasks checklist
       settings: {
-        userName: 'User',     // Initial user profile display name
-        currency: 'GH₵',       // Initial currency symbol
-        monthlySavingsGoal: 1200, // Monthly savings target
-        paystackKey: '',       // Empty Paystack secret key placeholder
-        geminiApiKey: '',      // Optional Gemini AI API key override
-        aiQueriesCount: 0,     // Free AI Coach queries used counter
-        isPremium: false,      // Default membership tier (Standard)
+        userName: 'User',        // Initial user profile display name
+        currency: 'GH₵',          // Initial currency symbol
+        monthlySavingsGoal: 0,   // Monthly savings target
+        paystackKey: '',         // Empty Paystack secret key placeholder
+        geminiApiKey: '',        // Optional Gemini AI API key override
+        aiQueriesCount: 0,       // Free AI Coach queries used counter
+        isPremium: false,        // Default membership tier (Standard)
         exchangeRates: {...DEFAULT_GHS_RATES}
       }
     };
@@ -148,50 +140,99 @@
     /**
      * Authenticates a user and sets up the active session.
      */
+    /**
+     * Authenticates an existing user via Supabase Cloud Auth and local storage.
+     */
     async signIn(username, password) {
       const rawUsername = username.trim();
-      const userKey = rawUsername.toLowerCase();
+      const userKey = rawUsername.toLowerCase().replace(/\s+/g, '');
       const registry = JSON.parse(localStorage.getItem(USERS_REGISTRY_KEY) || '{}');
-
-      // Attempt Supabase Auth Cloud Login
       const client = getSupabaseClient();
+
+      let cloudUser = null;
+      let lastAuthError = null;
+
+      // 1. Candidate emails to try on Supabase Cloud Auth
+      const candidateEmails = [];
+      if (rawUsername.includes('@')) {
+        candidateEmails.push(rawUsername);
+      } else {
+        candidateEmails.push(`${userKey}@gmail.com`);
+        candidateEmails.push(`${rawUsername.toLowerCase()}@gmail.com`);
+        candidateEmails.push(`${rawUsername.toLowerCase().replace(/[^a-z0-9]/g, '')}@gmail.com`);
+      }
+
       if (client) {
         try {
-          const authEmail = rawUsername.includes('@') ? rawUsername : `${userKey}@gmail.com`;
-          const { data, error } = await client.auth.signInWithPassword({
-            email: authEmail,
-            password: password
-          });
-          if (data && data.user) {
-            console.log('Supabase Auth sign-in success:', data.user.id);
-          } else if (error) {
-            console.warn('Supabase Auth sign-in notice:', error.message);
+          // Attempt login with candidate emails
+          for (const emailAttempt of candidateEmails) {
+            const { data, error } = await client.auth.signInWithPassword({
+              email: emailAttempt,
+              password: password
+            });
+            if (data && data.user) {
+              cloudUser = data.user;
+              break;
+            } else if (error) {
+              lastAuthError = error.message;
+            }
+          }
+
+          // If login failed, check if user profile exists by user_name in profiles table
+          if (!cloudUser) {
+            const { data: matchedProfile } = await client.from('profiles')
+              .select('id, user_name')
+              .or(`user_name.ilike.${rawUsername},user_name.ilike.%${rawUsername}%`)
+              .maybeSingle();
+
+            if (matchedProfile && lastAuthError && lastAuthError.toLowerCase().includes('invalid login credentials')) {
+              return { success: false, message: 'Invalid password for this account. Please try again!' };
+            }
           }
         } catch (err) {
           console.warn('Supabase Auth signin exception:', err);
         }
       }
 
-      if (!registry[userKey]) {
-        return { success: false, message: 'Account not found. Please sign up first!' };
+      const matchedKey = registry[userKey] ? userKey : (registry[rawUsername.toLowerCase()] ? rawUsername.toLowerCase() : null);
+
+      // 2. Validate authentication success (either Cloud Auth or Local Registry match)
+      if (cloudUser || matchedKey) {
+        const activeKey = matchedKey || userKey;
+        if (!registry[activeKey]) {
+          // User signed up on another device! Create local workspace for this authenticated cloud user
+          const userData = getSeedData();
+          userData.settings.userName = rawUsername;
+          registry[activeKey] = {
+            username: rawUsername,
+            password: password,
+            supabaseId: cloudUser ? cloudUser.id : null,
+            data: userData
+          };
+          localStorage.setItem(USERS_REGISTRY_KEY, JSON.stringify(registry));
+        } else if (!cloudUser && registry[activeKey].password !== password) {
+          return { success: false, message: 'Invalid password. Please try again.' };
+        }
+
+        // Establish active local session
+        localStorage.setItem(SESSION_KEY, activeKey);
+        this.data = registry[activeKey].data;
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(this.data));
+        window.dispatchEvent(new CustomEvent('store-updated'));
+
+        // Pull full financial history & profile image from Supabase Cloud
+        if (client) {
+          await this.fetchFromCloud();
+        }
+
+        return { success: true };
       }
 
-      if (registry[userKey].password !== password) {
-        return { success: false, message: 'Invalid password. Please try again.' };
+      if (lastAuthError && lastAuthError.toLowerCase().includes('invalid login credentials')) {
+        return { success: false, message: 'Invalid password for account. Please check your credentials and try again.' };
       }
 
-      // Establish session
-      localStorage.setItem(SESSION_KEY, userKey);
-      this.data = registry[userKey].data;
-      
-      // Save current active state
-      localStorage.setItem(STORAGE_KEY, JSON.stringify(this.data));
-      window.dispatchEvent(new CustomEvent('store-updated'));
-      
-      // Sync cloud data if available
-      this.fetchFromCloud();
-
-      return { success: true };
+      return { success: false, message: 'Account not found. Please check your username/email or sign up first!' };
     },
 
     /**
@@ -210,46 +251,50 @@
 
       const registry = JSON.parse(localStorage.getItem(USERS_REGISTRY_KEY) || '{}');
 
-      if (registry[userKey]) {
-        return { success: false, message: 'Username is already taken. Try another username!' };
-      }
-
-      // Attempt Supabase Cloud Auth Signup
       const client = getSupabaseClient();
-      if (!client) {
-        return { 
-          success: false, 
-          message: 'Supabase Client SDK is not loaded. Please check your internet connection and reload the page.' 
-        };
-      }
-
       let supabaseUser = null;
-      try {
-        const authEmail = rawUsername.includes('@') ? rawUsername : `${userKey}@gmail.com`;
-        const { data, error } = await client.auth.signUp({
-          email: authEmail,
-          password: password,
-          options: {
-            data: {
-              full_name: fullName.trim(),
-              username: rawUsername,
-              currency: currency || 'GH₵'
-            }
-          }
-        });
 
-        if (error) {
-          console.warn('Supabase Auth signup notice:', error.message);
-          return { success: false, message: 'Supabase Cloud Auth Error: ' + error.message };
-        } else if (data && data.user) {
-          supabaseUser = data.user;
-          console.log('Supabase Auth signup success:', supabaseUser.id);
-        } else {
-          return { success: false, message: 'Supabase Auth did not return a user object. Check your Supabase settings.' };
+      if (client) {
+        // 1. Check if user_name is already registered in Supabase Cloud
+        try {
+          const { data: existingProfile } = await client.from('profiles').select('id').ilike('user_name', rawUsername).maybeSingle();
+          if (existingProfile) {
+            return { success: false, message: 'Username is already taken in cloud database. Try another username!' };
+          }
+        } catch (checkErr) {}
+
+        // 2. Attempt Supabase Auth Signup
+        try {
+          const authEmail = rawUsername.includes('@') ? rawUsername : `${userKey}@gmail.com`;
+          const { data, error } = await client.auth.signUp({
+            email: authEmail,
+            password: password,
+            options: {
+              data: {
+                full_name: fullName.trim(),
+                username: rawUsername,
+                currency: currency || 'GH₵'
+              }
+            }
+          });
+
+          if (error) {
+            if (error.message && error.message.toLowerCase().includes('already registered')) {
+              return { success: false, message: 'This account already exists in Supabase. Try logging in instead!' };
+            }
+            console.warn('Supabase Auth signup notice:', error.message);
+          } else if (data && data.user) {
+            supabaseUser = data.user;
+            console.log('Supabase Auth signup success:', supabaseUser.id);
+          }
+        } catch (err) {
+          console.warn('Supabase Auth signup exception:', err);
         }
-      } catch (err) {
-        console.warn('Supabase Auth signup exception:', err);
-        return { success: false, message: 'Cloud connection error: ' + (err.message || err) };
+      } else {
+        // Offline / No client fallback: check local registry
+        if (registry[userKey]) {
+          return { success: false, message: 'Username is already taken. Try another username!' };
+        }
       }
 
       const secQuestion = (securityQuestion && securityQuestion.trim()) ? securityQuestion.trim() : 'What was the name of your first school?';
@@ -280,8 +325,10 @@
       localStorage.setItem(STORAGE_KEY, JSON.stringify(this.data));
       window.dispatchEvent(new CustomEvent('store-updated'));
 
-      // Push initial workspace data to Supabase cloud
-      this.syncToCloud();
+      // Sync initial profile and settings to Supabase Cloud
+      if (client) {
+        await this.syncToCloud();
+      }
 
       return { success: true };
     },
@@ -394,6 +441,13 @@
         }
       };
 
+      const client = getSupabaseClient();
+      if (client && client.auth) {
+        try {
+          client.auth.signOut();
+        } catch (e) {}
+      }
+
       const registry = JSON.parse(localStorage.getItem(USERS_REGISTRY_KEY) || '{}');
       registry[demoKey] = {
         fullName: 'Demo Account',
@@ -454,6 +508,13 @@
         }
       }
       
+      const client = getSupabaseClient();
+      if (client && client.auth) {
+        try {
+          client.auth.signOut();
+        } catch (e) {}
+      }
+
       // Wipe session variables
       localStorage.removeItem(SESSION_KEY);
       localStorage.removeItem(STORAGE_KEY);
@@ -465,21 +526,73 @@
     },
 
     /**
+     * Resets all user ledger transactions, budgets, goals, and tasks locally and in Supabase Cloud.
+     * Preserves profile name, currency, profile picture, and Premium membership status.
+     */
+    async resetAccountData() {
+      const currentUserName = (this.data && this.data.settings && this.data.settings.userName) ? this.data.settings.userName : 'User';
+      const currentCurrency = (this.data && this.data.settings && this.data.settings.currency) ? this.data.settings.currency : 'GH₵';
+      const isPremium = (this.data && this.data.settings && this.data.settings.isPremium) || false;
+      const profilePic = (this.data && this.data.settings && this.data.settings.profilePic) || null;
+
+      const cleanData = getSeedData();
+      cleanData.settings.userName = currentUserName;
+      cleanData.settings.currency = currentCurrency;
+      cleanData.settings.isPremium = isPremium;
+      cleanData.settings.profilePic = profilePic;
+
+      this.data = cleanData;
+      this.save();
+
+      // Clear cloud database tables for this user if connected
+      const client = getSupabaseClient();
+      if (client) {
+        try {
+          const { data: { session } } = await client.auth.getSession();
+          if (session && session.user) {
+            const userId = session.user.id;
+            await Promise.all([
+              client.from('transactions').delete().eq('user_id', userId),
+              client.from('budgets').delete().eq('user_id', userId),
+              client.from('savings_goals').delete().eq('user_id', userId)
+            ]);
+          }
+        } catch (err) {
+          console.warn('Supabase cloud reset notice:', err);
+        }
+      }
+
+      localStorage.removeItem('GUIDE_LESSONS_COMPLETED');
+      localStorage.removeItem('GUIDE_BOOKS_COMPLETED');
+      localStorage.removeItem('FINANCIAL_DASHBOARD_TOUR_DONE');
+
+      window.dispatchEvent(new CustomEvent('store-updated'));
+      if (window.syncUI) window.syncUI();
+      return true;
+    },
+
+    /**
      * Serializes and writes the in-memory data object back to localStorage.
      * Dispatches a custom event to notify all listening UI views to redraw.
      */
     save() {
-      // Stringify the data object and write it into active local storage
-      localStorage.setItem(STORAGE_KEY, JSON.stringify(this.data));
+      // Stringify the data object and write it into active local storage safely
+      try {
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(this.data));
+      } catch (err) {
+        console.warn('localStorage setItem failed:', err);
+      }
       
       // Sync private registry entry if logged in
       const currentUser = localStorage.getItem(SESSION_KEY);
       if (currentUser) {
-        const registry = JSON.parse(localStorage.getItem(USERS_REGISTRY_KEY) || '{}');
-        if (registry[currentUser]) {
-          registry[currentUser].data = this.data;
-          localStorage.setItem(USERS_REGISTRY_KEY, JSON.stringify(registry));
-        }
+        try {
+          const registry = JSON.parse(localStorage.getItem(USERS_REGISTRY_KEY) || '{}');
+          if (registry[currentUser]) {
+            registry[currentUser].data = this.data;
+            localStorage.setItem(USERS_REGISTRY_KEY, JSON.stringify(registry));
+          }
+        } catch (e) {}
       }
 
       // Trigger Cloud Sync if Supabase client is connected
@@ -495,6 +608,9 @@
      * Pushes active local data state to Supabase cloud database if connected.
      */
     async syncToCloud() {
+      const currentUser = localStorage.getItem(SESSION_KEY);
+      if (!currentUser || currentUser === 'demo_user') return;
+
       const client = getSupabaseClient();
       if (!client) return;
 
@@ -513,6 +629,8 @@
           monthly_savings_goal: settings.monthlySavingsGoal || 1200,
           is_premium: !!settings.isPremium,
           ai_queries_count: settings.aiQueriesCount || 0,
+          profile_pic: (settings.profilePic !== undefined && settings.profilePic !== null) ? settings.profilePic : '',
+          free_pdf_exports_used: settings.freePdfExportsUsed || 0,
           updated_at: new Date().toISOString()
         });
 
@@ -586,11 +704,17 @@
           this.data.settings.monthlySavingsGoal = profile.monthly_savings_goal || this.data.settings.monthlySavingsGoal;
           this.data.settings.isPremium = profile.is_premium ?? this.data.settings.isPremium;
           this.data.settings.aiQueriesCount = profile.ai_queries_count ?? this.data.settings.aiQueriesCount;
+          if (profile.profile_pic !== undefined) {
+            this.data.settings.profilePic = profile.profile_pic || '';
+          }
+          if (profile.free_pdf_exports_used !== undefined && profile.free_pdf_exports_used !== null) {
+            this.data.settings.freePdfExportsUsed = profile.free_pdf_exports_used;
+          }
         }
 
-        // Fetch Transactions
+        // Fetch Transactions (Cloud is authoritative)
         const { data: cloudTxs } = await client.from('transactions').select('*').eq('user_id', userId).order('date', { ascending: false });
-        if (cloudTxs && cloudTxs.length > 0) {
+        if (cloudTxs) {
           this.data.transactions = cloudTxs.map(t => ({
             id: t.id,
             date: t.date,
@@ -612,7 +736,7 @@
           this.data.budgets = budgetObj;
         }
 
-        // Fetch Goals
+        // Fetch Goals (Cloud is authoritative)
         const { data: cloudGoals } = await client.from('savings_goals').select('*').eq('user_id', userId);
         if (cloudGoals) {
           this.data.goals = cloudGoals.map(g => ({
@@ -624,9 +748,8 @@
           }));
         }
 
-        // Write to local storage and refresh views
-        localStorage.setItem(STORAGE_KEY, JSON.stringify(this.data));
-        window.dispatchEvent(new CustomEvent('store-updated'));
+        // Save active state and sync registry across devices
+        this.save();
         return true;
       } catch (err) {
         console.warn('Supabase fetchFromCloud error:', err);
@@ -789,7 +912,7 @@
     /**
      * Deletes a transaction from the ledger using its unique string ID.
      */
-    deleteTransaction(id) {
+    async deleteTransaction(id) {
       // Save snapshot for Undo
       this.pushState();
       // Locate index position of transaction matching ID
@@ -799,6 +922,16 @@
         this.data.transactions.splice(index, 1);
         // Persist update state
         this.save();
+
+        const client = getSupabaseClient();
+        if (client) {
+          try {
+            const { data: { session } } = await client.auth.getSession();
+            if (session && session.user) {
+              await client.from('transactions').delete().eq('id', id).eq('user_id', session.user.id);
+            }
+          } catch (e) {}
+        }
         return true; // Return successful status
       }
       return false; // Transaction matching ID not found
@@ -828,13 +961,23 @@
     /**
      * Removes a category budget limit completely.
      */
-    deleteBudget(category) {
+    async deleteBudget(category) {
       // Save state snapshot for Undo
       this.pushState();
       // Delete budget category key from map
       delete this.data.budgets[category];
       // Persist values to localStorage
       this.save();
+
+      const client = getSupabaseClient();
+      if (client) {
+        try {
+          const { data: { session } } = await client.auth.getSession();
+          if (session && session.user) {
+            await client.from('budgets').delete().eq('category', category).eq('user_id', session.user.id);
+          }
+        } catch (e) {}
+      }
     },
 
     // --- Savings Goals API ---
@@ -969,14 +1112,16 @@
     /**
      * Sets user premium status with a 30-day monthly subscription expiration timestamp.
      */
-    setPremiumStatus(isPremium) {
+    setPremiumStatus(isPremium, planType) {
       this.pushState();
       if (isPremium) {
         this.data.settings.isPremium = true;
-        // 30 days expiration timestamp in milliseconds (30 days * 24h * 60m * 60s * 1000ms)
-        this.data.settings.premiumExpiryDate = Date.now() + (30 * 24 * 60 * 60 * 1000);
+        this.data.settings.premiumPlanType = planType || 'annual';
+        const durationDays = (planType === 'monthly') ? 30 : 365;
+        this.data.settings.premiumExpiryDate = Date.now() + (durationDays * 24 * 60 * 60 * 1000);
       } else {
         this.data.settings.isPremium = false;
+        this.data.settings.premiumPlanType = null;
         this.data.settings.premiumExpiryDate = null;
       }
       this.save();

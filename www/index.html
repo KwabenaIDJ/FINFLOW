@@ -5,7 +5,8 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <meta name="description" content="Premium personal financial dashboard with offline local storage, budgets tracker, savings goals progress, mock investments ticker, and CSV data export/import.">
   <title>FinFlow - Premium Financial Dashboard</title>
-  <link rel="stylesheet" href="styles.css?v=1.3">
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>💎</text></svg>">
+  <link rel="stylesheet" href="styles.css?v=999.0">
   <!-- Asynchronous Third-Party / Google Analytics Fallback Stub -->
   <script>
     window.dataLayer = window.dataLayer || [];
@@ -288,11 +289,28 @@
             <option value="GH₵">GHS (GH₵)</option>
           </select>
 
-          <!-- Timeframe Selector -->
-          <select id="timeframeSelector" title="Filter timeframe" style="background: var(--bg-card); border: 1px solid var(--color-border); color: var(--text-main); border-radius: var(--border-radius-sm); padding: 10px 14px; font-family: inherit; font-size: 0.88rem; outline: none; cursor: pointer; transition: all var(--transition-fast); margin-right: 6px; min-width: 140px; font-weight: 600;">
+          <!-- Year Filter Selector -->
+          <select id="yearSelector" title="Select filter year" style="background: var(--bg-card); border: 1px solid var(--color-border); color: var(--text-main); border-radius: var(--border-radius-sm); padding: 10px 10px; font-family: inherit; font-size: 0.88rem; outline: none; cursor: pointer; transition: all var(--transition-fast); font-weight: 700;">
+            <option value="2026">2026</option>
+            <option value="all">All Years</option>
+          </select>
+
+          <!-- Month Filter Selector -->
+          <select id="monthSelector" title="Select filter month" style="background: var(--bg-card); border: 1px solid var(--color-border); color: var(--text-main); border-radius: var(--border-radius-sm); padding: 10px 10px; font-family: inherit; font-size: 0.88rem; outline: none; cursor: pointer; transition: all var(--transition-fast); font-weight: 700;">
             <option value="current">Current Month</option>
-            <option value="year">Full Year</option>
-            <option value="all_time">All Time</option>
+            <option value="all">All Months</option>
+            <option value="1">January</option>
+            <option value="2">February</option>
+            <option value="3">March</option>
+            <option value="4">April</option>
+            <option value="5">May</option>
+            <option value="6">June</option>
+            <option value="7">July</option>
+            <option value="8">August</option>
+            <option value="9">September</option>
+            <option value="10">October</option>
+            <option value="11">November</option>
+            <option value="12">December</option>
           </select>
         </div>
 
@@ -344,16 +362,16 @@
       <div id="aiInsightsBanner" class="card ai-insights-card" style="margin-bottom: 24px; background: linear-gradient(135deg, rgba(99, 102, 241, 0.12), rgba(168, 85, 247, 0.12)); border: 1px solid rgba(168, 85, 247, 0.3); border-radius: var(--border-radius-lg); padding: 18px 22px; position: relative; overflow: hidden; box-shadow: 0 4px 20px rgba(168, 85, 247, 0.12);">
         <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 14px; flex-wrap: wrap; gap: 10px;">
           <div style="display: flex; align-items: center; gap: 10px;">
-            <div style="width: 34px; height: 34px; border-radius: 50%; background: linear-gradient(135deg, var(--color-primary), #a855f7); display: flex; align-items: center; justify-content: center; color: #fff; font-size: 1rem; font-weight: 800; box-shadow: 0 0 12px rgba(168, 85, 247, 0.4);">💡</div>
+            <div style="width: 34px; height: 34px; border-radius: 50%; background: linear-gradient(135deg, var(--color-primary), #a855f7); display: flex; align-items: center; justify-content: center; color: #fff; font-size: 1rem; font-weight: 800; box-shadow: 0 0 12px rgba(168, 85, 247, 0.4);">⚡</div>
             <div>
               <h4 style="font-size: 0.98rem; font-weight: 800; color: var(--text-main); margin: 0; display: flex; align-items: center; gap: 6px;">
-                Proactive AI Insights <span style="background: linear-gradient(135deg, #a855f7, #ec4899); color: #fff; font-size: 0.64rem; font-weight: 800; padding: 2px 6px; border-radius: 10px; text-transform: uppercase;">Smart Admin</span>
+                Proactive AI Financial Diagnostics <span style="background: linear-gradient(135deg, #a855f7, #ec4899); color: #fff; font-size: 0.64rem; font-weight: 800; padding: 2px 6px; border-radius: 10px; text-transform: uppercase;">Smart Scanner</span>
               </h4>
-              <span style="font-size: 0.74rem; color: var(--text-muted);">Real-time background money analysis & proactive alerts</span>
+              <span style="font-size: 0.74rem; color: var(--text-muted);">Automated spending leak detection & 90-day predictive cash flow runway</span>
             </div>
           </div>
-          <button type="button" class="btn btn-secondary btn-sm" id="openAiCoachModalBtn" onclick="window.openAiCoachModal()" style="font-size: 0.78rem; font-weight: 700; background: linear-gradient(135deg, var(--color-primary), #a855f7); border: none; color: #ffffff; padding: 6px 14px; border-radius: 20px; display: flex; align-items: center; gap: 6px; cursor: pointer; box-shadow: 0 4px 12px rgba(99, 102, 241, 0.3);">
-            💬 Ask AI Coach
+          <button type="button" class="btn btn-secondary btn-sm" onclick="window.openPremiumModal()" style="font-size: 0.78rem; font-weight: 700; background: linear-gradient(135deg, #f1c40f, #f39c12); border: none; color: #0b0f19; padding: 6px 14px; border-radius: 20px; display: flex; align-items: center; gap: 6px; cursor: pointer; box-shadow: 0 4px 12px rgba(241, 196, 15, 0.3);">
+            ✨ Upgrade to Premium
           </button>
         </div>
 
@@ -440,21 +458,9 @@
             <div id="diagnosticsLockOverlay" style="display: none; position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: rgba(15, 23, 42, 0.45); backdrop-filter: blur(4px); -webkit-backdrop-filter: blur(4px); border-radius: var(--border-radius-sm); align-items: center; justify-content: center; flex-direction: column; gap: 10px; z-index: 10;">
               <span style="font-size: 1.4rem;">🔒</span>
               <span style="font-size: 0.76rem; font-weight: 700; color: #fff; text-shadow: 0 1px 3px rgba(0,0,0,0.6); text-align: center;">Unlock Detailed Smart Insights with Premium</span>
-              <button type="button" class="btn btn-primary btn-sm upgrade-trigger-btn" style="font-size: 0.72rem; padding: 6px 12px; background: #f1c40f; border-color: #f1c40f; color: #0b0f19; font-weight: 700; cursor: pointer; border-radius: 4px;">Upgrade ($1.99)</button>
+              <button type="button" class="btn btn-primary btn-sm upgrade-trigger-btn" style="font-size: 0.72rem; padding: 6px 12px; background: #f1c40f; border-color: #f1c40f; color: #0b0f19; font-weight: 700; cursor: pointer; border-radius: 4px;">Upgrade to Premium (GH₵13.99)</button>
             </div>
           </div>
-        </div>
-
-        <!-- Daily Financial Advice Card -->
-        <div class="card" style="display: flex; flex-direction: column; padding: 20px; align-items: flex-start; justify-content: flex-start; text-align: left;">
-          <h3 style="font-size: 1.05rem; font-weight: 700; margin-bottom: 12px; border-bottom: 1px solid var(--color-border); padding-bottom: 8px; width: 100%; display: flex; align-items: center; gap: 6px;">
-            <svg style="width: 18px; height: 18px; stroke: #eab308; fill: none; stroke-width: 2.5;"><use href="#icon-help"></use></svg>
-            Daily Advice
-          </h3>
-          <span id="dailyAdviceSession" style="font-size: 0.7rem; font-weight: 700; text-transform: uppercase; background: var(--color-primary-glow); color: var(--color-primary); padding: 2px 8px; border-radius: 4px; margin-bottom: 12px;">Morning Briefing</span>
-          <p id="dailyAdviceQuote" style="font-size: 0.85rem; font-style: italic; color: var(--text-main); line-height: 1.5; margin: 0; font-weight: 500;">
-            "Loading your daily advisory..."
-          </p>
         </div>
       </section>
 
@@ -497,8 +503,15 @@
         </section>
       </div>
 
-
-
+      <!-- DASHBOARD FOOTER -->
+      <footer style="margin-top: 35px; border-top: 1px solid var(--color-border); padding-top: 18px; padding-bottom: 25px; display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 12px; font-size: 0.82rem; color: var(--text-muted);">
+        <div>© 2026 FinFlow Platform. All rights reserved. • <strong style="color: var(--color-primary);">Developed by IDJ</strong></div>
+        <div style="display: flex; gap: 14px;">
+          <a href="terms.html" style="color: var(--color-primary); text-decoration: underline; font-weight: 600;">Terms of Service</a>
+          <a href="privacy.html" style="color: var(--color-primary); text-decoration: underline; font-weight: 600;">Privacy Policy</a>
+          <a href="refund.html" style="color: var(--color-primary); text-decoration: underline; font-weight: 600;">Refund Policy</a>
+        </div>
+      </footer>
     </div>
 
     <!-- ==================== PANEL: BUDGETS ==================== -->
@@ -1062,11 +1075,6 @@
             <input type="text" id="settingsCustomCurrency" maxlength="8" placeholder="e.g. ₦, KSh, GH₵, or USD">
           </div>
 
-          <div class="form-group">
-            <label for="settingsSavingsGoal">Monthly Savings Goal</label>
-            <input type="number" id="settingsSavingsGoal" required min="0">
-          </div>
-
 
 
           <!-- Premium Theme Selection -->
@@ -1077,7 +1085,7 @@
                 👑 Premium
               </span>
             </label>
-            <div class="theme-options-grid" style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 10px; margin-top: 8px;">
+            <div class="theme-options-grid" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(130px, 1fr)); gap: 10px; margin-top: 8px;">
               <button type="button" class="btn-theme-select active" data-theme-val="default" style="padding: 10px; border-radius: 8px; border: 2px solid var(--color-primary); background: var(--bg-secondary); color: var(--text-main); font-size: 0.76rem; cursor: pointer; text-align: center; font-family: inherit;">
                 <div style="font-size: 1.1rem; margin-bottom: 4px;">🔵</div>
                 Default Indigo
@@ -1094,11 +1102,20 @@
                 <div style="font-size: 1.1rem; margin-bottom: 4px;">🔴</div>
                 Crimson Neon
               </button>
+              <button type="button" class="btn-theme-select" data-theme-val="sapphire" style="padding: 10px; border-radius: 8px; border: 2px solid var(--color-border); background: #040d1a; color: #ecfeff; font-size: 0.76rem; cursor: pointer; text-align: center; font-family: inherit;">
+                <div style="font-size: 1.1rem; margin-bottom: 4px;">🩵</div>
+                Sapphire Ocean
+              </button>
+              <button type="button" class="btn-theme-select" data-theme-val="amethyst" style="padding: 10px; border-radius: 8px; border: 2px solid var(--color-border); background: #0f0919; color: #faf5ff; font-size: 0.76rem; cursor: pointer; text-align: center; font-family: inherit;">
+                <div style="font-size: 1.1rem; margin-bottom: 4px;">💜</div>
+                Amethyst Royalty
+              </button>
+              <button type="button" class="btn-theme-select" data-theme-val="rose" style="padding: 10px; border-radius: 8px; border: 2px solid var(--color-border); background: #16080d; color: #fff1f2; font-size: 0.76rem; cursor: pointer; text-align: center; font-family: inherit;">
+                <div style="font-size: 1.1rem; margin-bottom: 4px;">🩷</div>
+                Sunset Rose Gold
+              </button>
             </div>
-            <div id="premiumThemeNotice" style="font-size: 0.72rem; color: var(--text-muted); margin-top: 6px; line-height: 1.4;">
-              Upgrade to Premium Membership to select custom colors and layout designs.
-            </div>
-          </div>
+
 
           <button type="submit" class="btn btn-primary" style="margin-top: 10px;">Save Settings</button>
           <button type="button" class="btn btn-danger" id="resetAppDataBtn" style="margin-top: 10px; margin-left: 10px;">Reset App Data</button>
@@ -1143,6 +1160,18 @@
         <button class="modal-close-btn" onclick="window.closeModal(this.closest('.modal-overlay'))" aria-label="Close dialog"><svg><use href="#icon-close"></use></svg></button>
       </div>
       <form id="addTxForm">
+        <!-- OCR Receipt Scanner (Premium Feature) -->
+        <div style="background: rgba(168, 85, 247, 0.08); border: 1px dashed rgba(168, 85, 247, 0.4); padding: 12px; border-radius: var(--border-radius-sm); margin-bottom: 16px; text-align: center;">
+          <div style="font-size: 0.78rem; font-weight: 700; color: #a855f7; margin-bottom: 6px; display: flex; align-items: center; justify-content: center; gap: 4px;">
+            <span>📸 Smart Receipt & Invoice OCR Scanner</span>
+            <span style="background: linear-gradient(135deg, #f1c40f, #f39c12); color: #0b0f19; font-size: 0.62rem; padding: 1px 5px; border-radius: 4px;">👑 Premium</span>
+          </div>
+          <button type="button" class="btn btn-secondary btn-sm" id="scanReceiptBtn" style="font-size: 0.78rem; font-weight: 700; width: 100%; display: flex; align-items: center; justify-content: center; gap: 6px; background: rgba(168, 85, 247, 0.15); color: #a855f7; border: 1px solid rgba(168, 85, 247, 0.3);">
+            📷 Snap or Upload Receipt Photo
+          </button>
+          <input type="file" id="receiptFileInput" accept="image/*" style="display: none;">
+        </div>
+
         <div class="form-group">
           <label for="addTxType">Type</label>
           <select id="addTxType">
@@ -1350,105 +1379,63 @@
     </div>
   </div>
 
-  <!-- Floating Action Button: AI Coach Chat -->
-  <button id="floatingAiCoachFab" class="ai-fab-button" onclick="window.openAiCoachModal()" title="Ask Finflow AI Coach" aria-label="Open AI Financial Coach">
-    <div class="ai-fab-icon">✨</div>
-    <span class="ai-fab-label">AI Coach</span>
-  </button>
-
-  <!-- ==================== OVERLAY: FINFLOW AI COACH CHAT MODAL ==================== -->
-  <div class="modal-overlay" id="aiCoachModal">
-    <div class="modal-content ai-coach-modal-content" style="max-width: 540px; width: 95%; height: 85vh; max-height: 680px; display: flex; flex-direction: column; padding: 0; overflow: hidden; border: 1px solid rgba(168, 85, 247, 0.4); box-shadow: 0 10px 40px rgba(168, 85, 247, 0.25);">
-      <!-- Header -->
-      <div class="modal-header" style="padding: 16px 20px; border-bottom: 1px solid var(--color-border); background: linear-gradient(135deg, rgba(99, 102, 241, 0.15), rgba(168, 85, 247, 0.15)); display: flex; align-items: center; justify-content: space-between;">
-        <div style="display: flex; align-items: center; gap: 12px;">
-          <div style="width: 38px; height: 38px; border-radius: 50%; background: linear-gradient(135deg, #6366f1, #a855f7); display: flex; align-items: center; justify-content: center; color: #fff; font-size: 1.2rem;">
-            🤖
-          </div>
-          <div>
-            <h3 class="modal-title" style="font-size: 1.1rem; margin: 0; display: flex; align-items: center; gap: 8px;">
-              Finflow AI Coach
-              <span style="font-size: 0.65rem; font-weight: 800; background: linear-gradient(135deg, #ec4899, #a855f7); color: #fff; padding: 2px 8px; border-radius: 10px; text-transform: uppercase;">PRO</span>
-            </h3>
-            <span id="aiCoachStatusText" style="font-size: 0.74rem; color: var(--color-success); display: flex; align-items: center; gap: 4px;">
-              🟢 Online • Gemini 1.5 Flash AI
-            </span>
-          </div>
-        </div>
-        <button class="modal-close-btn" id="closeAiCoachModalBtn" onclick="window.closeAiCoachModal()" aria-label="Close dialog"><svg><use href="#icon-close"></use></svg></button>
-      </div>
-
-      <!-- Quick Prompt Suggestions Pills -->
-      <div style="padding: 10px 16px; border-bottom: 1px solid var(--color-border); background: var(--bg-secondary); display: flex; gap: 8px; overflow-x: auto; white-space: nowrap;">
-        <button class="ai-prompt-pill" data-prompt="How much did I spend on Food this month?">🍔 Food Spend</button>
-        <button class="ai-prompt-pill" data-prompt="Can I afford a trip to Kumasi next month if I save GHS 200 weekly?">✈️ Trip Affordability</button>
-        <button class="ai-prompt-pill" data-prompt="Explain T-Bills like I'm 15">📈 Explain T-Bills</button>
-        <button class="ai-prompt-pill" data-prompt="Give me 3 ways to save money this month">💡 3 Savings Tips</button>
-      </div>
-
-      <!-- Messages Thread -->
-      <div id="aiChatThread" class="ai-chat-thread" style="flex-grow: 1; padding: 18px 20px; overflow-y: auto; display: flex; flex-direction: column; gap: 14px; background: var(--bg-primary);">
-        <!-- Dynamically rendered bubbles -->
-      </div>
-
-      <!-- Footer Input Area -->
-      <div style="padding: 14px 16px; border-top: 1px solid var(--color-border); background: var(--bg-card); display: flex; align-items: center; gap: 10px;">
-        <input type="text" id="aiChatInput" placeholder="Ask Finflow anything about your money..." style="flex-grow: 1; padding: 12px 16px; border-radius: 24px; border: 1px solid var(--color-border); background: var(--bg-secondary); color: var(--text-main); font-family: inherit; font-size: 0.88rem; outline: none; transition: border-color var(--transition-fast);">
-        <button type="button" id="sendAiChatBtn" class="btn btn-primary" style="padding: 10px 18px; border-radius: 24px; font-weight: 700; background: linear-gradient(135deg, var(--color-primary), #a855f7); border: none; font-size: 0.88rem; display: flex; align-items: center; gap: 6px;">
-          Send
-        </button>
-      </div>
-    </div>
-  </div>
-
   <!-- ==================== OVERLAY: PREMIUM UPGRADE MODAL ==================== -->
   <div class="modal-overlay" id="premiumUpgradeModal">
-    <div class="modal-content" style="max-width: 440px; border: 2px solid #f1c40f; box-shadow: 0 0 30px rgba(241, 196, 15, 0.25);">
-      <div class="modal-header" style="border-bottom: 1px solid var(--color-border); padding-bottom: 15px;">
-        <h3 class="modal-title" style="color: #f1c40f; display: flex; align-items: center; gap: 8px;">
-          <svg style="width: 22px; height: 22px; fill: #f1c40f;"><use href="#icon-crown"></use></svg>
-          Unlock FinFlow Premium
+    <div class="modal-content" style="max-width: 440px; width: 95%; border: 2px solid #f1c40f; box-shadow: 0 0 35px rgba(241, 196, 15, 0.3);">
+      <div class="modal-header" style="border-bottom: 1px solid var(--color-border); padding-bottom: 14px;">
+        <h3 class="modal-title" style="color: #f1c40f; display: flex; align-items: center; gap: 8px; font-size: 1.2rem;">
+          <svg style="width: 24px; height: 24px; fill: #f1c40f;"><use href="#icon-crown"></use></svg>
+          FinFlow Premium Membership
         </h3>
         <button class="modal-close-btn" onclick="window.closePremiumModal()" aria-label="Close dialog"><svg><use href="#icon-close"></use></svg></button>
       </div>
       
-      <div style="padding-top: 15px; text-align: center;">
-        <p style="font-size: 0.9rem; color: var(--text-muted); line-height: 1.5; margin-bottom: 20px;">
-          Take complete control of your finances. Upgrade today for a one-time purchase of just <strong style="color: #f1c40f; font-size: 1.1rem;">$1.99</strong>.
-        </p>
+      <div style="padding-top: 10px; text-align: center;">
+        <div style="background: linear-gradient(135deg, rgba(241, 196, 15, 0.15), rgba(243, 156, 18, 0.2)); border: 2px solid #f1c40f; border-radius: var(--border-radius-md); padding: 12px; margin-bottom: 12px;">
+          <div style="font-size: 0.74rem; color: #f1c40f; text-transform: uppercase; font-weight: 800; letter-spacing: 0.5px; margin-bottom: 2px;">Monthly Membership Access</div>
+          <div style="font-size: 1.6rem; font-weight: 900; color: #f1c40f;">GH₵ 13.99 <span style="font-size: 0.82rem; font-weight: 600; color: var(--text-muted);">/ month</span></div>
+        </div>
 
-        <ul style="text-align: left; list-style: none; padding: 0; margin: 0 0 24px 0; display: flex; flex-direction: column; gap: 12px; font-size: 0.88rem;">
-          <li style="display: flex; align-items: flex-start; gap: 10px;">
-            <span style="color: #f1c40f; font-size: 1rem;">✨</span>
-            <span><strong>Finflow AI Coach:</strong> Unlimited 24/7 personal money coaching & chats.</span>
-          </li>
-          <li style="display: flex; align-items: flex-start; gap: 10px;">
-            <span style="color: var(--color-success); font-size: 1rem;">✓</span>
-            <span><strong>Ad-Free Experience:</strong> Hides all sponsored banner ads.</span>
-          </li>
-          <li style="display: flex; align-items: flex-start; gap: 10px;">
-            <span style="color: var(--color-success); font-size: 1rem;">✓</span>
-            <span><strong>Deep Financial Insights:</strong> Fully unlock smart diagnostic details.</span>
-          </li>
-          <li style="display: flex; align-items: flex-start; gap: 10px;">
-            <span style="color: var(--color-success); font-size: 1rem;">✓</span>
-            <span><strong>Custom Themes:</strong> Select custom dashboard colors & dark/light palettes.</span>
-          </li>
-          <li style="display: flex; align-items: flex-start; gap: 10px;">
-            <span style="color: var(--color-success); font-size: 1rem;">✓</span>
-            <span><strong>CSV Import / Export:</strong> Enable ledger downloads & json backups.</span>
-          </li>
-          <li style="display: flex; align-items: flex-start; gap: 10px;">
-            <span style="color: var(--color-success); font-size: 1rem;">✓</span>
-            <span><strong>Gold Crown Badge:</strong> Standout profile status styling.</span>
-          </li>
-        </ul>
+        <!-- FEATURES COMPARISON LIST -->
+        <div style="background: var(--bg-secondary); border: 1px solid var(--color-border); border-radius: var(--border-radius-md); padding: 12px 14px; margin-bottom: 14px; text-align: left;">
+          <div style="font-size: 0.78rem; font-weight: 800; color: var(--text-main); margin-bottom: 8px; text-transform: uppercase; letter-spacing: 0.5px;">✨ What's Included in Premium:</div>
+          <ul style="list-style: none; padding: 0; margin: 0; display: flex; flex-direction: column; gap: 7px; font-size: 0.82rem;">
+            <li style="display: flex; align-items: center; gap: 8px;">
+              <span style="color: #f1c40f; font-weight: 800;">🔮</span>
+              <span><strong>90-Day Cash Flow Runway:</strong> 3-month predictive balance chart.</span>
+            </li>
+            <li style="display: flex; align-items: center; gap: 8px;">
+              <span style="color: #f1c40f; font-weight: 800;">⚡</span>
+              <span><strong>AI Spending Leak Scanner:</strong> Automated subscription trap alerts.</span>
+            </li>
+            <li style="display: flex; align-items: center; gap: 8px;">
+              <span style="color: var(--color-success); font-weight: 800;">✓</span>
+              <span><strong>Unlimited PDF Exports:</strong> High-precision bank verification statements.</span>
+            </li>
+            <li style="display: flex; align-items: center; gap: 8px;">
+              <span style="color: var(--color-success); font-weight: 800;">✓</span>
+              <span><strong>CSV & JSON Backups:</strong> Full ledger export & import capabilities.</span>
+            </li>
+            <li style="display: flex; align-items: center; gap: 8px;">
+              <span style="color: var(--color-success); font-weight: 800;">✓</span>
+              <span><strong>All 6 VIP Themes:</strong> Royal Gold, Dark Neon, Emerald, Cyberpunk.</span>
+            </li>
+            <li style="display: flex; align-items: center; gap: 8px;">
+              <span style="color: var(--color-success); font-weight: 800;">✓</span>
+              <span><strong>Gold Crown Profile Badge:</strong> VIP status badge on profile headers.</span>
+            </li>
+          </ul>
+        </div>
 
-        <button class="btn btn-primary" id="upgradeCheckoutBtn" onclick="window.triggerPaystackCheckout()" style="width: 100%; padding: 14px; font-size: 1rem; font-weight: 800; background: linear-gradient(135deg, #f1c40f, #f39c12); color: #0b0f19; border: none; border-radius: var(--border-radius-sm); cursor: pointer; box-shadow: 0 4px 15px rgba(241, 196, 15, 0.4);">
-          Unlock Premium ($1.99)
+        <button class="btn btn-primary" id="upgradeCheckoutBtn" onclick="window.triggerPaystackCheckout()" style="width: 100%; padding: 12px; font-size: 0.95rem; font-weight: 800; background: linear-gradient(135deg, #f1c40f, #f39c12); color: #0b0f19; border: none; border-radius: var(--border-radius-sm); cursor: pointer; box-shadow: 0 4px 15px rgba(241, 196, 15, 0.4);">
+          Unlock Premium Access (GH₵13.99/mo)
         </button>
 
-        <button type="button" class="btn btn-secondary modal-close-action" onclick="window.closePremiumModal()" style="margin-top: 10px; width: 100%; border: none; background: transparent; color: var(--text-muted);">
+        <div style="margin-top: 8px; font-size: 0.72rem; color: var(--text-muted); display: flex; align-items: center; justify-content: center; gap: 6px;">
+          <span>🔒 SSL Encrypted</span> • <span>Instant Activation via Paystack & MoMo</span>
+        </div>
+
+        <button type="button" class="btn btn-secondary modal-close-action" onclick="window.closePremiumModal()" style="margin-top: 8px; width: 100%; border: none; background: transparent; color: var(--text-muted); font-size: 0.82rem; cursor: pointer;">
           Maybe Later
         </button>
       </div>
@@ -1470,7 +1457,7 @@
           <span>✨ Try Live Demo</span>
         </button>
         <span class="landing-pill"><span class="pill-dot"></span> Web Platform</span>
-        <span class="landing-pill premium-pill"><span class="pill-dot gold"></span> Premium $1.99</span>
+        <span class="landing-pill premium-pill"><span class="pill-dot gold"></span> Premium GH₵13.99</span>
         <span class="landing-pill"><span class="pill-dot green"></span> Compliance Review Ready</span>
       </div>
     </header>
@@ -1480,7 +1467,7 @@
       <!-- HERO HEADER SECTION -->
       <div class="landing-hero">
         <div class="landing-badge">
-          <span class="badge-icon">⚡</span> Personal Financial Management Suite • Premium $1.99
+          <span class="badge-icon">⚡</span> Personal Financial Management Suite • Premium GH₵13.99
         </div>
         <h1 class="landing-title">
           FinFlow
@@ -1527,7 +1514,7 @@
             </div>
             <div class="feature-info">
               <h4>Premium Membership</h4>
-              <p>Unlock AI Coach money analytics, ad-free experience & CSV data exports for a <strong>$1.99</strong> membership.</p>
+              <p>Unlock 90-day cash flow forecasts, automated spending leak alerts & unlimited PDF exports for just <strong>GH₵13.99 / month</strong>.</p>
             </div>
           </div>
         </div>
@@ -1542,7 +1529,7 @@
             <span class="stat-label">Report Exports</span>
           </div>
           <div class="stat-item">
-            <span class="stat-num" style="color: #f1c40f;">$1.99</span>
+            <span class="stat-num" style="color: #f1c40f;">GH₵13.99</span>
             <span class="stat-label">Premium Membership</span>
           </div>
         </div>
@@ -1607,6 +1594,26 @@
                 <option value="$">USD ($)</option>
                 <option value="€">EUR (€)</option>
                 <option value="£">GBP (£)</option>
+                <option value="¥">JPY/CNY (¥)</option>
+                <option value="₹">INR (₹)</option>
+                <option value="C$">CAD (C$)</option>
+                <option value="A$">AUD (A$)</option>
+                <option value="Fr">CHF (Fr)</option>
+                <option value="kr">SEK/NOK/DKK (kr)</option>
+                <option value="zł">PLN (zł)</option>
+                <option value="R$">BRL (R$)</option>
+                <option value="₽">RUB (₽)</option>
+                <option value="R">ZAR (R)</option>
+                <option value="د.إ">AED (د.إ)</option>
+                <option value="ر.س">SAR (ر.س)</option>
+                <option value="₪">ILS (₪)</option>
+                <option value="₱">PHP (₱)</option>
+                <option value="Rp">IDR (Rp)</option>
+                <option value="RM">MYR (RM)</option>
+                <option value="฿">THB (฿)</option>
+                <option value="₫">VND (₫)</option>
+                <option value="₦">NGN (₦)</option>
+                <option value="KSh">KES (KSh)</option>
               </select>
             </div>
 
@@ -1667,7 +1674,7 @@
       </div>
 
       <div class="landing-footer-bottom" style="display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 12px; border-top: 1px solid var(--color-border); padding-top: 15px; margin-top: 15px;">
-        <p>© 2026 FinFlow Platform. All rights reserved. Personal Financial Management Software Platform.</p>
+        <p>© 2026 FinFlow Platform. All rights reserved. <strong>Developed by IDJ</strong>. Personal Financial Management Software Platform.</p>
         <div style="display: flex; gap: 16px; font-size: 0.8rem;">
           <a href="terms.html" style="color: var(--color-primary); text-decoration: underline; font-weight: 600;">Terms of Service</a>
           <a href="privacy.html" style="color: var(--color-primary); text-decoration: underline; font-weight: 600;">Privacy Policy</a>
@@ -1690,11 +1697,11 @@
         
         <h4 style="color: var(--text-main); margin-top: 14px; margin-bottom: 6px;">2. Scope of Advice & Disclaimer</h4>
         <p style="background: rgba(245, 158, 11, 0.1); border-left: 3px solid #f59e0b; padding: 10px; border-radius: 4px; color: var(--text-main);">
-          <strong>IMPORTANT DISCLAIMER:</strong> Finflow provides self-directed personal budgeting tools, educational financial guides, and automated money organizational insights (including AI Money Coach responses). Finflow does NOT provide licensed fiduciary advice, certified financial planning, regulated investment management, asset custody, or money transfer services. All automated AI insights and literacy materials are intended strictly for educational self-tracking and informational organization.
+          <strong>IMPORTANT DISCLAIMER:</strong> Finflow provides self-directed personal budgeting tools, educational financial guides, and automated money organizational insights (including AI diagnostic alerts). Finflow does NOT provide licensed fiduciary advice, certified financial planning, regulated investment management, asset custody, or money transfer services. All automated insights and literacy materials are intended strictly for educational self-tracking and informational organization.
         </p>
 
         <h4 style="color: var(--text-main); margin-top: 14px; margin-bottom: 6px;">3. Subscriptions & Pricing Model</h4>
-        <p>Basic financial literacy guides, transaction logging, and budgeting tools are provided 100% free of charge. Premium Membership features (including Finflow AI Coach analytics, custom themes, and unlimited PDF exports) are available for <strong>$1.99 USD / month</strong> (or equivalent local currency automatically converted in real-time at live market exchange rates via Paystack).</p>
+        <p>Basic financial literacy guides, transaction logging, and budgeting tools are provided 100% free of charge. Premium Membership features (including 90-day cash flow forecasting, automated spending leak alerts, custom themes, and unlimited PDF exports) are available for <strong>GH₵13.99 / month</strong> via Paystack & Mobile Money (MoMo).</p>
 
         <h4 style="color: var(--text-main); margin-top: 14px; margin-bottom: 6px;">4. User Responsibilities</h4>
         <p>Users are responsible for ensuring the accuracy of data entered into their personal ledger and keeping their private account login credentials confidential.</p>
@@ -1738,7 +1745,7 @@
       <div class="modal-body" style="padding-top: 15px; font-size: 0.86rem; line-height: 1.6; color: var(--text-muted); max-height: 420px; overflow-y: auto;">
         <h4 style="color: var(--text-main); margin-bottom: 6px;">1. 7-Day Money-Back Guarantee</h4>
         <p style="background: rgba(16, 185, 129, 0.1); border-left: 3px solid #10b981; padding: 10px; border-radius: 4px; color: var(--text-main);">
-          We want you to be 100% satisfied with Finflow. We offer a <strong>7-day full refund guarantee</strong> for all Premium Membership purchases ($1.99 USD or equivalent local currency dynamically converted at live exchange rates).
+          We want you to be 100% satisfied with Finflow. We offer a <strong>7-day full refund guarantee</strong> for all Premium Membership purchases (GH₵13.99 or equivalent local currency dynamically converted at live exchange rates).
         </p>
 
         <h4 style="color: var(--text-main); margin-top: 14px; margin-bottom: 6px;">2. How to Request a Refund</h4>
@@ -1752,6 +1759,8 @@
       </div>
     </div>
   </div>
+
+
 
   <!-- ==================== ONBOARDING TOUR TOOLTIP & OVERLAY ==================== -->
   <div id="tourOverlay" style="display: none; position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; background: rgba(0,0,0,0.6); z-index: 10001; pointer-events: none; transition: all 0.3s ease;"></div>
@@ -1772,9 +1781,9 @@
   <!-- ==================== CHART JS, PAYSTACK SDK & SCRIPTS ==================== -->
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
   <script src="https://js.paystack.co/v1/inline.js"></script>
-  <script src="store.js?v=1.0.2"></script>
-  <script src="charts.js?v=1.0.2"></script>
-  <script src="app.js?v=1.0.2"></script>
+  <script src="store.js?v=999.0"></script>
+  <script src="charts.js?v=999.0"></script>
+  <script src="app.js?v=999.0"></script>
   <!-- CONFETTI CANVAS FOR SAVINGS CELEBRATIONS -->
   <canvas id="confettiCanvas" style="position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; pointer-events: none; z-index: 10010; display: none;"></canvas>
 </body>

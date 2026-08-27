@@ -1967,6 +1967,13 @@ header {
 }
 
 /* ==================== FINFLOW AI COACH & FAB STYLES ==================== */
+#openAiCoachModalBtn,
+#floatingAiCoachFab,
+.ai-fab-button,
+[onclick*="openAiCoachModal"] {
+  display: none !important;
+}
+
 .ai-fab-button {
   display: none !important;
   position: fixed;

@@ -345,6 +345,16 @@ main {
   min-width: 0; /* Prevents overflow from expanding grid column */
 }
 
+.view-panel {
+  display: none !important;
+  width: 100%;
+}
+
+.view-panel.active {
+  display: block !important;
+  width: 100% !important;
+}
+
 header {
   display: flex;
   flex-direction: column;
@@ -452,6 +462,8 @@ header {
   justify-content: space-between;
   align-items: center;
   margin-bottom: 12px;
+  gap: 8px;
+  width: 100%;
 }
 
 .kpi-title {
@@ -460,6 +472,11 @@ header {
   color: var(--text-muted);
   text-transform: uppercase;
   letter-spacing: 0.5px;
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .kpi-icon {
@@ -470,6 +487,7 @@ header {
   display: flex;
   align-items: center;
   justify-content: center;
+  flex-shrink: 0;
 }
 
 .kpi-card.cash { --card-accent-glow: var(--color-primary-glow); }
@@ -1077,15 +1095,16 @@ header {
   left: 0;
   width: 100%;
   height: 100%;
-  background: rgba(0, 0, 0, 0.6);
+  background: rgba(0, 0, 0, 0.75);
   backdrop-filter: var(--glass-blur);
   -webkit-backdrop-filter: var(--glass-blur);
   display: none;
   pointer-events: none !important;
   align-items: center;
   justify-content: center;
-  z-index: 1000;
-  padding: 20px;
+  z-index: 10000;
+  padding: 16px;
+  overflow-y: auto;
 }
 
 .modal-overlay.active {
@@ -1098,11 +1117,15 @@ header {
   background: var(--bg-modal);
   border: 1px solid var(--color-border);
   border-radius: var(--border-radius-lg);
-  padding: 28px;
+  padding: 24px;
   width: 100%;
   max-width: 480px;
+  max-height: 88vh;
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
   box-shadow: var(--shadow-main);
   position: relative;
+  margin: auto;
   animation: slideDown var(--transition-normal) cubic-bezier(0.16, 1, 0.3, 1);
 }
 
@@ -1307,10 +1330,27 @@ header {
 }
 
 @media (max-width: 768px) {
+  main {
+    padding: 16px 12px;
+    gap: 20px;
+  }
+
   header {
     flex-direction: column;
     align-items: flex-start;
     gap: 16px;
+  }
+
+  .header-title h1 {
+    font-size: 1.45rem;
+    line-height: 1.25;
+    margin-bottom: 4px;
+  }
+
+  .header-title p {
+    font-size: 0.84rem;
+    line-height: 1.45;
+    margin-top: 2px;
   }
 
   .header-actions {
@@ -1331,9 +1371,23 @@ header {
 
   .header-dropdowns-row > select,
   .header-main-buttons-row > button {
-    flex: 1 !important;
     width: 100% !important;
     margin-right: 0 !important;
+  }
+
+  .header-dropdowns-row #headerCurrencySelector {
+    flex: 0.8 !important;
+    min-width: 0 !important;
+  }
+
+  .header-dropdowns-row #yearSelector {
+    flex: 0.9 !important;
+    min-width: 0 !important;
+  }
+
+  .header-dropdowns-row #monthSelector {
+    flex: 1.3 !important;
+    min-width: 0 !important;
   }
 
   .header-utilities {
@@ -1354,6 +1408,11 @@ header {
 
   .kpi-grid {
     grid-template-columns: 1fr;
+  }
+
+  .kpi-card {
+    padding: 18px !important;
+    overflow: hidden !important;
   }
 
   .tx-filters {
@@ -1908,7 +1967,15 @@ header {
 }
 
 /* ==================== FINFLOW AI COACH & FAB STYLES ==================== */
+#openAiCoachModalBtn,
+#floatingAiCoachFab,
+.ai-fab-button,
+[onclick*="openAiCoachModal"] {
+  display: none !important;
+}
+
 .ai-fab-button {
+  display: none !important;
   position: fixed;
   bottom: 24px;
   right: 24px;
@@ -2051,4 +2118,57 @@ header {
   align-items: center;
   justify-content: center;
 }
+
+/* --- High-Visibility iOS Style Toggle Switch --- */
+.ios-switch-label {
+  position: relative;
+  display: inline-block;
+  width: 50px;
+  height: 28px;
+  flex-shrink: 0;
+  cursor: pointer;
+}
+
+.ios-switch-label input {
+  opacity: 0;
+  width: 0;
+  height: 0;
+}
+
+.ios-switch-slider {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: #374151;
+  border: 2px solid #6b7280;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  border-radius: 28px;
+  box-shadow: inset 0 2px 4px rgba(0,0,0,0.3);
+}
+
+.ios-switch-slider::before {
+  content: "";
+  position: absolute;
+  height: 20px;
+  width: 20px;
+  left: 2px;
+  bottom: 2px;
+  background-color: #ffffff;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  border-radius: 50%;
+  box-shadow: 0 2px 6px rgba(0,0,0,0.4);
+}
+
+.ios-switch-label input:checked + .ios-switch-slider {
+  background-color: #10b981;
+  border-color: #34d399;
+}
+
+.ios-switch-label input:checked + .ios-switch-slider::before {
+  transform: translateX(22px);
+  background-color: #ffffff;
+}
+
 

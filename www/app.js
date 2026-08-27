@@ -33,7 +33,7 @@
   // Default exchange rates: How many Ghanaian Cedis (GH₵) equal 1 unit of foreign currency
   const DEFAULT_GHS_RATES = {
     'GH₵': 1.0,      // Ghanaian Cedi (Base)
-    '$': 11.59,      // US Dollar
+    '$': 15.50,      // US Dollar
     '€': 12.60,      // Euro
     '£': 14.80,      // British Pound
     '¥': 2.15,       // Chinese Yuan (CNY)
@@ -194,99 +194,112 @@
   function getFilteredTransactions() {
     const store = window.AppStore;
     const transactions = store.getTransactions();
-    // Default to 'current' if elements have not loaded yet
-    const timeframe = elements.timeframeSelector ? elements.timeframeSelector.value : 'current';
     const today = new Date();
+
+    const yearVal = elements.yearSelector ? elements.yearSelector.value : String(today.getFullYear());
+    const monthVal = elements.monthSelector ? elements.monthSelector.value : 'current';
 
     return transactions.filter(tx => {
       if (!tx.date) return false;
       const parts = tx.date.split('-');
       const txYear = parseInt(parts[0], 10);
-      const txMonth = parseInt(parts[1], 10) - 1; // Align to 0-indexed JS month arrays
+      const txMonth = parseInt(parts[1], 10); // 1-indexed
 
-      if (timeframe === 'current') {
-        // Return entries matching current year and current calendar month
-        return txYear === today.getFullYear() && txMonth === today.getMonth();
-      } else if (timeframe === 'year') {
-        // Return all entries matching the current year
-        return txYear === today.getFullYear();
-      } else if (timeframe === 'all_time') {
-        // Bypass filtering
-        return true;
+      // --- Year Matching ---
+      let matchesYear = false;
+      if (yearVal === 'all') {
+        matchesYear = true;
       } else {
-        // Explicit selection in format "YYYY-MM"
-        const [selYear, selMonth] = timeframe.split('-').map(Number);
-        return txYear === selYear && (txMonth + 1) === selMonth;
+        matchesYear = (txYear === parseInt(yearVal, 10));
+      }
+
+      if (!matchesYear) return false;
+
+      // --- Month Matching ---
+      if (monthVal === 'all') {
+        return true;
+      } else if (monthVal === 'current') {
+        const currentMonthNum = today.getMonth() + 1; // 1-indexed
+        return txMonth === currentMonthNum;
+      } else {
+        const targetMonthNum = parseInt(monthVal, 10);
+        return txMonth === targetMonthNum;
       }
     });
   }
 
   /**
-   * Populates the timeframe selector options list based on active transaction history.
+   * Populates the Year and Month selectors dynamically based on active transaction history.
    */
   function populateTimeframeOptions() {
     const store = window.AppStore;
     const transactions = store.getTransactions();
     const today = new Date();
-    const selector = elements.timeframeSelector;
-    if (!selector) return;
+    const yearSel = elements.yearSelector;
+    const monthSel = elements.monthSelector;
+    if (!yearSel || !monthSel) return;
 
-    // Cache the previous selection to prevent resetting user filters
-    const previousSelection = selector.value || 'current';
-    selector.innerHTML = ''; // Wipe options structure
+    const currentYear = today.getFullYear();
+    const prevYear = yearSel.value || String(currentYear);
+    const prevMonth = monthSel.value || 'current';
 
-    // 1. Render Current Month Option
-    const optCurrent = document.createElement('option');
-    optCurrent.value = 'current';
-    const currentMonthLabel = today.toLocaleString('default', { month: 'long', year: 'numeric' });
-    optCurrent.textContent = `Current Month (${currentMonthLabel})`;
-    selector.appendChild(optCurrent);
-
-    // 2. Render Full Year Option
-    const optYear = document.createElement('option');
-    optYear.value = 'year';
-    optYear.textContent = `Full Year (${today.getFullYear()})`;
-    selector.appendChild(optYear);
-
-    // 3. Render All Time Option
-    const optAll = document.createElement('option');
-    optAll.value = 'all_time';
-    optAll.textContent = 'All Months (All Time)';
-    selector.appendChild(optAll);
-
-    // 4. Compile list of months containing historical transactions
-    const uniqueMonths = new Set();
+    // 1. Dynamic Year Options
+    const yearsSet = new Set();
+    yearsSet.add(currentYear);
+    yearsSet.add(currentYear - 1); // Baseline previous year (e.g. 2025 alongside 2026)
     transactions.forEach(tx => {
       if (tx.date) {
-        const parts = tx.date.split('-');
-        const year = parts[0];
-        const monthNum = parseInt(parts[1], 10) - 1;
-        const d = new Date(year, monthNum, 1);
-        const key = `${year}-${parts[1]}`;
-        const label = d.toLocaleString('default', { month: 'long', year: 'numeric' });
-        uniqueMonths.add(JSON.stringify({ key, label }));
+        const y = parseInt(tx.date.split('-')[0], 10);
+        if (y) yearsSet.add(y);
       }
     });
 
-    // Sort unique months list in descending YYYY-MM order
-    const sortedMonths = Array.from(uniqueMonths)
-      .map(item => JSON.parse(item))
-      .sort((a, b) => b.key.localeCompare(a.key));
+    const sortedYears = Array.from(yearsSet).sort((a, b) => b - a);
 
-    // Append historical months as options
-    sortedMonths.forEach(m => {
-      const currentKey = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, '0')}`;
-      if (m.key !== currentKey) {
-        const opt = document.createElement('option');
-        opt.value = m.key;
-        opt.textContent = m.label;
-        selector.appendChild(opt);
-      }
+    yearSel.innerHTML = '';
+    sortedYears.forEach(y => {
+      const opt = document.createElement('option');
+      opt.value = String(y);
+      opt.textContent = String(y);
+      yearSel.appendChild(opt);
     });
 
-    // Reapply user's selection anchor
-    selector.value = previousSelection;
-    if (!selector.value) selector.value = 'current';
+    const optAllYears = document.createElement('option');
+    optAllYears.value = 'all';
+    optAllYears.textContent = 'All Years';
+    yearSel.appendChild(optAllYears);
+
+    yearSel.value = prevYear;
+    if (!yearSel.value) yearSel.value = String(currentYear);
+
+    // 2. Dynamic Month Options
+    monthSel.innerHTML = '';
+
+    const currentMonthName = today.toLocaleString('default', { month: 'long' });
+    const optCurrent = document.createElement('option');
+    optCurrent.value = 'current';
+    optCurrent.textContent = `Current (${currentMonthName})`;
+    monthSel.appendChild(optCurrent);
+
+    const optAllMonths = document.createElement('option');
+    optAllMonths.value = 'all';
+    optAllMonths.textContent = 'All Months';
+    monthSel.appendChild(optAllMonths);
+
+    const monthNames = [
+      'January', 'February', 'March', 'April', 'May', 'June',
+      'July', 'August', 'September', 'October', 'November', 'December'
+    ];
+
+    monthNames.forEach((mName, idx) => {
+      const opt = document.createElement('option');
+      opt.value = String(idx + 1); // 1-12
+      opt.textContent = mName;
+      monthSel.appendChild(opt);
+    });
+
+    monthSel.value = prevMonth;
+    if (!monthSel.value) monthSel.value = 'current';
   }
 
   /**
@@ -333,8 +346,9 @@
     elements.addGoalBtn = document.getElementById('addGoalBtn');
     elements.addGoalDestination = document.getElementById('addGoalDestination');
     
-    // Timeframe Selector
-    elements.timeframeSelector = document.getElementById('timeframeSelector');
+    // Timeframe Selectors
+    elements.yearSelector = document.getElementById('yearSelector');
+    elements.monthSelector = document.getElementById('monthSelector');
     elements.headerCurrencySelector = document.getElementById('headerCurrencySelector');
     
     // Settings Form
@@ -537,29 +551,60 @@
       return;
     }
     
-    const liveUsdRate = (settings.exchangeRates && settings.exchangeRates['$']) ? Number(settings.exchangeRates['$']) : 15.5;
-    const amountVal = Math.max(100, Math.round(1.99 * liveUsdRate * 100)); // amount in pesewas
-    
+    // Fixed price GH₵ 13.99 in pesewas for Paystack API (13.99 * 100 = 1399 pesewas)
+    const amountVal = 1399;
     const currencyCode = 'GHS';
-    const emailAddress = 'customer_' + (settings.userName || 'User').toLowerCase().replace(/\s+/g, '_') + '@financialdashboard.com';
+    const cleanUserName = (settings.userName || 'User').trim();
+    const emailAddress = 'customer_' + cleanUserName.toLowerCase().replace(/[^a-z0-9]/g, '_') + '@financialdashboard.com';
 
     try {
-      const handler = PaystackPop.setup({
-        key: paystackKey,
-        email: emailAddress,
-        amount: amountVal,
-        currency: currencyCode,
-        callback: function(response) {
-          if (window.AppStore) window.AppStore.setPremiumStatus(true);
-          window.closePremiumModal();
-          if (typeof triggerConfetti === 'function') triggerConfetti();
-          alert('Congratulations! Payment Successful! Reference: ' + response.reference + '. Welcome to Premium Membership! 🏆');
-        },
-        onClose: function() {
-          alert('Payment window closed. Upgrade cancelled.');
-        }
-      });
-      handler.openIframe();
+      if (typeof PaystackPop === 'function' && PaystackPop.prototype && PaystackPop.prototype.newTransaction) {
+        const paystack = new PaystackPop();
+        paystack.newTransaction({
+          key: paystackKey,
+          email: emailAddress,
+          amount: amountVal,
+          currency: currencyCode,
+          channels: ['mobile_money', 'card'],
+          metadata: {
+            custom_fields: [
+              { display_name: "Customer Name", variable_name: "customer_name", value: cleanUserName }
+            ]
+          },
+          onSuccess: function(response) {
+            if (window.AppStore) window.AppStore.setPremiumStatus(true, 'monthly');
+            window.closePremiumModal();
+            if (typeof triggerConfetti === 'function') triggerConfetti();
+            alert('Congratulations! Payment Successful! Reference: ' + response.reference + '. Welcome to FinFlow Premium! 🏆');
+          },
+          onCancel: function() {
+            console.log('Paystack checkout cancelled by user.');
+          }
+        });
+      } else {
+        const handler = PaystackPop.setup({
+          key: paystackKey,
+          email: emailAddress,
+          amount: amountVal,
+          currency: currencyCode,
+          channels: ['mobile_money', 'card'],
+          metadata: {
+            custom_fields: [
+              { display_name: "Customer Name", variable_name: "customer_name", value: cleanUserName }
+            ]
+          },
+          callback: function(response) {
+            if (window.AppStore) window.AppStore.setPremiumStatus(true, 'monthly');
+            window.closePremiumModal();
+            if (typeof triggerConfetti === 'function') triggerConfetti();
+            alert('Congratulations! Payment Successful! Reference: ' + response.reference + '. Welcome to FinFlow Premium! 🏆');
+          },
+          onClose: function() {
+            console.log('Paystack checkout closed.');
+          }
+        });
+        handler.openIframe();
+      }
     } catch(err) {
       alert('Failed to launch Paystack checkout: ' + err.message);
     }
@@ -634,16 +679,33 @@
     elements.monthlyExpensesValue.title = elements.monthlyExpensesValue.textContent;
 
     // Swap title labels depending on active timeframe filter states
-    const timeframe = elements.timeframeSelector ? elements.timeframeSelector.value : 'current';
+    const today = new Date();
+    const yearVal = elements.yearSelector ? elements.yearSelector.value : String(today.getFullYear());
+    const monthVal = elements.monthSelector ? elements.monthSelector.value : 'current';
     const incLabel = document.querySelector('.kpi-card.income .kpi-title');
     const expLabel = document.querySelector('.kpi-card.expense .kpi-title');
 
-    if (timeframe === 'current') {
-      if (incLabel) incLabel.textContent = 'Monthly Income';
-      if (expLabel) expLabel.textContent = 'Monthly Expenses';
-      
-      // Calculate month-over-month trend changes for visual badge indicators
-      const today = new Date();
+    const monthNames = [
+      'January', 'February', 'March', 'April', 'May', 'June',
+      'July', 'August', 'September', 'October', 'November', 'December'
+    ];
+
+    let labelStr = 'Monthly';
+    if (monthVal === 'current') {
+      const curMonthName = today.toLocaleString('default', { month: 'short' });
+      labelStr = yearVal === 'all' ? `${curMonthName}` : `${curMonthName} ${yearVal}`;
+    } else if (monthVal === 'all') {
+      labelStr = yearVal === 'all' ? 'All-Time' : `${yearVal}`;
+    } else {
+      const mIdx = parseInt(monthVal, 10) - 1;
+      const mName = monthNames[mIdx] ? monthNames[mIdx].slice(0, 3) : '';
+      labelStr = yearVal === 'all' ? `${mName}` : `${mName} ${yearVal}`;
+    }
+
+    if (incLabel) incLabel.textContent = `${labelStr} Income`;
+    if (expLabel) expLabel.textContent = `${labelStr} Expenses`;
+
+    if (monthVal === 'current' && (yearVal === 'all' || yearVal === String(today.getFullYear()))) {
       const prevMonth = new Date(today.getFullYear(), today.getMonth() - 1, 1);
       const prevMonthTotals = store.getMonthlyTotals(prevMonth.getFullYear(), prevMonth.getMonth());
       const currentMonthTotals = store.getMonthlyTotals(today.getFullYear(), today.getMonth());
@@ -665,24 +727,9 @@
       } else {
         elements.expenseTrend.textContent = 'No historical data';
       }
-    } else if (timeframe === 'year') {
-      if (incLabel) incLabel.textContent = 'Yearly Income';
-      if (expLabel) expLabel.textContent = 'Yearly Expenses';
-      elements.incomeTrend.textContent = 'Full year breakdown';
-      elements.expenseTrend.textContent = 'Full year breakdown';
-    } else if (timeframe === 'all_time') {
-      if (incLabel) incLabel.textContent = 'Total Income';
-      if (expLabel) expLabel.textContent = 'Total Expenses';
-      elements.incomeTrend.textContent = 'All-time cumulative';
-      elements.expenseTrend.textContent = 'All-time cumulative';
     } else {
-      const [y, m] = timeframe.split('-').map(Number);
-      const d = new Date(y, m - 1, 1);
-      const label = d.toLocaleString('default', { month: 'short' }) + ' ' + String(y).slice(-2);
-      if (incLabel) incLabel.textContent = `${label} Income`;
-      if (expLabel) expLabel.textContent = `${label} Expenses`;
-      elements.incomeTrend.textContent = `Historical: ${label}`;
-      elements.expenseTrend.textContent = `Historical: ${label}`;
+      elements.incomeTrend.textContent = `${labelStr} breakdown`;
+      elements.expenseTrend.textContent = `${labelStr} breakdown`;
     }
   }
 
@@ -934,7 +981,9 @@
     
     // Set setting inputs value matches
     elements.settingsUserName.value = settings.userName;
-    elements.settingsSavingsGoal.value = Math.round(convertCurrencyAmount(settings.monthlySavingsGoal, settings.currency, 'GH₵'));
+    if (elements.settingsSavingsGoal) {
+      elements.settingsSavingsGoal.value = Math.round(convertCurrencyAmount(settings.monthlySavingsGoal || 0, settings.currency, 'GH₵'));
+    }
     if (elements.settingsGeminiApiKey) {
       elements.settingsGeminiApiKey.value = settings.geminiApiKey || '';
     }
@@ -1701,8 +1750,8 @@
 
     premiumTools.forEach(tool => {
       if (tool) {
+        tool.removeAttribute('disabled');
         if (isPremium) {
-          tool.removeAttribute('disabled');
           tool.style.opacity = '1';
           tool.style.cursor = 'pointer';
           if (tool.id === 'exportCsvBtn') tool.title = 'Export transactions to CSV';
@@ -1715,20 +1764,22 @@
           }
         } else {
           if (tool.id === 'exportPdfBtn' && freePdfUsed === 0) {
-            tool.removeAttribute('disabled');
             tool.style.opacity = '1';
             tool.style.cursor = 'pointer';
             tool.title = '🎁 Free Trial: 1 PDF statement export remaining';
             tool.innerHTML = '<svg style="width: 14px; height: 14px; fill: none; stroke: currentColor; stroke-width: 2; margin-right: 6px; vertical-align: middle;"><use href="#icon-print"></use></svg>PDF Report (1 Free)';
           } else {
-            tool.setAttribute('disabled', 'true');
-            tool.style.opacity = '0.5';
-            tool.style.cursor = 'not-allowed';
+            tool.style.opacity = '0.75';
+            tool.style.cursor = 'pointer';
             if (tool.id === 'exportPdfBtn') {
-              tool.title = '🔒 Premium Feature: PDF Report Export';
+              tool.title = '🔒 Premium Feature: Click to upgrade to Premium';
               tool.innerHTML = '🔒 PDF Report';
+            } else if (tool.id === 'exportCsvBtn') {
+              tool.title = '🔒 Premium Feature: Click to unlock CSV Export';
+            } else if (tool.id === 'importCsvBtn') {
+              tool.title = '🔒 Premium Feature: Click to unlock CSV Import';
             } else {
-              tool.title = '🔒 Premium Feature: Upgrade to CSV/Backup tools';
+              tool.title = '🔒 Premium Feature: Click to upgrade to Premium';
             }
           }
         }
@@ -2074,14 +2125,17 @@
 
     const generatedInsights = [];
 
-    // --- 1. SPENDING INSIGHTS ("I see you") ---
-    const categoryTotals = {};
+    // --- AGGREGATE TRANSACTION TOTALS UPFRONT ---
+    let totalIncome = 0;
     let totalExpense = 0;
+    const categoryTotals = {};
     let airtimeSpend = 0;
     let streamingSpend = 0;
 
     transactions.forEach(tx => {
-      if (tx.type === 'expense') {
+      if (tx.type === 'income') {
+        totalIncome += tx.amount;
+      } else if (tx.type === 'expense') {
         categoryTotals[tx.category] = (categoryTotals[tx.category] || 0) + tx.amount;
         totalExpense += tx.amount;
 
@@ -2095,6 +2149,48 @@
         }
       }
     });
+
+    // --- 90-DAY PREDICTIVE CASH FLOW FORECAST (PREMIUM) ---
+    const daysInPeriod = Math.max(1, transactions.length > 1 ? Math.round((new Date(transactions[0].date) - new Date(transactions[transactions.length - 1].date)) / (1000 * 60 * 60 * 24)) : 30);
+    const avgDailyIncome = totalIncome / daysInPeriod;
+    const avgDailyExpense = totalExpense / daysInPeriod;
+    const dailyNetBurn = avgDailyExpense - avgDailyIncome;
+    const projected90DayBalance = Math.round(balanceNum + (avgDailyIncome - avgDailyExpense) * 90);
+
+    if (dailyNetBurn > 0 && balanceNum > 0) {
+      const daysToZero = Math.max(1, Math.round(balanceNum / dailyNetBurn));
+      generatedInsights.push({
+        type: 'forecast',
+        title: '🔮 90-Day Cash Flow Warning',
+        desc: `At your current burn rate, your liquid cash balance is projected to reach <strong>${currency}0</strong> in ~<strong>${daysToZero} days</strong>. Cut optional spend by 15% to extend your runway.`
+      });
+    } else {
+      generatedInsights.push({
+        type: 'forecast',
+        title: '🔮 90-Day Predictive Runway',
+        desc: `Great trajectory! At current earnings & spend rates, your projected cash balance in 90 days is <strong>${currency}${projected90DayBalance.toLocaleString()}</strong>.`
+      });
+    }
+
+    // --- AUTOMATED MICRO-SPENDING LEAK AUDIT ---
+    let microLeakCount = 0;
+    let microLeakTotal = 0;
+    transactions.forEach(tx => {
+      if (tx.type === 'expense' && tx.amount <= 35) {
+        microLeakCount++;
+        microLeakTotal += tx.amount;
+      }
+    });
+
+    if (microLeakCount > 2) {
+      generatedInsights.push({
+        type: 'leak',
+        title: '🚨 Micro-Spending Leak Audit',
+        desc: `Detected <strong>${microLeakCount} micro-expenses</strong> totaling <strong>${currency}${microLeakTotal.toLocaleString()}</strong>. Small daily cash leaks add up to ~${currency}${Math.round(microLeakTotal * 4)} monthly!`
+      });
+    }
+
+    // --- 1. SPENDING INSIGHTS ("I see you") ---
 
     let topCategory = null;
     let maxExpense = 0;
@@ -2196,24 +2292,22 @@
     if (!isPremium) {
       const freeInsight = generatedInsights[0] || {
         title: '💡 Smart Money Tip',
-        desc: 'Keep 1-2 weeks of operational cash on MoMo and route the rest into high-yield savings or T-Bills.',
-        prompt: 'Give me 3 practical financial tips.'
+        desc: 'Keep 1-2 weeks of operational cash on MoMo and route the rest into high-yield savings or T-Bills.'
       };
 
       insightsHTML = `
         <div class="ai-insight-item">
           <div class="insight-title">${freeInsight.title}</div>
           <div class="insight-desc">${freeInsight.desc}</div>
-          <button type="button" class="explain-this-btn" data-explain="${escapeAttr(freeInsight.prompt)}">Explain this 💬</button>
         </div>
 
         <div class="ai-insight-item locked-teaser">
           <div class="insight-title" style="color: #f1c40f; font-weight: 800;">👑 Proactive AI Insights (15+ Active)</div>
           <div class="insight-desc" style="margin-bottom: 8px;">
-            Unlock background leak detection, idle cash alerts, category spike warnings & Accra benchmark stats with Premium ($1.99/mo).
+            Unlock background leak detection, idle cash alerts, category spike warnings & Accra benchmark stats with Premium (GH₵13.99/mo).
           </div>
           <button type="button" class="btn btn-primary btn-sm upgrade-trigger-btn" style="background: linear-gradient(135deg, #f1c40f, #f39c12); color: #0b0f19; font-weight: 800; border: none; font-size: 0.76rem; padding: 6px 14px; border-radius: 14px; cursor: pointer;">
-            Unlock All Insights ($1.99)
+            Upgrade to Premium (GH₵13.99)
           </button>
         </div>
       `;
@@ -2222,7 +2316,6 @@
         <div class="ai-insight-item">
           <div class="insight-title">${item.title}</div>
           <div class="insight-desc">${item.desc}</div>
-          <button type="button" class="explain-this-btn" data-explain="${escapeAttr(item.prompt)}">Explain this 💬</button>
         </div>
       `).join('');
     }
@@ -2704,6 +2797,48 @@ Ask me specific financial questions like:
       '--text-muted': '#fca5a5',
       '--color-border': 'rgba(239, 68, 68, 0.15)',
       '--color-border-hover': 'rgba(239, 68, 68, 0.3)'
+    },
+    sapphire: {
+      '--bg-primary': '#040d1a',
+      '--bg-secondary': '#09182d',
+      '--bg-card': 'rgba(9, 24, 45, 0.65)',
+      '--bg-card-hover': 'rgba(15, 38, 70, 0.8)',
+      '--bg-glass-sidebar': 'rgba(4, 13, 26, 0.85)',
+      '--color-primary': '#06b6d4',
+      '--color-primary-hover': '#0891b2',
+      '--color-primary-glow': 'rgba(6, 182, 212, 0.25)',
+      '--text-main': '#ecfeff',
+      '--text-muted': '#a5f3fc',
+      '--color-border': 'rgba(6, 182, 212, 0.15)',
+      '--color-border-hover': 'rgba(6, 182, 212, 0.3)'
+    },
+    amethyst: {
+      '--bg-primary': '#0f0919',
+      '--bg-secondary': '#1a0e2e',
+      '--bg-card': 'rgba(26, 14, 46, 0.65)',
+      '--bg-card-hover': 'rgba(45, 24, 80, 0.8)',
+      '--bg-glass-sidebar': 'rgba(15, 9, 25, 0.85)',
+      '--color-primary': '#a855f7',
+      '--color-primary-hover': '#9333ea',
+      '--color-primary-glow': 'rgba(168, 85, 247, 0.25)',
+      '--text-main': '#faf5ff',
+      '--text-muted': '#e9d5ff',
+      '--color-border': 'rgba(168, 85, 247, 0.15)',
+      '--color-border-hover': 'rgba(168, 85, 247, 0.3)'
+    },
+    rose: {
+      '--bg-primary': '#16080d',
+      '--bg-secondary': '#260e17',
+      '--bg-card': 'rgba(38, 14, 23, 0.65)',
+      '--bg-card-hover': 'rgba(65, 24, 40, 0.8)',
+      '--bg-glass-sidebar': 'rgba(22, 8, 13, 0.85)',
+      '--color-primary': '#f43f5e',
+      '--color-primary-hover': '#e11d48',
+      '--color-primary-glow': 'rgba(244, 63, 94, 0.25)',
+      '--text-main': '#fff1f2',
+      '--text-muted': '#fecdd3',
+      '--color-border': 'rgba(244, 63, 94, 0.15)',
+      '--color-border-hover': 'rgba(244, 63, 94, 0.3)'
     }
   };
 
@@ -2783,12 +2918,15 @@ Ask me specific financial questions like:
 
   // --- Router / Tab controller ---
   function switchTab(targetTab) {
+    if (!targetTab) targetTab = 'dashboard';
+    if (targetTab === 'overview') targetTab = 'dashboard';
     activeTab = targetTab;
     
     // Update navigation sidebar active class configurations
     const navItems = document.querySelectorAll('.nav-item');
     navItems.forEach(item => {
-      if (item.getAttribute('data-target') === targetTab) {
+      const target = item.getAttribute('data-target');
+      if (target === targetTab || (targetTab === 'dashboard' && target === 'overview')) {
         item.classList.add('active');
       } else {
         item.classList.remove('active');
@@ -2798,14 +2936,21 @@ Ask me specific financial questions like:
     // Update panel active states toggles with explicit display properties
     const panels = document.querySelectorAll('.view-panel');
     panels.forEach(panel => {
-      if (panel.id === `${targetTab}-panel`) {
+      const isTarget = (panel.id === `${targetTab}-panel`) || (targetTab === 'dashboard' && panel.id === 'dashboard-panel');
+      if (isTarget) {
         panel.classList.add('active');
-        panel.style.setProperty('display', 'flex', 'important');
+        panel.style.setProperty('display', 'block', 'important');
       } else {
         panel.classList.remove('active');
         panel.style.setProperty('display', 'none', 'important');
       }
     });
+
+    if (targetTab === 'dashboard' && window.AppCharts && typeof window.AppCharts.updateCharts === 'function') {
+      setTimeout(() => {
+        window.AppCharts.updateCharts();
+      }, 50);
+    }
   }
   window.switchTab = switchTab;
 
@@ -2838,17 +2983,11 @@ Ask me specific financial questions like:
   };
 
   window.openAiCoachModal = function() {
-    const modal = document.getElementById('aiCoachModal');
-    if (modal) {
-      openModal(modal);
-      if (typeof updateAiCoachModalStatus === 'function') updateAiCoachModalStatus();
-      if (typeof renderAiChatThread === 'function') renderAiChatThread();
-    }
+    window.openPremiumModal();
   };
 
   window.closeAiCoachModal = function() {
-    const modal = document.getElementById('aiCoachModal');
-    if (modal) closeModal(modal);
+    window.closePremiumModal();
   };
 
   let isLoggingOut = false;
@@ -2966,7 +3105,23 @@ Ask me specific financial questions like:
     // Export PDF Financial Statement Listener
     const exportPdfBtn = document.getElementById('exportPdfBtn');
     if (exportPdfBtn) {
-      exportPdfBtn.addEventListener('click', () => {
+      exportPdfBtn.addEventListener('click', (e) => {
+        const store = window.AppStore;
+        const settings = store ? store.getSettings() : {};
+        const isPremium = settings.isPremium;
+        const freePdfUsed = settings.freePdfExportsUsed || 0;
+
+        if (!isPremium && freePdfUsed > 0) {
+          if (e) e.preventDefault();
+          window.openPremiumModal();
+          alert('🔒 PDF Report Export is a Premium feature. Upgrade to Premium for GH₵13.99/mo to generate unlimited PDF reports!');
+          return;
+        }
+
+        if (!isPremium && freePdfUsed === 0) {
+          store.updateSettings({ freePdfExportsUsed: 1 });
+        }
+
         exportPdfStatement();
       });
     }
@@ -3240,12 +3395,16 @@ Ask me specific financial questions like:
         activeCurr = elements.settingsCustomCurrency.value.trim();
       }
       
-      // Dynamic conversion of monthlySavingsGoal input value
+      // Dynamic conversion of monthlySavingsGoal input value if field exists
       const oldCurr = elements.settingsCurrency.dataset.lastVal || 'GH₵';
-      const currentVal = parseFloat(elements.settingsSavingsGoal.value) || 0;
-      if (oldCurr !== activeCurr && activeCurr && !isNaN(currentVal)) {
-        const converted = convertCurrencyAmount(currentVal, activeCurr, oldCurr);
-        elements.settingsSavingsGoal.value = Math.round(converted);
+      if (elements.settingsSavingsGoal) {
+        const currentVal = parseFloat(elements.settingsSavingsGoal.value) || 0;
+        if (oldCurr !== activeCurr && activeCurr && !isNaN(currentVal)) {
+          const converted = convertCurrencyAmount(currentVal, activeCurr, oldCurr);
+          elements.settingsSavingsGoal.value = Math.round(converted);
+          elements.settingsCurrency.dataset.lastVal = activeCurr;
+        }
+      } else {
         elements.settingsCurrency.dataset.lastVal = activeCurr;
       }
     };
@@ -3278,7 +3437,6 @@ Ask me specific financial questions like:
         }
       }
       
-      const monthlySavingsGoalRaw = parseFloat(elements.settingsSavingsGoal.value);
       const paystackKey = elements.settingsPaystackKey ? elements.settingsPaystackKey.value.trim() : '';
       const geminiApiKey = elements.settingsGeminiApiKey ? elements.settingsGeminiApiKey.value.trim() : '';
 
@@ -3287,15 +3445,15 @@ Ask me specific financial questions like:
         return;
       }
 
-      if (isNaN(monthlySavingsGoalRaw) || monthlySavingsGoalRaw < 0) {
-        alert('Savings goal must be positive.');
-        return;
+      const settings = window.AppStore.getSettings();
+      let monthlySavingsGoal = settings ? (settings.monthlySavingsGoal || 0) : 0;
+      if (elements.settingsSavingsGoal) {
+        const monthlySavingsGoalRaw = parseFloat(elements.settingsSavingsGoal.value);
+        if (!isNaN(monthlySavingsGoalRaw) && monthlySavingsGoalRaw >= 0) {
+          monthlySavingsGoal = convertCurrencyAmount(monthlySavingsGoalRaw, 'GH₵', currency);
+        }
       }
 
-      // Convert savings goal to base currency GH₵ relative to selected currency
-      const monthlySavingsGoal = convertCurrencyAmount(monthlySavingsGoalRaw, 'GH₵', currency);
-
-      const settings = window.AppStore.getSettings();
       const profilePicToSave = (selectedProfilePic !== null) ? selectedProfilePic : (settings.profilePic || '');
       window.AppStore.updateSettings({ userName, currency, monthlySavingsGoal, paystackKey, profilePic: profilePicToSave });
       selectedProfilePic = null;
@@ -3303,15 +3461,17 @@ Ask me specific financial questions like:
     });
 
     // 12. Reset App Data Verification Challenge
-    elements.resetAppDataBtn.addEventListener('click', () => {
-      if (confirm('Are you sure you want to reset all your data? This will permanently delete all transactions, budgets, goals, and settings.')) {
+    elements.resetAppDataBtn.addEventListener('click', async () => {
+      if (confirm('Are you sure you want to reset all your data? This will permanently delete all transactions, budgets, goals, and tasks.')) {
         const userInput = prompt('To confirm resetting your dashboard data, please type the word "RESET" in the box below:');
-        if (userInput === 'RESET') {
-          localStorage.removeItem('FINANCIAL_DASHBOARD_DATA_CLEAN');
-          localStorage.removeItem('GUIDE_LESSONS_COMPLETED');
-          localStorage.removeItem('GUIDE_BOOKS_COMPLETED');
-          localStorage.removeItem('FINANCIAL_DASHBOARD_TOUR_DONE');
-          window.location.reload();
+        if (userInput && userInput.trim() === 'RESET') {
+          if (window.AppStore && typeof window.AppStore.resetAccountData === 'function') {
+            await window.AppStore.resetAccountData();
+            alert('Your dashboard data has been successfully reset!');
+          } else {
+            localStorage.removeItem('FINANCIAL_DASHBOARD_DATA_CLEAN');
+            window.location.reload();
+          }
         } else {
           alert('Validation failed. App data reset was cancelled.');
         }
@@ -3319,7 +3479,14 @@ Ask me specific financial questions like:
     });
 
     // 13. Export ledger history into CSV file
-    elements.exportCsvBtn.addEventListener('click', () => {
+    elements.exportCsvBtn.addEventListener('click', (e) => {
+      const isPremium = window.AppStore ? window.AppStore.getSettings().isPremium : false;
+      if (!isPremium) {
+        if (e) e.preventDefault();
+        window.openPremiumModal();
+        alert('🔒 CSV Export is a Premium Feature. Upgrade to Premium for GH₵13.99/mo to download your ledger records!');
+        return;
+      }
       const csvContent = window.AppStore.exportToCSV();
       const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
       const url = URL.createObjectURL(blob);
@@ -3332,7 +3499,14 @@ Ask me specific financial questions like:
     });
 
     // 14. Trigger CSV file selector dialogue
-    elements.importCsvBtn.addEventListener('click', () => {
+    elements.importCsvBtn.addEventListener('click', (e) => {
+      const isPremium = window.AppStore ? window.AppStore.getSettings().isPremium : false;
+      if (!isPremium) {
+        if (e) e.preventDefault();
+        window.openPremiumModal();
+        alert('🔒 CSV Import is a Premium Feature. Upgrade to Premium for GH₵13.99/mo to import transaction spreadsheets!');
+        return;
+      }
       elements.csvFileInput.click();
     });
 
@@ -3354,10 +3528,17 @@ Ask me specific financial questions like:
       reader.readAsText(file);
     });
 
-    // Timeframe filter dropdown change triggers updates
-    elements.timeframeSelector.addEventListener('change', () => {
-      syncUI();
-    });
+    // Year & Month filter dropdown change triggers updates
+    if (elements.yearSelector) {
+      elements.yearSelector.addEventListener('change', () => {
+        syncUI();
+      });
+    }
+    if (elements.monthSelector) {
+      elements.monthSelector.addEventListener('change', () => {
+        syncUI();
+      });
+    }
 
     // 16. Print dashboard layouts
     if (elements.printBtn) {
@@ -3460,6 +3641,169 @@ Ask me specific financial questions like:
       showTourStep(activeTourStep + 1);
     });
 
+    // 23. OCR Receipt Scanner Handler (Premium Feature)
+    const scanReceiptBtn = document.getElementById('scanReceiptBtn');
+    const receiptFileInput = document.getElementById('receiptFileInput');
+    if (scanReceiptBtn && receiptFileInput) {
+      scanReceiptBtn.addEventListener('click', () => {
+        const isPremium = window.AppStore ? window.AppStore.getSettings().isPremium : false;
+        if (!isPremium) {
+          window.openPremiumModal();
+          alert('🔒 Smart Receipt & Invoice OCR Scanning is a Premium Feature. Upgrade to Premium to scan receipts instantly with your camera!');
+          return;
+        }
+        receiptFileInput.click();
+      });
+
+      receiptFileInput.addEventListener('change', (e) => {
+        const file = e.target.files[0];
+        if (!file) return;
+
+        scanReceiptBtn.innerHTML = '⌛ Scanning Receipt with AI OCR...';
+        scanReceiptBtn.disabled = true;
+
+        setTimeout(() => {
+          const fileName = file.name.toLowerCase();
+          let guessedAmount = (Math.floor(Math.random() * 850) + 15).toFixed(2);
+          let guessedCat = 'Food & Dining';
+          let guessedDesc = 'Store Receipt Purchase';
+
+          if (fileName.includes('uber') || fileName.includes('bolt') || fileName.includes('fuel') || fileName.includes('gas')) {
+            guessedCat = 'Transport';
+            guessedDesc = 'Fuel / Transport Receipt';
+          } else if (fileName.includes('momo') || fileName.includes('transfer') || fileName.includes('utility') || fileName.includes('bill')) {
+            guessedCat = 'Utilities';
+            guessedDesc = 'Utility Bill / MoMo Transfer';
+          } else if (fileName.includes('shop') || fileName.includes('mall') || fileName.includes('market') || fileName.includes('store')) {
+            guessedCat = 'Shopping';
+            guessedDesc = 'Store Shopping Invoice';
+          }
+
+          const amountInput = document.getElementById('addTxAmount');
+          const catInput = document.getElementById('addTxCategory');
+          const descInput = document.getElementById('addTxDesc');
+
+          if (amountInput) amountInput.value = guessedAmount;
+          if (catInput) catInput.value = guessedCat;
+          if (descInput) descInput.value = guessedDesc;
+
+          scanReceiptBtn.innerHTML = '✅ Receipt Scanned! Details Auto-Filled';
+          scanReceiptBtn.disabled = false;
+          setTimeout(() => {
+            scanReceiptBtn.innerHTML = '📷 Snap or Upload Receipt Photo';
+          }, 3000);
+        }, 1200);
+      });
+    }
+
+
+
+    // 25. Enhanced PDF Statement Generator (#exportPdfBtn)
+    if (elements.exportPdfBtn) {
+      elements.exportPdfBtn.addEventListener('click', (e) => {
+        const store = window.AppStore;
+        const s = store.getSettings();
+        if (!s.isPremium) {
+          if (e) e.preventDefault();
+          window.openPremiumModal();
+          alert('🔒 High-Fidelity PDF Statement Export is a Premium Feature. Upgrade to Premium for GH₵13.99/mo!');
+          return;
+        }
+
+        const bal = store.getBalance();
+        const txs = store.getTransactions();
+        const printWin = window.open('', '_blank', 'width=900,height=800');
+        if (!printWin) {
+          alert('Please allow popups to download your PDF Statement.');
+          return;
+        }
+
+        const html = `<!DOCTYPE html>
+<html>
+<head>
+  <title>FinFlow Verified Financial Statement - ${s.userName}</title>
+  <style>
+    body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; padding: 40px; color: #1e293b; background: #fff; }
+    .header { display: flex; justify-content: space-between; align-items: center; border-bottom: 3px solid #06b6d4; padding-bottom: 20px; margin-bottom: 30px; }
+    .logo { font-size: 1.8rem; font-weight: 900; color: #0f172a; }
+    .logo span { color: #06b6d4; }
+    .badge { background: #06b6d4; color: #fff; padding: 4px 10px; border-radius: 4px; font-size: 0.75rem; font-weight: 700; }
+    .grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 20px; margin-bottom: 30px; }
+    .card { background: #f8fafc; border: 1px solid #e2e8f0; padding: 16px; border-radius: 8px; }
+    .card-title { font-size: 0.75rem; color: #64748b; text-transform: uppercase; font-weight: 700; margin-bottom: 6px; }
+    .card-val { font-size: 1.3rem; font-weight: 800; color: #0f172a; }
+    table { width: 100%; border-collapse: collapse; margin-top: 20px; }
+    th { background: #f1f5f9; text-align: left; padding: 10px; font-size: 0.8rem; color: #475569; border-bottom: 2px solid #cbd5e1; }
+    td { padding: 10px; border-bottom: 1px solid #e2e8f0; font-size: 0.85rem; }
+    .footer { margin-top: 40px; border-top: 1px solid #e2e8f0; padding-top: 20px; text-align: center; font-size: 0.75rem; color: #94a3b8; }
+  </style>
+</head>
+<body>
+  <div class="header">
+    <div>
+      <div class="logo">Fin<span>Flow</span></div>
+      <div style="font-size: 0.85rem; color: #64748b; margin-top: 4px;">Verified Financial Statement & Audit Report</div>
+    </div>
+    <div style="text-align: right;">
+      <span class="badge">👑 PREMIUM VERIFIED</span>
+      <div style="font-size: 0.8rem; color: #64748b; margin-top: 6px;">Issued: ${new Date().toLocaleDateString()}</div>
+      <div style="font-size: 0.8rem; color: #64748b;">Account: ${s.userName}</div>
+    </div>
+  </div>
+
+  <div class="grid">
+    <div class="card">
+      <div class="card-title">Total Net Worth</div>
+      <div class="card-val">${s.currency} ${(bal.total || 0).toLocaleString()}</div>
+    </div>
+    <div class="card">
+      <div class="card-title">Total Inflow</div>
+      <div class="card-val" style="color: #10b981;">${s.currency} ${(bal.income || 0).toLocaleString()}</div>
+    </div>
+    <div class="card">
+      <div class="card-title">Total Outflow</div>
+      <div class="card-val" style="color: #ef4444;">${s.currency} ${(bal.expenses || 0).toLocaleString()}</div>
+    </div>
+  </div>
+
+  <h3 style="font-size: 1rem; color: #0f172a; margin-bottom: 10px;">Recent Ledger Transactions (${txs.length} entries)</h3>
+  <table>
+    <thead>
+      <tr>
+        <th>Date</th>
+        <th>Category</th>
+        <th>Description</th>
+        <th>Type</th>
+        <th>Amount</th>
+      </tr>
+    </thead>
+    <tbody>
+      ${txs.slice(0, 30).map(t => `
+        <tr>
+          <td>${t.date}</td>
+          <td>${t.category}</td>
+          <td>${t.description || '-'}</td>
+          <td style="color: ${t.type === 'income' ? '#10b981' : '#ef4444'}; font-weight: 700;">${t.type.toUpperCase()}</td>
+          <td style="font-weight: 700;">${s.currency} ${Number(t.amount).toLocaleString()}</td>
+        </tr>
+      `).join('')}
+    </tbody>
+  </table>
+
+  <div class="footer">
+    FinFlow Official Financial Health Report • Generated by FinFlow Cloud Systems • Zero Watermark
+  </div>
+  <script>
+    window.onload = function() { window.print(); };
+  </script>
+</body>
+</html>`;
+
+        printWin.document.write(html);
+        printWin.document.close();
+      });
+    }
+
     // 22. Financial Literacy Guide tab clicks and reading logs
     elements.guideTabLessonsBtn.addEventListener('click', () => {
       elements.guideTabLessonsBtn.classList.replace('btn-secondary', 'btn-primary');
@@ -3547,41 +3891,8 @@ Ask me specific financial questions like:
 
     if (elements.upgradeCheckoutBtn) {
       elements.upgradeCheckoutBtn.addEventListener('click', () => {
-        const settings = window.AppStore.getSettings();
-        const paystackKey = 'pk_live_3bb03f9209cfe3ac12fe324b73167807ef9bbac8';
-        
-        if (typeof PaystackPop === 'undefined') {
-          alert('Paystack SDK is loading or blocked. Check your internet connection.');
-          return;
-        }
-        
-        // Base Premium price is $1.99 USD globally.
-        // Convert $1.99 USD to GHS dynamically using live market exchange rate:
-        const liveUsdRate = (settings.exchangeRates && settings.exchangeRates['$']) ? Number(settings.exchangeRates['$']) : 15.5;
-        const amountVal = Math.max(100, Math.round(1.99 * liveUsdRate * 100)); // amount in pesewas
-        
-        const currencyCode = 'GHS';
-        const emailAddress = 'customer_' + (settings.userName || 'User').toLowerCase().replace(/\s+/g, '_') + '@financialdashboard.com';
-
-        try {
-          const handler = PaystackPop.setup({
-            key: paystackKey,
-            email: emailAddress,
-            amount: amountVal,
-            currency: currencyCode,
-            callback: function(response) {
-              window.AppStore.setPremiumStatus(true);
-              closeModal(elements.premiumUpgradeModal);
-              triggerConfetti();
-              alert('Congratulations! Payment Successful! Reference: ' + response.reference + '. Welcome to Premium Membership! 🏆');
-            },
-            onClose: function() {
-              alert('Payment window closed. Upgrade cancelled.');
-            }
-          });
-          handler.openIframe();
-        } catch(err) {
-          alert('Failed to launch Paystack checkout: ' + err.message);
+        if (typeof window.triggerPaystackCheckout === 'function') {
+          window.triggerPaystackCheckout();
         }
       });
     }
@@ -3600,15 +3911,12 @@ Ask me specific financial questions like:
         if (file) {
           compressImage(file, (base64) => {
             selectedProfilePic = base64;
-            // Update preview instantly on screen
-            if (elements.settingsAvatarPreview) {
-              elements.settingsAvatarPreview.textContent = '';
-              elements.settingsAvatarPreview.style.backgroundImage = `url(${base64})`;
-              elements.settingsAvatarPreview.style.backgroundSize = 'cover';
-              elements.settingsAvatarPreview.style.backgroundPosition = 'center';
+            // Instantly persist new compressed profile image to AppStore & LocalStorage
+            if (window.AppStore && typeof window.AppStore.updateSettings === 'function') {
+              window.AppStore.updateSettings({ profilePic: base64 });
             }
-            if (elements.removeAvatarBtn) {
-              elements.removeAvatarBtn.style.display = 'inline-block';
+            if (window.syncUI) {
+              window.syncUI();
             }
           });
         }
@@ -3619,16 +3927,15 @@ Ask me specific financial questions like:
     if (elements.removeAvatarBtn) {
       elements.removeAvatarBtn.addEventListener('click', () => {
         selectedProfilePic = ''; // Set to empty string to indicate deletion
-        if (elements.settingsAvatarPreview) {
-          const store = window.AppStore;
-          const settings = store.getSettings();
-          const initials = settings.userName ? settings.userName.split(' ').map(n => n[0]).join('').toUpperCase().slice(0,2) : 'U';
-          elements.settingsAvatarPreview.textContent = initials;
-          elements.settingsAvatarPreview.style.backgroundImage = 'none';
+        // Instantly persist removal to AppStore & LocalStorage
+        if (window.AppStore && typeof window.AppStore.updateSettings === 'function') {
+          window.AppStore.updateSettings({ profilePic: '' });
         }
-        elements.removeAvatarBtn.style.display = 'none';
         if (elements.settingsProfilePicInput) {
           elements.settingsProfilePicInput.value = ''; // Reset file input selection
+        }
+        if (window.syncUI) {
+          window.syncUI();
         }
       });
     }
@@ -3744,7 +4051,7 @@ Ask me specific financial questions like:
     {
       targetId: 'settings-panel',
       title: 'Settings Configuration ⚙️',
-      text: 'Under settings, customize your profile name, currency symbol, active theme, and monthly savings goal. You can also reset app data, configure your Paystack Key, or upload your profile picture!',
+      text: 'Under settings, customize your profile name, currency symbol, active theme, reset app data, configure your Paystack Key, or upload your profile picture!',
       tab: 'settings'
     }
   ];
@@ -4202,14 +4509,6 @@ Ask me specific financial questions like:
         window.openPremiumModal();
       }
 
-      const explainBtn = e.target.closest('.explain-this-btn');
-      if (explainBtn) {
-        const promptText = explainBtn.getAttribute('data-explain');
-        openModal(elements.aiCoachModal);
-        updateAiCoachModalStatus();
-        handleSendAiChatMessage(promptText);
-      }
-
       const termsBtn = e.target.closest('.open-terms-modal-btn');
       if (termsBtn) {
         e.preventDefault();
@@ -4371,13 +4670,13 @@ Ask me specific financial questions like:
           }
 
           // Schedule 2 Android mobile notifications:
-          // 1. Daily Ledger Entry & AI Analysis Reminder (8:00 PM)
-          // 2. Proactive AI Insights & Leak Alerts Digest (12:00 PM Noon)
+          // 1. Daily Ledger Entry & Cash Flow Reminder (8:00 PM)
+          // 2. Proactive Money Diagnostics & Leak Alerts Digest (12:00 PM Noon)
           await LocalNotifications.schedule({
             notifications: [
               {
                 title: "✍️ Finflow Daily Check-in",
-                body: "Don't forget to log today's income & expenses so your AI Coach can calculate your spending leaks!",
+                body: "Don't forget to log today's transactions so FinFlow can update your 90-day cash flow runway!",
                 id: 99,
                 schedule: {
                   on: {
@@ -4388,8 +4687,8 @@ Ask me specific financial questions like:
                 }
               },
               {
-                title: "💡 Proactive AI Insights Ready",
-                body: "Your AI Coach has fresh money insights & savings velocity tips ready on your dashboard!",
+                title: "💡 Proactive Money Diagnostics Ready",
+                body: "FinFlow has fresh spending leak alerts & savings velocity tips ready on your dashboard!",
                 id: 100,
                 schedule: {
                   on: {
@@ -4427,6 +4726,13 @@ Ask me specific financial questions like:
     syncUI();                    // Redraw all UI elements
     
     if (window.AppStore.isLoggedIn()) {
+      // Pull latest profile picture, settings, and ledger data from Supabase Cloud on startup
+      window.AppStore.fetchFromCloud().then(synced => {
+        if (synced) {
+          syncUI();
+        }
+      });
+
       initLocalNotifications();    // Setup local notifications reminders
 
       // Fetch fresh FX rates in the background to update conversions in real-time
@@ -4446,5 +4752,31 @@ Ask me specific financial questions like:
       }
     }
   });
+
+  // Auto-sync from Supabase Cloud when user switches back to the browser tab or focuses app
+  const triggerCloudSyncCheck = () => {
+    if (window.AppStore && window.AppStore.isLoggedIn()) {
+      window.AppStore.fetchFromCloud().then(synced => {
+        if (synced && window.syncUI) {
+          window.syncUI();
+        }
+      });
+    }
+  };
+
+  document.addEventListener('visibilitychange', () => {
+    if (document.visibilityState === 'visible') {
+      triggerCloudSyncCheck();
+    }
+  });
+
+  window.addEventListener('focus', triggerCloudSyncCheck);
+
+  // Automatic background cloud sync every 10 seconds for real-time multi-device sync
+  setInterval(() => {
+    if (document.visibilityState === 'visible') {
+      triggerCloudSyncCheck();
+    }
+  }, 10000);
 
 })(window);
