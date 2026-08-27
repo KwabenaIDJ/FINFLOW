@@ -173,7 +173,7 @@
       img.onload = () => {
         const canvas = document.createElement('canvas');
         const ctx = canvas.getContext('2d');
-        const size = 128;
+        const size = 96;
         canvas.width = size;
         canvas.height = size;
         
@@ -182,7 +182,7 @@
         const sy = (img.height - minSide) / 2;
         
         ctx.drawImage(img, sx, sy, minSide, minSide, 0, 0, size, size);
-        callback(canvas.toDataURL('image/jpeg', 0.7));
+        callback(canvas.toDataURL('image/jpeg', 0.6));
       };
     };
   }
@@ -2956,6 +2956,30 @@ Ask me specific financial questions like:
       setTimeout(() => {
         window.AppCharts.updateCharts();
       }, 50);
+    }
+
+    // Automatically check for latest profile & ledger updates from cloud when navigating
+    if (window.AppStore && typeof window.AppStore.syncFromCloud === 'function' && window.AppStore.isLoggedIn()) {
+      window.AppStore.syncFromCloud().then(() => {
+        // Soft refresh of UI elements
+        const settings = window.AppStore.getSettings();
+        const avatars = document.querySelectorAll('.profile-avatar');
+        const initials = settings.userName ? settings.userName.split(' ').map(n => n[0]).join('').toUpperCase().slice(0,2) : 'U';
+        const activePic = settings.profilePic || '';
+        avatars.forEach(avatar => {
+          if (avatar) {
+            if (activePic) {
+              avatar.textContent = '';
+              avatar.style.backgroundImage = `url(${activePic})`;
+              avatar.style.backgroundSize = 'cover';
+              avatar.style.backgroundPosition = 'center';
+            } else {
+              avatar.textContent = initials;
+              avatar.style.backgroundImage = 'none';
+            }
+          }
+        });
+      });
     }
   }
   window.switchTab = switchTab;
