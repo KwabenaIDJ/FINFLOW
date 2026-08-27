@@ -397,6 +397,19 @@
     elements.goalFundType = document.getElementById('goalFundType');
     elements.goalFundReminder = document.getElementById('goalFundReminder');
 
+    // Account Switcher Elements
+    elements.accountSwitcherBtn = document.getElementById('accountSwitcherBtn');
+    elements.accountSwitcherMenu = document.getElementById('accountSwitcherMenu');
+    elements.accountSwitcherItems = document.getElementById('accountSwitcherItems');
+    elements.accountSwitcherLabel = document.getElementById('accountSwitcherLabel');
+    elements.accountSwitcherIcon = document.getElementById('accountSwitcherIcon');
+    elements.addNewAccountBtn = document.getElementById('addNewAccountBtn');
+    elements.addAccountModal = document.getElementById('addAccountModal');
+    elements.addAccountForm = document.getElementById('addAccountForm');
+    elements.newAccountName = document.getElementById('newAccountName');
+    elements.newAccountType = document.getElementById('newAccountType');
+    elements.newAccountCurrency = document.getElementById('newAccountCurrency');
+
     // Share & Print Elements
     elements.shareBtn = document.getElementById('shareBtn');
     elements.printBtn = document.getElementById('printBtn');
@@ -2060,6 +2073,81 @@
   }
 
   /**
+   * Redraws the account switcher dropdown menu items and active label.
+   */
+  function renderAccountSwitcher() {
+    const store = window.AppStore;
+    if (!store || typeof store.getAccounts !== 'function') return;
+
+    const accounts = store.getAccounts();
+    const activeAcc = store.getActiveAccount();
+
+    if (elements.accountSwitcherLabel && activeAcc) {
+      elements.accountSwitcherLabel.textContent = activeAcc.name;
+    }
+    if (elements.accountSwitcherIcon && activeAcc) {
+      let iconEmoji = '👤';
+      if (activeAcc.type === 'business') iconEmoji = '💼';
+      else if (activeAcc.type === 'side_hustle') iconEmoji = '🚀';
+      else if (activeAcc.type === 'savings') iconEmoji = '🐖';
+      elements.accountSwitcherIcon.textContent = iconEmoji;
+    }
+
+    if (!elements.accountSwitcherItems) return;
+    elements.accountSwitcherItems.innerHTML = '';
+
+    accounts.forEach(acc => {
+      const item = document.createElement('div');
+      item.className = `account-switcher-item ${acc.id === activeAcc.id ? 'active' : ''}`;
+      
+      let typeLabel = 'Personal';
+      let iconEmoji = '👤';
+      if (acc.type === 'business') { typeLabel = 'Business'; iconEmoji = '💼'; }
+      else if (acc.type === 'side_hustle') { typeLabel = 'Side Hustle'; iconEmoji = '🚀'; }
+      else if (acc.type === 'savings') { typeLabel = 'Savings'; iconEmoji = '🐖'; }
+
+      item.innerHTML = `
+        <div style="display: flex; align-items: center; gap: 10px;">
+          <span>${iconEmoji}</span>
+          <div>
+            <div style="font-weight: 700; line-height: 1.2;">${acc.name}</div>
+            <div style="font-size: 0.72rem; color: var(--text-muted);">${acc.currency || 'GH₵'} • <span class="acc-type-tag">${typeLabel}</span></div>
+          </div>
+        </div>
+        <div style="display: flex; align-items: center; gap: 6px;">
+          ${acc.id === activeAcc.id ? '<span style="color: var(--color-primary); font-size: 0.9rem;">✓</span>' : ''}
+          ${accounts.length > 1 && acc.id !== 'acc_default' ? `<button type="button" class="delete-account-btn" data-id="${acc.id}" title="Delete Account Workspace"><svg style="width: 14px; height: 14px; fill: none; stroke: currentColor; stroke-width: 2;"><use href="#icon-trash"></use></svg></button>` : ''}
+        </div>
+      `;
+
+      item.addEventListener('click', (e) => {
+        const delBtn = e.target.closest('.delete-account-btn');
+        if (delBtn) {
+          e.stopPropagation();
+          const accIdToDelete = delBtn.getAttribute('data-id');
+          if (confirm(`Are you sure you want to delete the account "${acc.name}"? All transaction records in this workspace will be deleted.`)) {
+            store.deleteAccount(accIdToDelete);
+            syncUI();
+          }
+          return;
+        }
+
+        if (acc.id !== activeAcc.id) {
+          store.switchAccount(acc.id);
+          if (elements.accountSwitcherMenu) elements.accountSwitcherMenu.style.display = 'none';
+          syncUI();
+        }
+      });
+
+      elements.accountSwitcherItems.appendChild(item);
+    });
+  }
+
+  window.closeAddAccountModal = function() {
+    if (elements.addAccountModal) closeModal(elements.addAccountModal);
+  };
+
+  /**
    * Main synchronization routing function. Redraws all view panels.
    */
   function syncUI() {
@@ -2076,6 +2164,7 @@
       }
       elements.headerCurrencySelector.value = activeCurr;
     }
+    renderAccountSwitcher();
     populateTimeframeOptions();
     renderKPIs();
     renderTransactions();
@@ -3099,6 +3188,75 @@ Ask me specific financial questions like:
         const newCurr = e.target.value;
         window.AppStore.updateSettings({ currency: newCurr });
         syncUI();
+      });
+    }
+
+    // Account Switcher Dropdown Toggle
+    if (elements.accountSwitcherBtn && elements.accountSwitcherMenu) {
+      elements.accountSwitcherBtn.addEventListener('click', (e) => {
+        e.stopPropagation();
+        const isVisible = elements.accountSwitcherMenu.style.display === 'block';
+        elements.accountSwitcherMenu.style.display = isVisible ? 'none' : 'block';
+      });
+
+      document.addEventListener('click', (e) => {
+        if (elements.accountSwitcherMenu && !e.target.closest('.account-switcher-wrapper')) {
+          elements.accountSwitcherMenu.style.display = 'none';
+        }
+      });
+    }
+
+    // Add New Account Trigger (Premium Gated)
+    if (elements.addNewAccountBtn) {
+      elements.addNewAccountBtn.addEventListener('click', (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        if (elements.accountSwitcherMenu) elements.accountSwitcherMenu.style.display = 'none';
+
+        const store = window.AppStore;
+        const isPremium = store ? store.getSettings().isPremium : false;
+        const existingAccounts = store ? store.getAccounts() : [];
+
+        if (!isPremium && existingAccounts.length >= 1) {
+          window.openPremiumModal();
+          alert('🔒 Creating multiple accounts is a Premium feature. Upgrade to Premium for GH₵13.99/mo to manage unlimited personal and business workspaces!');
+          return;
+        }
+
+        if (elements.addAccountModal) {
+          openModal(elements.addAccountModal);
+        }
+      });
+    }
+
+    // Form Submit Listener for Add Account Modal
+    if (elements.addAccountForm) {
+      elements.addAccountForm.addEventListener('submit', (e) => {
+        e.preventDefault();
+        const name = elements.newAccountName ? elements.newAccountName.value.trim() : '';
+        const type = elements.newAccountType ? elements.newAccountType.value : 'personal';
+        const currency = elements.newAccountCurrency ? elements.newAccountCurrency.value : 'GH₵';
+
+        if (!name) {
+          alert('Please enter an account workspace name.');
+          return;
+        }
+
+        const store = window.AppStore;
+        const res = store.createAccount({ name, type, currency });
+
+        if (res.success) {
+          closeModal(elements.addAccountModal);
+          elements.addAccountForm.reset();
+          syncUI();
+          alert(`🎉 Account "${res.account.name}" created and set as active workspace!`);
+        } else if (res.requiresPremium) {
+          closeModal(elements.addAccountModal);
+          window.openPremiumModal();
+          alert(res.message);
+        } else {
+          alert(res.message || 'Failed to create account.');
+        }
       });
     }
 
