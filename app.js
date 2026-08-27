@@ -1004,8 +1004,7 @@
 
     // Update circular profile avatars text contents or backgrounds
     const avatars = document.querySelectorAll('.profile-avatar');
-    const initials = settings.userName ? settings.userName.split(' ').map(n => n[0]).join('').toUpperCase().slice(0,2) : 'U';
-    const activeProfilePic = (selectedProfilePic !== null) ? selectedProfilePic : (settings.profilePic || '');
+    const activeProfilePic = settings.profilePic || '';
     
     avatars.forEach(avatar => {
       if (avatar) {
@@ -3484,9 +3483,7 @@ Ask me specific financial questions like:
         }
       }
 
-      const profilePicToSave = (selectedProfilePic !== null) ? selectedProfilePic : (settings.profilePic || '');
-      window.AppStore.updateSettings({ userName, currency, monthlySavingsGoal, paystackKey, profilePic: profilePicToSave });
-      selectedProfilePic = null;
+      window.AppStore.updateSettings({ userName, currency, monthlySavingsGoal, paystackKey });
       alert('Settings updated successfully!');
     });
 
@@ -3940,8 +3937,6 @@ Ask me specific financial questions like:
         const file = e.target.files[0];
         if (file) {
           compressImage(file, (base64) => {
-            selectedProfilePic = base64;
-            // Instantly persist new compressed profile image to AppStore & LocalStorage
             if (window.AppStore && typeof window.AppStore.updateSettings === 'function') {
               window.AppStore.updateSettings({ profilePic: base64 });
             }
@@ -3956,13 +3951,11 @@ Ask me specific financial questions like:
     // Remove Avatar click binding
     if (elements.removeAvatarBtn) {
       elements.removeAvatarBtn.addEventListener('click', () => {
-        selectedProfilePic = ''; // Set to empty string to indicate deletion
-        // Instantly persist removal to AppStore & LocalStorage
         if (window.AppStore && typeof window.AppStore.updateSettings === 'function') {
           window.AppStore.updateSettings({ profilePic: '' });
         }
         if (elements.settingsProfilePicInput) {
-          elements.settingsProfilePicInput.value = ''; // Reset file input selection
+          elements.settingsProfilePicInput.value = '';
         }
         if (window.syncUI) {
           window.syncUI();
