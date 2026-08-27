@@ -173,7 +173,7 @@
       img.onload = () => {
         const canvas = document.createElement('canvas');
         const ctx = canvas.getContext('2d');
-        const size = 96;
+        const size = 72;
         canvas.width = size;
         canvas.height = size;
         
@@ -182,7 +182,7 @@
         const sy = (img.height - minSide) / 2;
         
         ctx.drawImage(img, sx, sy, minSide, minSide, 0, 0, size, size);
-        callback(canvas.toDataURL('image/jpeg', 0.6));
+        callback(canvas.toDataURL('image/jpeg', 0.45));
       };
     };
   }

@@ -743,7 +743,7 @@
           this.data.settings.monthlySavingsGoal = profile.monthly_savings_goal || this.data.settings.monthlySavingsGoal;
           this.data.settings.isPremium = profile.is_premium ?? this.data.settings.isPremium;
           this.data.settings.aiQueriesCount = profile.ai_queries_count ?? this.data.settings.aiQueriesCount;
-          if (profile.profile_pic && profile.profile_pic.length > 20) {
+          if (profile.profile_pic !== undefined && profile.profile_pic !== null) {
             this.data.settings.profilePic = profile.profile_pic;
           }
           if (profile.free_pdf_exports_used !== undefined && profile.free_pdf_exports_used !== null) {
