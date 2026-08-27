@@ -622,7 +622,7 @@
 
         // 1. Sync Profile & Settings
         const settings = this.data.settings || {};
-        await client.from('profiles').upsert({
+        const profilePayload = {
           id: userId,
           user_name: settings.userName || 'User',
           currency: settings.currency || 'GH₵',
@@ -632,7 +632,15 @@
           profile_pic: (settings.profilePic !== undefined && settings.profilePic !== null) ? settings.profilePic : '',
           free_pdf_exports_used: settings.freePdfExportsUsed || 0,
           updated_at: new Date().toISOString()
-        });
+        };
+
+        const { error: pErr } = await client.from('profiles').upsert(profilePayload);
+        if (pErr) {
+          console.warn('Supabase Profile Upsert Warning:', pErr.message);
+          // Fallback: retry without profile_pic column in case DB column has size limit
+          delete profilePayload.profile_pic;
+          try { await client.from('profiles').upsert(profilePayload); } catch(e) {}
+        }
 
         // 2. Sync Transactions
         if (this.data.transactions && this.data.transactions.length > 0) {
@@ -704,8 +712,13 @@
           this.data.settings.monthlySavingsGoal = profile.monthly_savings_goal || this.data.settings.monthlySavingsGoal;
           this.data.settings.isPremium = profile.is_premium ?? this.data.settings.isPremium;
           this.data.settings.aiQueriesCount = profile.ai_queries_count ?? this.data.settings.aiQueriesCount;
-          if (profile.profile_pic !== undefined) {
-            this.data.settings.profilePic = profile.profile_pic || '';
+          if (profile.profile_pic && profile.profile_pic.length > 0) {
+            this.data.settings.profilePic = profile.profile_pic;
+          } else if (profile.profile_pic === '') {
+            // Explicit deletion from cloud
+            if (!this.data.settings.profilePic || this.data.settings.profilePic === '') {
+              this.data.settings.profilePic = '';
+            }
           }
           if (profile.free_pdf_exports_used !== undefined && profile.free_pdf_exports_used !== null) {
             this.data.settings.freePdfExportsUsed = profile.free_pdf_exports_used;
