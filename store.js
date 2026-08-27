@@ -32,6 +32,36 @@
     return supabaseClient;
   }
 
+  let realtimeChannel = null;
+
+  function setupRealtimeSync(userId) {
+    const client = getSupabaseClient();
+    if (!client || !userId || userId === 'demo_user') return;
+
+    if (realtimeChannel) {
+      try { client.removeChannel(realtimeChannel); } catch(e) {}
+    }
+
+    try {
+      realtimeChannel = client.channel(`realtime-sync-${userId}`)
+        .on('postgres_changes', { event: '*', schema: 'public', filter: `user_id=eq.${userId}` }, (payload) => {
+          if (window.AppStore && typeof window.AppStore.syncFromCloud === 'function') {
+            window.AppStore.syncFromCloud().then(() => {
+              if (typeof window.syncUI === 'function') window.syncUI();
+            });
+          }
+        })
+        .on('postgres_changes', { event: '*', schema: 'public', table: 'profiles', filter: `id=eq.${userId}` }, (payload) => {
+          if (window.AppStore && typeof window.AppStore.syncFromCloud === 'function') {
+            window.AppStore.syncFromCloud().then(() => {
+              if (typeof window.syncUI === 'function') window.syncUI();
+            });
+          }
+        })
+        .subscribe();
+    } catch (e) {}
+  }
+
   const DEFAULT_GHS_RATES = {
     'GH₵': 1.0,
     '$': 15.50,
@@ -703,6 +733,7 @@
         if (!session || !session.user) return false;
 
         const userId = session.user.id;
+        setupRealtimeSync(userId);
 
         // Fetch Profile
         const { data: profile } = await client.from('profiles').select('*').eq('id', userId).single();

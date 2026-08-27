@@ -2090,17 +2090,17 @@
     renderBudgetBreachAlerts();
     renderAIInsights();
     
-    // Update charts dimensions and redraw trend curves safely
-    if (window.AppCharts && typeof window.AppCharts.updateAll === 'function') {
-      window.AppCharts.updateAll();
+    // Render Cash Flow Trend (Past 6 Months) Line Chart
+    if (window.AppCharts && typeof window.AppCharts.renderCashFlowTrend === 'function') {
+      window.AppCharts.renderCashFlowTrend(store.getTransactions());
     }
     
-    // Calculate category breakdown sums specifically for charts
+    // Calculate category breakdown sums specifically for Expenses Breakdown Doughnut Chart
     const filteredTxs = getFilteredTransactions();
     const categoryBreakdown = {};
     filteredTxs.forEach(tx => {
       if (tx.type === 'expense') {
-        categoryBreakdown[tx.category] = (categoryBreakdown[tx.category] || 0) + tx.amount;
+        categoryBreakdown[tx.category] = (categoryBreakdown[tx.category] || 0) + Number(tx.amount || 0);
       }
     });
     if (window.AppCharts && typeof window.AppCharts.updateCategoryChart === 'function') {
