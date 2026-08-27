@@ -205,6 +205,10 @@
         <svg><use href="#icon-settings"></use></svg>
         <span>Settings</span>
       </a>
+      <a class="nav-item" id="sidebarAddAccountNav" onclick="window.triggerAddAccountModal(); closeMobileSidebar();" style="cursor: pointer; color: var(--color-primary); font-weight: 700;">
+        <svg style="stroke: var(--color-primary); fill: none;"><use href="#icon-plus"></use></svg>
+        <span>➕ Add / Switch Account</span>
+      </a>
       <a class="nav-item" id="logoutNavBtn" onclick="window.handleLogout(event); closeMobileSidebar();" style="cursor: pointer; color: var(--color-danger);">
         <svg style="stroke: var(--color-danger); fill: none;"><use href="#icon-logout"></use></svg>
         <span style="color: var(--color-danger); font-weight: 600;">Log Out</span>
@@ -346,6 +350,26 @@
             <svg style="width: 16px; height: 16px; fill: none; stroke: currentColor; stroke-width: 2;"><use href="#icon-print"></use></svg>
             <span>PDF Report</span>
           </button>
+          <!-- Account Switcher / Add Account Button -->
+          <div class="account-switcher-wrapper" style="position: relative; display: inline-block;">
+            <button type="button" id="accountSwitcherBtn" class="btn btn-secondary account-switcher-btn" style="padding: 10px 14px; font-weight: 700; display: flex; align-items: center; gap: 8px; font-size: 0.88rem; cursor: pointer; background: var(--bg-card); border: 1px solid var(--color-border); border-radius: var(--border-radius-sm); color: var(--text-main);">
+              <span id="accountSwitcherIcon">👤</span>
+              <span id="accountSwitcherLabel">Personal Account</span>
+              <span style="font-size: 0.75rem; color: var(--text-muted);">▾</span>
+            </button>
+            <div id="accountSwitcherMenu" class="account-switcher-menu shadow-lg" style="display: none; position: absolute; top: calc(100% + 6px); right: 0; min-width: 240px; background: var(--bg-card); border: 1px solid var(--color-border); border-radius: var(--border-radius-sm); padding: 6px 0; z-index: 1000; box-shadow: 0 10px 25px rgba(0,0,0,0.3);">
+              <div class="account-switcher-header" style="padding: 6px 14px; font-size: 0.72rem; text-transform: uppercase; letter-spacing: 0.5px; color: var(--text-muted); font-weight: 800;">
+                Workspaces & Accounts
+              </div>
+              <div id="accountSwitcherItems"></div>
+              <div style="border-top: 1px solid var(--color-border); margin-top: 4px; padding-top: 4px;">
+                <button type="button" id="addNewAccountBtn" style="width: 100%; text-align: left; padding: 10px 14px; background: transparent; border: none; color: var(--color-primary); font-family: inherit; font-size: 0.85rem; font-weight: 700; cursor: pointer; display: flex; align-items: center; justify-content: space-between;">
+                  <span>➕ Add New Account</span>
+                  <span style="font-size: 0.68rem; background: linear-gradient(135deg, #f1c40f, #f39c12); color: #000; padding: 2px 6px; border-radius: 4px; font-weight: 800;">GH₵13.99</span>
+                </button>
+              </div>
+            </div>
+          </div>
         </div>
 
         <!-- Row 3: Utility Icon Buttons -->

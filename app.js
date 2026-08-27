@@ -2147,6 +2147,22 @@
     if (elements.addAccountModal) closeModal(elements.addAccountModal);
   };
 
+  window.triggerAddAccountModal = function() {
+    const store = window.AppStore;
+    const isPremium = store ? store.getSettings().isPremium : false;
+    const existingAccounts = store ? store.getAccounts() : [];
+
+    if (!isPremium && existingAccounts.length >= 1) {
+      window.openPremiumModal();
+      alert('🔒 Creating multiple accounts is a Premium feature. Upgrade to Premium for GH₵13.99/mo to manage unlimited personal and business workspaces!');
+      return;
+    }
+
+    if (elements.addAccountModal) {
+      openModal(elements.addAccountModal);
+    }
+  };
+
   /**
    * Main synchronization routing function. Redraws all view panels.
    */
