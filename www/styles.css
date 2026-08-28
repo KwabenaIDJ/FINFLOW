@@ -1517,9 +1517,9 @@ header {
   }
   
   .chart-container {
-    height: 250px !important;
-    position: static !important;
-    overflow: visible !important;
+    height: 280px !important;
+    position: relative !important;
+    overflow: hidden !important;
   }
   
   h1, h2, h3, h4, span, p, div {

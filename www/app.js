@@ -173,7 +173,7 @@
       img.onload = () => {
         const canvas = document.createElement('canvas');
         const ctx = canvas.getContext('2d');
-        const size = 128;
+        const size = 72;
         canvas.width = size;
         canvas.height = size;
         
@@ -182,7 +182,7 @@
         const sy = (img.height - minSide) / 2;
         
         ctx.drawImage(img, sx, sy, minSide, minSide, 0, 0, size, size);
-        callback(canvas.toDataURL('image/jpeg', 0.7));
+        callback(canvas.toDataURL('image/jpeg', 0.45));
       };
     };
   }
@@ -347,9 +347,9 @@
     elements.addGoalDestination = document.getElementById('addGoalDestination');
     
     // Timeframe Selectors
-    elements.yearSelector = document.getElementById('yearSelector');
-    elements.monthSelector = document.getElementById('monthSelector');
-    elements.headerCurrencySelector = document.getElementById('headerCurrencySelector');
+    elements.yearSelector = document.getElementById('yearSelector'); // Year selector element
+    elements.monthSelector = document.getElementById('monthSelector'); // Month selector element
+    elements.headerCurrencySelector = document.getElementById('headerCurrencySelector'); // Currency selector element
     
     // Settings Form
     elements.settingsForm = document.getElementById('settingsForm');
@@ -1005,7 +1005,7 @@
     // Update circular profile avatars text contents or backgrounds
     const avatars = document.querySelectorAll('.profile-avatar');
     const initials = settings.userName ? settings.userName.split(' ').map(n => n[0]).join('').toUpperCase().slice(0,2) : 'U';
-    const activeProfilePic = (selectedProfilePic !== null) ? selectedProfilePic : (settings.profilePic || '');
+    const activeProfilePic = settings.profilePic || '';
     
     avatars.forEach(avatar => {
       if (avatar) {
@@ -2063,7 +2063,7 @@
    * Main synchronization routing function. Redraws all view panels.
    */
   function syncUI() {
-    const store = window.AppStore;
+    const store = window.AppStore; // Reference store instance
     // Sync header currency switcher value to active settings currency
     if (elements.headerCurrencySelector) {
       const activeCurr = store.getSettings().currency;
@@ -2090,18 +2090,22 @@
     renderBudgetBreachAlerts();
     renderAIInsights();
     
-    // Update charts dimensions and redraw trend curves
-    window.AppCharts.updateAll();
+    // Render Cash Flow Trend (Past 6 Months) Line Chart
+    if (window.AppCharts && typeof window.AppCharts.renderCashFlowTrend === 'function') {
+      window.AppCharts.renderCashFlowTrend(store.getTransactions());
+    }
     
-    // Calculate category breakdown sums specifically for charts
+    // Calculate category breakdown sums specifically for Expenses Breakdown Doughnut Chart
     const filteredTxs = getFilteredTransactions();
     const categoryBreakdown = {};
     filteredTxs.forEach(tx => {
       if (tx.type === 'expense') {
-        categoryBreakdown[tx.category] = (categoryBreakdown[tx.category] || 0) + tx.amount;
+        categoryBreakdown[tx.category] = (categoryBreakdown[tx.category] || 0) + Number(tx.amount || 0);
       }
     });
-    window.AppCharts.updateCategoryChart(categoryBreakdown);
+    if (window.AppCharts && typeof window.AppCharts.updateCategoryChart === 'function') {
+      window.AppCharts.updateCategoryChart(categoryBreakdown);
+    }
   }
 
   /**
@@ -2913,7 +2917,9 @@ Ask me specific financial questions like:
     }
     
     updateThemeToggleUI(newTheme);
-    window.AppCharts.updateTheme(); // Re-apply grid colors to chart canvas
+    if (window.AppCharts && typeof window.AppCharts.updateTheme === 'function') {
+      window.AppCharts.updateTheme(); // Re-apply grid colors to chart canvas
+    }
   }
 
   // --- Router / Tab controller ---
@@ -2950,6 +2956,30 @@ Ask me specific financial questions like:
       setTimeout(() => {
         window.AppCharts.updateCharts();
       }, 50);
+    }
+
+    // Automatically check for latest profile & ledger updates from cloud when navigating
+    if (window.AppStore && typeof window.AppStore.syncFromCloud === 'function' && window.AppStore.isLoggedIn()) {
+      window.AppStore.syncFromCloud().then(() => {
+        // Soft refresh of UI elements
+        const settings = window.AppStore.getSettings();
+        const avatars = document.querySelectorAll('.profile-avatar');
+        const initials = settings.userName ? settings.userName.split(' ').map(n => n[0]).join('').toUpperCase().slice(0,2) : 'U';
+        const activePic = settings.profilePic || '';
+        avatars.forEach(avatar => {
+          if (avatar) {
+            if (activePic) {
+              avatar.textContent = '';
+              avatar.style.backgroundImage = `url(${activePic})`;
+              avatar.style.backgroundSize = 'cover';
+              avatar.style.backgroundPosition = 'center';
+            } else {
+              avatar.textContent = initials;
+              avatar.style.backgroundImage = 'none';
+            }
+          }
+        });
+      });
     }
   }
   window.switchTab = switchTab;
@@ -3454,9 +3484,7 @@ Ask me specific financial questions like:
         }
       }
 
-      const profilePicToSave = (selectedProfilePic !== null) ? selectedProfilePic : (settings.profilePic || '');
-      window.AppStore.updateSettings({ userName, currency, monthlySavingsGoal, paystackKey, profilePic: profilePicToSave });
-      selectedProfilePic = null;
+      window.AppStore.updateSettings({ userName, currency, monthlySavingsGoal, paystackKey });
       alert('Settings updated successfully!');
     });
 
@@ -3910,8 +3938,6 @@ Ask me specific financial questions like:
         const file = e.target.files[0];
         if (file) {
           compressImage(file, (base64) => {
-            selectedProfilePic = base64;
-            // Instantly persist new compressed profile image to AppStore & LocalStorage
             if (window.AppStore && typeof window.AppStore.updateSettings === 'function') {
               window.AppStore.updateSettings({ profilePic: base64 });
             }
@@ -3926,13 +3952,11 @@ Ask me specific financial questions like:
     // Remove Avatar click binding
     if (elements.removeAvatarBtn) {
       elements.removeAvatarBtn.addEventListener('click', () => {
-        selectedProfilePic = ''; // Set to empty string to indicate deletion
-        // Instantly persist removal to AppStore & LocalStorage
         if (window.AppStore && typeof window.AppStore.updateSettings === 'function') {
           window.AppStore.updateSettings({ profilePic: '' });
         }
         if (elements.settingsProfilePicInput) {
-          elements.settingsProfilePicInput.value = ''; // Reset file input selection
+          elements.settingsProfilePicInput.value = '';
         }
         if (window.syncUI) {
           window.syncUI();
@@ -4721,8 +4745,9 @@ Ask me specific financial questions like:
     registerEvents();            // Bind all form submit and button click listeners
     initAuth();                  // Handle sign-in/sign-up authentication checks
     
-    // Always initialize dashboard views and layout components
-    window.AppCharts.init();     // Initialize Charts.js default configurations
+    if (window.AppCharts && typeof window.AppCharts.init === 'function') {
+      window.AppCharts.init();     // Initialize Charts.js default configurations
+    }
     syncUI();                    // Redraw all UI elements
     
     if (window.AppStore.isLoggedIn()) {

@@ -32,6 +32,36 @@
     return supabaseClient;
   }
 
+  let realtimeChannel = null;
+
+  function setupRealtimeSync(userId) {
+    const client = getSupabaseClient();
+    if (!client || !userId || userId === 'demo_user') return;
+
+    if (realtimeChannel) {
+      try { client.removeChannel(realtimeChannel); } catch(e) {}
+    }
+
+    try {
+      realtimeChannel = client.channel(`realtime-sync-${userId}`)
+        .on('postgres_changes', { event: '*', schema: 'public', filter: `user_id=eq.${userId}` }, (payload) => {
+          if (window.AppStore && typeof window.AppStore.syncFromCloud === 'function') {
+            window.AppStore.syncFromCloud().then(() => {
+              if (typeof window.syncUI === 'function') window.syncUI();
+            });
+          }
+        })
+        .on('postgres_changes', { event: '*', schema: 'public', table: 'profiles', filter: `id=eq.${userId}` }, (payload) => {
+          if (window.AppStore && typeof window.AppStore.syncFromCloud === 'function') {
+            window.AppStore.syncFromCloud().then(() => {
+              if (typeof window.syncUI === 'function') window.syncUI();
+            });
+          }
+        })
+        .subscribe();
+    } catch (e) {}
+  }
+
   const DEFAULT_GHS_RATES = {
     'GH₵': 1.0,
     '$': 15.50,
@@ -73,7 +103,6 @@
       return d.toISOString().split('T')[0]; // Extract YYYY-MM-DD
     };
 
-    // Return the default data blueprint
     return {
       transactions: [], // Initialize transactions ledger as an empty array
       budgets: {},      // Clean empty category monthly limits
@@ -622,7 +651,7 @@
 
         // 1. Sync Profile & Settings
         const settings = this.data.settings || {};
-        await client.from('profiles').upsert({
+        const profilePayload = {
           id: userId,
           user_name: settings.userName || 'User',
           currency: settings.currency || 'GH₵',
@@ -632,21 +661,29 @@
           profile_pic: (settings.profilePic !== undefined && settings.profilePic !== null) ? settings.profilePic : '',
           free_pdf_exports_used: settings.freePdfExportsUsed || 0,
           updated_at: new Date().toISOString()
-        });
+        };
+
+        const { error: pErr } = await client.from('profiles').upsert(profilePayload);
+        if (pErr) {
+          console.warn('Supabase Profile Upsert Warning:', pErr.message);
+          // Fallback: retry without profile_pic column in case DB column has size limit
+          delete profilePayload.profile_pic;
+          try { await client.from('profiles').upsert(profilePayload); } catch(e) {}
+        }
 
         // 2. Sync Transactions
-        if (this.data.transactions && this.data.transactions.length > 0) {
-          const txRows = this.data.transactions.map(tx => ({
-            id: String(tx.id),
-            user_id: userId,
-            date: tx.date,
-            description: tx.description || tx.note || '',
-            category: tx.category,
-            type: tx.type,
-            amount: Number(tx.amount),
-            note: tx.note || ''
-          }));
-          await client.from('transactions').upsert(txRows, { onConflict: 'id' });
+        if (this.data.transactions && this.data.transactions.length > 0) { // Verify transactions exist
+          const txRows = this.data.transactions.map(tx => ({ // Map local transactions to Supabase rows
+            id: String(tx.id), // String ID
+            user_id: userId, // User auth ID
+            date: tx.date, // Transaction YYYY-MM-DD date string
+            description: tx.description || tx.note || '', // Note or description
+            category: tx.category, // Category string
+            type: tx.type, // 'income' or 'expense'
+            amount: Number(tx.amount), // Numeric amount
+            note: tx.note || '' // Optional extra note
+          })); // End map
+          await client.from('transactions').upsert(txRows, { onConflict: 'id' }); // Upsert to Supabase Cloud
         }
 
         // 3. Sync Budgets
@@ -695,6 +732,7 @@
         if (!session || !session.user) return false;
 
         const userId = session.user.id;
+        setupRealtimeSync(userId);
 
         // Fetch Profile
         const { data: profile } = await client.from('profiles').select('*').eq('id', userId).single();
@@ -704,8 +742,8 @@
           this.data.settings.monthlySavingsGoal = profile.monthly_savings_goal || this.data.settings.monthlySavingsGoal;
           this.data.settings.isPremium = profile.is_premium ?? this.data.settings.isPremium;
           this.data.settings.aiQueriesCount = profile.ai_queries_count ?? this.data.settings.aiQueriesCount;
-          if (profile.profile_pic !== undefined) {
-            this.data.settings.profilePic = profile.profile_pic || '';
+          if (profile.profile_pic !== undefined && profile.profile_pic !== null) {
+            this.data.settings.profilePic = profile.profile_pic;
           }
           if (profile.free_pdf_exports_used !== undefined && profile.free_pdf_exports_used !== null) {
             this.data.settings.freePdfExportsUsed = profile.free_pdf_exports_used;
@@ -713,17 +751,17 @@
         }
 
         // Fetch Transactions (Cloud is authoritative)
-        const { data: cloudTxs } = await client.from('transactions').select('*').eq('user_id', userId).order('date', { ascending: false });
-        if (cloudTxs) {
-          this.data.transactions = cloudTxs.map(t => ({
-            id: t.id,
-            date: t.date,
-            description: t.description || t.note || '',
-            category: t.category,
-            type: t.type,
-            amount: Number(t.amount),
-            note: t.note || ''
-          }));
+        const { data: cloudTxs } = await client.from('transactions').select('*').eq('user_id', userId).order('date', { ascending: false }); // Fetch user transactions
+        if (cloudTxs) { // If cloud transactions exist
+          this.data.transactions = cloudTxs.map(t => ({ // Map cloud rows to store format
+            id: t.id, // String ID
+            date: t.date, // Transaction date string
+            description: t.description || t.note || '', // Description string
+            category: t.category, // Category string
+            type: t.type, // 'income' or 'expense'
+            amount: Number(t.amount), // Numeric amount
+            note: t.note || '' // Optional note
+          })); // End map
         }
 
         // Fetch Budgets
@@ -879,25 +917,22 @@
      * Returns the array containing all recorded transactions in the ledger database.
      */
     getTransactions() {
-      return this.data.transactions;
+      if (!this.data || !Array.isArray(this.data.transactions)) return []; // Guard against empty data
+      return this.data.transactions; // Return full transactions array
     },
 
     /**
-     * Records a new transaction entry to the database.
-     * Mutates the state and saves it.
+     * Records a new transaction entry to the ledger database.
      */
     addTransaction(tx) {
-      // Record historical state before updating database to support Undo
-      this.pushState();
-      // Instantiate standard transaction properties mapping values correctly
-      const newTx = {
-        // Generate unique transaction string ID based on millisecond timestamp and random offset
-        id: 'tx-' + Date.now() + '-' + Math.floor(Math.random() * 1000),
+      this.pushState(); // Save state snapshot for Undo support
+      const newTx = { // Build standard transaction object record
+        id: 'tx-' + Date.now() + '-' + Math.floor(Math.random() * 1000), // Generate unique transaction ID string
         type: tx.type, // 'income' or 'expense'
-        category: tx.category,
-        amount: Number(tx.amount), // Force numeric type
-        date: tx.date || new Date().toISOString().split('T')[0], // Default to current date string
-        description: tx.description || '' // Default empty string
+        category: tx.category, // Category string
+        amount: Number(tx.amount), // Force numeric type conversion
+        date: tx.date || new Date().toISOString().split('T')[0], // Default YYYY-MM-DD date string
+        description: tx.description || '' // Transaction note string
       };
       
       // Insert new transaction to front of ledger array
