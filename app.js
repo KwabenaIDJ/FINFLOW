@@ -347,9 +347,9 @@
     elements.addGoalDestination = document.getElementById('addGoalDestination');
     
     // Timeframe Selectors
-    elements.yearSelector = document.getElementById('yearSelector');
-    elements.monthSelector = document.getElementById('monthSelector');
-    elements.headerCurrencySelector = document.getElementById('headerCurrencySelector');
+    elements.yearSelector = document.getElementById('yearSelector'); // Year selector element
+    elements.monthSelector = document.getElementById('monthSelector'); // Month selector element
+    elements.headerCurrencySelector = document.getElementById('headerCurrencySelector'); // Currency selector element
     
     // Settings Form
     elements.settingsForm = document.getElementById('settingsForm');
@@ -2063,7 +2063,7 @@
    * Main synchronization routing function. Redraws all view panels.
    */
   function syncUI() {
-    const store = window.AppStore;
+    const store = window.AppStore; // Reference store instance
     // Sync header currency switcher value to active settings currency
     if (elements.headerCurrencySelector) {
       const activeCurr = store.getSettings().currency;
