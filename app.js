@@ -15,7 +15,7 @@
   let selectedProfilePic = null;   // Caches uploaded profile image Base64 data url before save
   let isSelectingAvatar = false;   // Guard flag preventing window focus events from triggering stale cloud fetch during image upload
 
-  // Hardcoded Gemini 1.5 Flash API Key (Set key here to enable for all users)
+  // Optional Gemini API Key placeholder (Leave empty to use server environment variable or user settings)
   const HARDCODED_GEMINI_API_KEY = "";
 
   // Central DOM Elements object mapping to cache node lookups

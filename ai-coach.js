@@ -1,4 +1,4 @@
-﻿// Vercel Serverless Function: Google Gemini 1.5 Flash AI Coach & Vision OCR Scanner
+// Vercel Serverless Function: Google Gemini 1.5 Flash AI Coach & Vision OCR Scanner
 // Export asynchronous request handler function for Vercel
 module.exports = async function handler(req, res) {
   // Set CORS credentials header
@@ -26,12 +26,12 @@ module.exports = async function handler(req, res) {
   // End method check
   }
 
-  // Retrieve Gemini API Key from environment variables
+  // Retrieve Gemini API Key securely from the server environment variables
   const apiKey = process.env.GEMINI_API_KEY;
-  // Verify that API key exists on the server environment
+  // Verify that the environment variable API key is configured on the server
   if (!apiKey) {
-    // Return 500 error if API key is not configured
-    return res.status(500).json({ error: 'GEMINI_API_KEY environment variable is not configured on server.' });
+    // Return 500 error instructing developer to configure GEMINI_API_KEY in Vercel settings
+    return res.status(500).json({ error: 'GEMINI_API_KEY environment variable is not configured on the server. Please add it in Vercel Project Settings.' });
   // End API key check
   }
 
@@ -88,13 +88,19 @@ module.exports = async function handler(req, res) {
   try {
     // Target Google Gemini REST API URL
     const geminiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${apiKey}`;
-    // Send HTTP POST request
+    // Send HTTP POST request to Gemini endpoint
     const response = await fetch(geminiUrl, {
       // POST method
       method: 'POST',
-      // Content-Type header
-      headers: { 'Content-Type': 'application/json' },
-      // Serialize payload as JSON
+      // Request headers object
+      headers: {
+        // Content-Type header specifying JSON payload
+        'Content-Type': 'application/json',
+        // Official Google API authentication header
+        'x-goog-api-key': apiKey
+      // End headers object
+      },
+      // Serialize payload as JSON string
       body: JSON.stringify(geminiPayload)
     // End fetch
     });
