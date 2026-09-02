@@ -2259,14 +2259,29 @@
     
     // Calculate category breakdown sums specifically for Expenses Breakdown Doughnut Chart
     const filteredTxs = getFilteredTransactions();
+    // Retrieve user's active selected currency from store settings
+    const activeCurrency = (store && typeof store.getSettings === 'function') ? (store.getSettings().currency || 'GH₵') : 'GH₵';
+    // Initialize category accumulator object
     const categoryBreakdown = {};
+    // Iterate through filtered transactions
     filteredTxs.forEach(tx => {
+      // Filter for expense transactions only
       if (tx.type === 'expense') {
-        categoryBreakdown[tx.category] = (categoryBreakdown[tx.category] || 0) + Number(tx.amount || 0);
+        // Retrieve raw transaction amount in base GH₵
+        const rawAmount = Number(tx.amount || 0);
+        // Convert amount from base GH₵ into user's active selected currency
+        const converted = convertCurrencyAmount(rawAmount, activeCurrency, 'GH₵');
+        // Accumulate converted amount for this category
+        categoryBreakdown[tx.category] = (categoryBreakdown[tx.category] || 0) + converted;
+      // End expense check
       }
+    // End iteration
     });
+    // Verify updateCategoryChart method exists on AppCharts
     if (window.AppCharts && typeof window.AppCharts.updateCategoryChart === 'function') {
+      // Pass converted category breakdown to Doughnut Chart
       window.AppCharts.updateCategoryChart(categoryBreakdown);
+    // End updateCategoryChart check
     }
   }
   // Expose syncUI on global window so external events and callbacks can trigger view updates
