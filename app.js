@@ -4140,9 +4140,11 @@ Ask me specific financial questions like:
     if (elements.removeAvatarBtn) {
       // Attach click event listener to Remove Avatar button
       elements.removeAvatarBtn.addEventListener('click', async () => {
+        // Activate guard flag to prevent window focus from triggering stale cloud fetch
+        isSelectingAvatar = true;
         // Verify AppStore and updateSettings method exist
         if (window.AppStore && typeof window.AppStore.updateSettings === 'function') {
-          // Stamp timestamp of local avatar update
+          // Stamp timestamp of local avatar update to protect local state for 8 seconds
           window.AppStore._lastLocalAvatarUpdate = Date.now();
           // Update store settings with empty profile picture
           window.AppStore.updateSettings({ profilePic: '' });
@@ -4166,6 +4168,12 @@ Ask me specific financial questions like:
           window.syncUI();
         // End syncUI check
         }
+        // Release avatar selection guard after grace period
+        setTimeout(() => {
+          // Re-enable normal background sync checks
+          isSelectingAvatar = false;
+        // End timeout
+        }, 3000);
       // End removeAvatarBtn listener
       });
     // End removeAvatarBtn check
@@ -5018,11 +5026,15 @@ Ask me specific financial questions like:
 
   window.addEventListener('focus', triggerCloudSyncCheck);
 
-  // Automatic background cloud sync every 10 seconds for real-time multi-device sync
+  // Automatic background cloud sync every 4 seconds for real-time multi-device sync
   setInterval(() => {
+    // Only trigger check when page is visible in foreground
     if (document.visibilityState === 'visible') {
+      // Execute cloud sync check
       triggerCloudSyncCheck();
+    // End visible condition
     }
-  }, 10000);
+  // Set interval timer to 4000 milliseconds
+  }, 4000);
 
 })(window);

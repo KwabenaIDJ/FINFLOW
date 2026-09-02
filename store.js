@@ -42,23 +42,63 @@
       try { client.removeChannel(realtimeChannel); } catch(e) {}
     }
 
+    // Try block to initialize and subscribe to Supabase Realtime channel
     try {
+      // Create or get Supabase Realtime channel for this specific user
       realtimeChannel = client.channel(`realtime-sync-${userId}`)
+        // Listen to database events on user transactions, budgets, and savings goals
         .on('postgres_changes', { event: '*', schema: 'public', filter: `user_id=eq.${userId}` }, (payload) => {
+          // Check if AppStore and syncFromCloud method exist
           if (window.AppStore && typeof window.AppStore.syncFromCloud === 'function') {
+            // Trigger background cloud fetch to pull changes
             window.AppStore.syncFromCloud().then(() => {
+              // Refresh user interface if syncUI function is defined
               if (typeof window.syncUI === 'function') window.syncUI();
+            // End promise resolution
             });
+          // End AppStore check
           }
+        // End user_id postgres_changes listener
         })
-        .on('postgres_changes', { event: '*', schema: 'public', table: 'profiles', filter: `id=eq.${userId}` }, (payload) => {
+        // Listen to database events on the profiles table (profile picture, display name, currency)
+        .on('postgres_changes', { event: '*', schema: 'public', table: 'profiles' }, (payload) => {
+          // Verify that change payload belongs to the currently logged in user
+          if (payload && payload.new && payload.new.id === userId) {
+            // Calculate elapsed time since this specific device last modified the avatar
+            const elapsed = Date.now() - (window.AppStore?._lastLocalAvatarUpdate || 0);
+            // If another device initiated the change (not locally updated in the last 6 seconds)
+            if (elapsed > 6000 && window.AppStore) {
+              // Retrieve existing settings object from the store
+              const currentSettings = window.AppStore.getSettings();
+              // Immediately update profile picture from incoming cloud payload (clearing if empty)
+              currentSettings.profilePic = payload.new.profile_pic || '';
+              // Update display name if provided in cloud payload
+              if (payload.new.user_name) currentSettings.userName = payload.new.user_name;
+              // Update currency symbol if provided in cloud payload
+              if (payload.new.currency) currentSettings.currency = payload.new.currency;
+              // Persist update to local storage without triggering a recursive cloud push
+              window.AppStore.saveLocally(true);
+              // Immediately refresh user interface on this device
+              if (typeof window.syncUI === 'function') window.syncUI();
+            // End remote device update block
+            }
+          // End payload user verification
+          }
+          // Perform full cloud fetch to ensure ledger state consistency
           if (window.AppStore && typeof window.AppStore.syncFromCloud === 'function') {
+            // Await full cloud fetch promise
             window.AppStore.syncFromCloud().then(() => {
+              // Refresh user interface
               if (typeof window.syncUI === 'function') window.syncUI();
+            // End promise resolution
             });
+          // End syncFromCloud check
           }
+        // End profiles table postgres_changes listener
         })
+        // Subscribe to channel
         .subscribe();
+    // Catch any connection or subscription errors
     } catch (e) {}
   }
 
@@ -697,12 +737,29 @@
           updated_at: new Date().toISOString()
         };
 
+        // Attempt to upsert profile record to Supabase
         const { error: pErr } = await client.from('profiles').upsert(profilePayload);
+        // Check if an error occurred during upsert
         if (pErr) {
+          // Log warning message
           console.warn('Supabase Profile Upsert Warning:', pErr.message);
-          // Fallback: retry without profile_pic column in case DB column has size limit
-          delete profilePayload.profile_pic;
-          try { await client.from('profiles').upsert(profilePayload); } catch(e) {}
+          // Attempt direct update fallback in case upsert constraint failed
+          try {
+            // Update profile record directly
+            await client.from('profiles').update({
+              // Update user name
+              user_name: profilePayload.user_name,
+              // Update currency
+              currency: profilePayload.currency,
+              // Update profile picture
+              profile_pic: profilePayload.profile_pic,
+              // Update timestamp
+              updated_at: profilePayload.updated_at
+            // Filter by current user ID
+            }).eq('id', userId);
+          // End try-catch
+          } catch(e) {}
+        // End error check
         }
 
         // 2. Sync Transactions
@@ -789,23 +846,15 @@
 
           // Preserve query count parameter from cloud database or keep current
           this.data.settings.aiQueriesCount = profile.ai_queries_count ?? this.data.settings.aiQueriesCount;
-          // Determine if cloud response contains a valid non-empty profile picture
-          if (profile.profile_pic) {
-            // Calculate elapsed time since last local avatar upload in milliseconds
-            const elapsedSinceUpload = Date.now() - (this._lastLocalAvatarUpdate || 0);
-            // Check if local avatar was uploaded very recently within a 20-second grace period
-            const isRecentUpload = elapsedSinceUpload < 20000;
-            // Only overwrite local profile picture if none exists or it wasn't just uploaded locally
-            if (!this.data.settings.profilePic || !isRecentUpload) {
-              // Apply cloud profile image to local store settings
-              this.data.settings.profilePic = profile.profile_pic;
-            // End inner if
-            }
-          // Check if cloud has empty string and local store also has no image or update history
-          } else if (profile.profile_pic === '' && !this.data.settings.profilePic && !this._lastLocalAvatarUpdate) {
-            // Keep local profile picture empty
-            this.data.settings.profilePic = '';
-          // End avatar check
+          // Calculate elapsed time since this specific device modified its avatar locally
+          const elapsedSinceLocalAvatarAction = Date.now() - (this._lastLocalAvatarUpdate || 0);
+          // Protect local user avatar action from in-flight response collision for 6 seconds
+          const isRecentLocalAvatarAction = elapsedSinceLocalAvatarAction < 6000;
+          // If this device did not recently change the avatar locally, cloud is authoritative
+          if (!isRecentLocalAvatarAction) {
+            // Synchronize profile picture from cloud directly, clearing if empty string or null
+            this.data.settings.profilePic = profile.profile_pic || '';
+          // End local action protection check
           }
           // Verify if free PDF export count is provided in cloud profile
           if (profile.free_pdf_exports_used !== undefined && profile.free_pdf_exports_used !== null) {
