@@ -127,6 +127,7 @@
     data: null,      // Holds the active parsed database object in memory
     undoStack: [],   // History stack of serialized states for the Undo operation
     redoStack: [],   // History stack of serialized states for the Redo operation
+    _lastLocalAvatarUpdate: 0, // Timestamp of the most recent local profile picture change
 
     /**
      * Initializes the store by loading persisted data from the browser's localStorage.
@@ -601,36 +602,69 @@
     },
 
     /**
+     * Persists in-memory database to browser localStorage and updates user registry without pushing to cloud.
+     */
+    saveLocally(notifyUI = true) {
+      // Serialize in-memory data to active storage key
+      try {
+        // Write stringified data to localStorage
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(this.data));
+      // Catch storage quota or serialization errors
+      } catch (err) {
+        // Warn storage failure in developer console
+        console.warn('localStorage setItem failed:', err);
+      // End try-catch
+      }
+      // Retrieve currently authenticated user session key
+      const currentUser = localStorage.getItem(SESSION_KEY);
+      // Check if user session exists
+      if (currentUser) {
+        // Safely attempt registry data update
+        try {
+          // Parse users registry object from storage
+          const registry = JSON.parse(localStorage.getItem(USERS_REGISTRY_KEY) || '{}');
+          // Check if registry record exists for active user
+          if (registry[currentUser]) {
+            // Assign active data state to registry entry
+            registry[currentUser].data = this.data;
+            // Persist modified registry to storage
+            localStorage.setItem(USERS_REGISTRY_KEY, JSON.stringify(registry));
+          // End inner if
+          }
+        // Catch registry parsing or storage errors
+        } catch (e) {}
+      // End session if
+      }
+      // Synchronize header toolbar Undo/Redo button visual states
+      this.updateButtonsUI();
+      // Check if observers should be notified via store-updated event
+      if (notifyUI) {
+        // Dispatch store-updated custom event to trigger UI redraws
+        window.dispatchEvent(new CustomEvent('store-updated'));
+      // End notifyUI check
+      }
+    // End saveLocally
+    },
+
+    /**
      * Serializes and writes the in-memory data object back to localStorage.
      * Dispatches a custom event to notify all listening UI views to redraw.
      */
     save() {
-      // Stringify the data object and write it into active local storage safely
-      try {
-        localStorage.setItem(STORAGE_KEY, JSON.stringify(this.data));
-      } catch (err) {
-        console.warn('localStorage setItem failed:', err);
-      }
-      
-      // Sync private registry entry if logged in
-      const currentUser = localStorage.getItem(SESSION_KEY);
-      if (currentUser) {
-        try {
-          const registry = JSON.parse(localStorage.getItem(USERS_REGISTRY_KEY) || '{}');
-          if (registry[currentUser]) {
-            registry[currentUser].data = this.data;
-            localStorage.setItem(USERS_REGISTRY_KEY, JSON.stringify(registry));
-          }
-        } catch (e) {}
-      }
-
+      // Save data locally and notify observers
+      this.saveLocally(true);
       // Trigger Cloud Sync if Supabase client is connected
       this.syncToCloud();
+    // End save
+    },
 
-      // Dispatch a custom event on the window to alert observers that the state has changed
-      window.dispatchEvent(new CustomEvent('store-updated'));
-      // Synchronize the Undo/Redo button disable/enable states in the header toolbar
-      this.updateButtonsUI();
+    /**
+     * Alias for fetchFromCloud to support realtime and navigation sync listeners.
+     */
+    syncFromCloud() {
+      // Return the fetchFromCloud promise
+      return this.fetchFromCloud();
+    // End syncFromCloud
     },
 
     /**
@@ -753,11 +787,29 @@
             } catch (e) {}
           }
 
+          // Preserve query count parameter from cloud database or keep current
           this.data.settings.aiQueriesCount = profile.ai_queries_count ?? this.data.settings.aiQueriesCount;
-          if (profile.profile_pic !== undefined && profile.profile_pic !== null) {
-            this.data.settings.profilePic = profile.profile_pic;
+          // Determine if cloud response contains a valid non-empty profile picture
+          if (profile.profile_pic) {
+            // Calculate elapsed time since last local avatar upload in milliseconds
+            const elapsedSinceUpload = Date.now() - (this._lastLocalAvatarUpdate || 0);
+            // Check if local avatar was uploaded very recently within a 20-second grace period
+            const isRecentUpload = elapsedSinceUpload < 20000;
+            // Only overwrite local profile picture if none exists or it wasn't just uploaded locally
+            if (!this.data.settings.profilePic || !isRecentUpload) {
+              // Apply cloud profile image to local store settings
+              this.data.settings.profilePic = profile.profile_pic;
+            // End inner if
+            }
+          // Check if cloud has empty string and local store also has no image or update history
+          } else if (profile.profile_pic === '' && !this.data.settings.profilePic && !this._lastLocalAvatarUpdate) {
+            // Keep local profile picture empty
+            this.data.settings.profilePic = '';
+          // End avatar check
           }
+          // Verify if free PDF export count is provided in cloud profile
           if (profile.free_pdf_exports_used !== undefined && profile.free_pdf_exports_used !== null) {
+            // Assign free export count to local settings
             this.data.settings.freePdfExportsUsed = profile.free_pdf_exports_used;
           }
         }
@@ -798,8 +850,9 @@
           }));
         }
 
-        // Save active state and sync registry across devices
-        this.save();
+        // Save active state to browser localStorage without triggering a circular cloud push
+        this.saveLocally(true);
+        // Return true to indicate successful cloud data fetch
         return true;
       } catch (err) {
         console.warn('Supabase fetchFromCloud error:', err);
@@ -1163,6 +1216,12 @@
      * Updates the user profile settings (name, currency, savings goal).
      */
     updateSettings(newSettings) {
+      // Check if incoming payload contains a profile picture property
+      if (newSettings && newSettings.profilePic !== undefined) {
+        // Record current epoch timestamp to protect fresh avatar from stale cloud fetches
+        this._lastLocalAvatarUpdate = Date.now();
+      // End profile picture check
+      }
       // Save state snapshot for Undo
       this.pushState();
       // Merge current setting parameters with the incoming properties

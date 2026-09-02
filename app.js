@@ -13,6 +13,7 @@
   let txSearchQuery = '';          // The active search string typed in the transactions list
   let selectedGoalId = null;       // Tracks which savings goal is selected during deposit/withdraw operations
   let selectedProfilePic = null;   // Caches uploaded profile image Base64 data url before save
+  let isSelectingAvatar = false;   // Guard flag preventing window focus events from triggering stale cloud fetch during image upload
 
   // Hardcoded Gemini 1.5 Flash API Key (Set key here to enable for all users)
   const HARDCODED_GEMINI_API_KEY = "";
@@ -4114,41 +4115,125 @@ Ask me specific financial questions like:
 
     // Change Avatar click binding
     if (elements.changeAvatarBtn) {
+      // Attach click event listener to Change Avatar button
       elements.changeAvatarBtn.addEventListener('click', () => {
+        // Set guard flag to prevent window focus from triggering stale cloud fetch
+        isSelectingAvatar = true;
+        // Check if profile picture file input element exists
+        if (elements.settingsProfilePicInput) {
+          // Clear current file input value so selecting the same image fires change event
+          elements.settingsProfilePicInput.value = '';
+        // End input check
+        }
+        // Safety timeout to reset selection guard if user dismisses file dialog without picking
+        setTimeout(() => {
+          // Reset guard flag after timeout
+          isSelectingAvatar = false;
+        // End timeout
+        }, 15000);
+        // Trigger native file picker open dialog
         elements.settingsProfilePicInput.click();
+      // End changeAvatarBtn listener
       });
+    // End changeAvatarBtn check
     }
 
     // File Input change binding
     if (elements.settingsProfilePicInput) {
+      // Attach change event listener to handle file selection
       elements.settingsProfilePicInput.addEventListener('change', (e) => {
+        // Ensure guard flag remains active while processing image
+        isSelectingAvatar = true;
+        // Extract selected file from file input
         const file = e.target.files[0];
+        // Verify that a file was chosen
         if (file) {
-          compressImage(file, (base64) => {
+          // Compress selected image into optimized lightweight Base64 data URL
+          compressImage(file, async (base64) => {
+            // Verify AppStore and updateSettings method exist
             if (window.AppStore && typeof window.AppStore.updateSettings === 'function') {
+              // Stamp timestamp of local avatar update on AppStore
+              window.AppStore._lastLocalAvatarUpdate = Date.now();
+              // Update settings with newly compressed profile picture
               window.AppStore.updateSettings({ profilePic: base64 });
+              // Push updated profile directly to Supabase cloud to ensure immediate persistence
+              if (typeof window.AppStore.syncToCloud === 'function') {
+                // Await cloud sync push
+                await window.AppStore.syncToCloud();
+              // End syncToCloud check
+              }
+            // End updateSettings check
             }
+            // Synchronize UI immediately so circular avatar displays new image
             if (window.syncUI) {
+              // Trigger dashboard UI refresh
               window.syncUI();
+            // End syncUI check
             }
+            // Reset file input value so same file can be re-selected if needed
+            if (elements.settingsProfilePicInput) {
+              // Clear file input value
+              elements.settingsProfilePicInput.value = '';
+            // End input check
+            }
+            // Release avatar selection guard after grace period
+            setTimeout(() => {
+              // Re-enable normal background sync checks
+              isSelectingAvatar = false;
+            // End timeout
+            }, 3000);
+          // End compressImage callback
           });
+        // Handle case where file was not selected
+        } else {
+          // Release avatar selection guard
+          isSelectingAvatar = false;
+        // End file check
         }
+      // End change event listener
       });
+      // Attach cancel event listener to reset guard flag when picker is cancelled
+      elements.settingsProfilePicInput.addEventListener('cancel', () => {
+        // Immediately release guard flag on cancel
+        isSelectingAvatar = false;
+      // End cancel event listener
+      });
+    // End settingsProfilePicInput check
     }
 
     // Remove Avatar click binding
     if (elements.removeAvatarBtn) {
-      elements.removeAvatarBtn.addEventListener('click', () => {
+      // Attach click event listener to Remove Avatar button
+      elements.removeAvatarBtn.addEventListener('click', async () => {
+        // Verify AppStore and updateSettings method exist
         if (window.AppStore && typeof window.AppStore.updateSettings === 'function') {
+          // Stamp timestamp of local avatar update
+          window.AppStore._lastLocalAvatarUpdate = Date.now();
+          // Update store settings with empty profile picture
           window.AppStore.updateSettings({ profilePic: '' });
+          // Push profile picture removal to Supabase cloud
+          if (typeof window.AppStore.syncToCloud === 'function') {
+            // Await cloud sync push
+            await window.AppStore.syncToCloud();
+          // End syncToCloud check
+          }
+        // End updateSettings check
         }
+        // Clear file input value
         if (elements.settingsProfilePicInput) {
+          // Reset file input value
           elements.settingsProfilePicInput.value = '';
+        // End input check
         }
+        // Synchronize UI to remove picture and show initials
         if (window.syncUI) {
+          // Trigger UI synchronization
           window.syncUI();
+        // End syncUI check
         }
+      // End removeAvatarBtn listener
       });
+    // End removeAvatarBtn check
     }
 
     // To-Do Form submission
@@ -4967,13 +5052,27 @@ Ask me specific financial questions like:
 
   // Auto-sync from Supabase Cloud when user switches back to the browser tab or focuses app
   const triggerCloudSyncCheck = () => {
-    if (window.AppStore && window.AppStore.isLoggedIn()) {
-      window.AppStore.fetchFromCloud().then(synced => {
-        if (synced && window.syncUI) {
-          window.syncUI();
-        }
-      });
+    // Check if user is currently selecting or uploading a profile image
+    if (isSelectingAvatar) {
+      // Abort background cloud sync to prevent overwriting fresh local image
+      return;
+    // End isSelectingAvatar guard check
     }
+    // Verify that AppStore is available and user session is active
+    if (window.AppStore && window.AppStore.isLoggedIn()) {
+      // Fetch latest profile and ledger state from Supabase Cloud
+      window.AppStore.fetchFromCloud().then(synced => {
+        // Redraw UI components if cloud data update occurred
+        if (synced && window.syncUI) {
+          // Trigger visual UI update
+          window.syncUI();
+        // End syncUI check
+        }
+      // End fetchFromCloud promise
+      });
+    // End isLoggedIn check
+    }
+  // End triggerCloudSyncCheck
   };
 
   document.addEventListener('visibilitychange', () => {
