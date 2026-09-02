@@ -532,82 +532,124 @@
     if (modal) closeModal(modal);
   };
 
+  /**
+   * Opens the Premium membership upgrade modal dialog.
+   * If the user is already a paid Premium member, alerts and avoids showing the checkout dialog.
+   */
   window.openPremiumModal = function() {
+    // Check if store exists and verify if current user is an active paid member
+    const isPremium = window.AppStore ? (window.AppStore.getSettings().isPremium || localStorage.getItem('FINFLOW_PREMIUM_ACTIVE') === 'true') : false;
+    // Guard clause: if already a premium subscriber, do not show upgrade modal
+    if (isPremium) {
+      // Notify user that their account is already on the premium tier
+      alert('You are already a FinFlow Premium member! 👑 All premium features are active and unlocked.');
+      // Exit function to prevent modal popup
+      return;
+    }
+    // Fetch modal overlay element from document
     const modal = document.getElementById('premiumUpgradeModal');
+    // Open modal if element is found in DOM
     if (modal) openModal(modal);
   };
 
+  /**
+   * Closes the Premium membership upgrade modal dialog.
+   */
   window.closePremiumModal = function() {
+    // Fetch modal overlay element by ID
     const modal = document.getElementById('premiumUpgradeModal');
+    // Close modal if element is present in DOM
     if (modal) closeModal(modal);
   };
 
+  /**
+   * Triggers Paystack payment popup for monthly premium subscription.
+   */
   window.triggerPaystackCheckout = function() {
+    // Retrieve active app settings or empty object fallback
     const settings = window.AppStore ? window.AppStore.getSettings() : {};
+    // Public live Paystack API key for payment processing
     const paystackKey = 'pk_live_3bb03f9209cfe3ac12fe324b73167807ef9bbac8';
     
+    // Check if Paystack script has loaded properly
     if (typeof PaystackPop === 'undefined') {
+      // Alert user if Paystack SDK could not be loaded
       alert('Paystack SDK is loading or blocked. Check your internet connection.');
+      // Abort execution
       return;
     }
     
     // Fixed price GH₵ 13.99 in pesewas for Paystack API (13.99 * 100 = 1399 pesewas)
     const amountVal = 1399;
+    // Transaction currency code set to Ghana Cedi
     const currencyCode = 'GHS';
+    // Sanitize user display name or fallback to generic User
     const cleanUserName = (settings.userName || 'User').trim();
+    // Build deterministic customer email for Paystack receipt tracking
     const emailAddress = 'customer_' + cleanUserName.toLowerCase().replace(/[^a-z0-9]/g, '_') + '@financialdashboard.com';
 
+    // Attempt payment initialization in try-catch block
     try {
+      // Handle modern PaystackPop constructor if available
       if (typeof PaystackPop === 'function' && PaystackPop.prototype && PaystackPop.prototype.newTransaction) {
+        // Instantiate modern Paystack client
         const paystack = new PaystackPop();
+        // Trigger transaction workflow with credentials and callbacks
         paystack.newTransaction({
-          key: paystackKey,
-          email: emailAddress,
-          amount: amountVal,
-          currency: currencyCode,
-          channels: ['mobile_money', 'card'],
-          metadata: {
-            custom_fields: [
-              { display_name: "Customer Name", variable_name: "customer_name", value: cleanUserName }
-            ]
-          },
-          onSuccess: function(response) {
-            if (window.AppStore) window.AppStore.setPremiumStatus(true, 'monthly');
-            window.closePremiumModal();
-            if (typeof triggerConfetti === 'function') triggerConfetti();
-            alert('Congratulations! Payment Successful! Reference: ' + response.reference + '. Welcome to FinFlow Premium! 🏆');
-          },
-          onCancel: function() {
-            console.log('Paystack checkout cancelled by user.');
-          }
-        });
-      } else {
+          key: paystackKey, // Public API key
+          email: emailAddress, // Customer billing email
+          amount: amountVal, // Charge amount in minor currency units
+          currency: currencyCode, // ISO currency code
+          channels: ['mobile_money', 'card'], // Allowed payment methods
+          metadata: { // Custom transaction metadata
+            custom_fields: [ // Form field mappings
+              { display_name: "Customer Name", variable_name: "customer_name", value: cleanUserName } // Name field
+            ] // End custom_fields
+          }, // End metadata
+          onSuccess: function(response) { // Callback on verified payment completion
+            if (window.AppStore) window.AppStore.setPremiumStatus(true, 'monthly'); // Upgrade status in store
+            window.closePremiumModal(); // Close checkout overlay immediately
+            if (typeof triggerConfetti === 'function') triggerConfetti(); // Fire celebratory animation
+            if (typeof syncUI === 'function') syncUI(); // Refresh all UI components to hide upgrade options
+            if (window.syncUI) window.syncUI(); // Fallback trigger through global window reference
+            alert('Congratulations! Payment Successful! Reference: ' + response.reference + '. Welcome to FinFlow Premium! 🏆'); // Celebration alert
+          }, // End onSuccess
+          onCancel: function() { // Callback on checkout dismissal
+            console.log('Paystack checkout cancelled by user.'); // Log cancellation notice
+          } // End onCancel
+        }); // End newTransaction
+      } else { // Fallback for legacy Paystack inline iframe setup
+        // Initialize legacy handler with transaction parameters
         const handler = PaystackPop.setup({
-          key: paystackKey,
-          email: emailAddress,
-          amount: amountVal,
-          currency: currencyCode,
-          channels: ['mobile_money', 'card'],
-          metadata: {
-            custom_fields: [
-              { display_name: "Customer Name", variable_name: "customer_name", value: cleanUserName }
-            ]
-          },
-          callback: function(response) {
-            if (window.AppStore) window.AppStore.setPremiumStatus(true, 'monthly');
-            window.closePremiumModal();
-            if (typeof triggerConfetti === 'function') triggerConfetti();
-            alert('Congratulations! Payment Successful! Reference: ' + response.reference + '. Welcome to FinFlow Premium! 🏆');
-          },
-          onClose: function() {
-            console.log('Paystack checkout closed.');
-          }
-        });
+          key: paystackKey, // Public API key
+          email: emailAddress, // Billing email
+          amount: amountVal, // Charge amount in pesewas
+          currency: currencyCode, // Ghana Cedis
+          channels: ['mobile_money', 'card'], // Supported payment rails
+          metadata: { // Custom metadata payload
+            custom_fields: [ // Fields array
+              { display_name: "Customer Name", variable_name: "customer_name", value: cleanUserName } // Customer name
+            ] // End custom_fields
+          }, // End metadata
+          callback: function(response) { // Callback on successful charge
+            if (window.AppStore) window.AppStore.setPremiumStatus(true, 'monthly'); // Upgrade membership in memory and storage
+            window.closePremiumModal(); // Dismiss checkout modal
+            if (typeof triggerConfetti === 'function') triggerConfetti(); // Trigger celebratory confetti
+            if (typeof syncUI === 'function') syncUI(); // Refresh dashboard to remove all upgrade buttons
+            if (window.syncUI) window.syncUI(); // Window global fallback execution
+            alert('Congratulations! Payment Successful! Reference: ' + response.reference + '. Welcome to FinFlow Premium! 🏆'); // User feedback alert
+          }, // End callback
+          onClose: function() { // Callback on popup closure
+            console.log('Paystack checkout closed.'); // Log closure
+          } // End onClose
+        }); // End setup
+        // Open payment modal iframe
         handler.openIframe();
-      }
-    } catch(err) {
+      } // End else
+    } catch(err) { // Handle unforeseen errors
+      // Display friendly error message
       alert('Failed to launch Paystack checkout: ' + err.message);
-    }
+    } // End catch
   };
 
   /**
@@ -1713,20 +1755,24 @@
    * Toggles layouts, blurs, ads, and tools lock states based on premium status.
    */
   function renderPremiumLayout() {
+    // Acquire active AppStore reference
     const store = window.AppStore;
+    // Retrieve latest user settings object from memory
     const settings = store.getSettings();
-    const isPremium = settings.isPremium;
+    // Determine if the user is a paid premium member from settings or local storage flag
+    const isPremium = !!(settings.isPremium || (typeof localStorage !== 'undefined' && localStorage.getItem('FINFLOW_PREMIUM_ACTIVE') === 'true'));
 
-
-
-    // Toggle diagnostics blur overlay
+    // Toggle diagnostics blur overlay in Smart Insights card
     if (elements.diagnosticsLockOverlay) {
+      // Hide the overlay when premium, display when standard
       elements.diagnosticsLockOverlay.style.display = isPremium ? 'none' : 'flex';
     }
 
-    // Toggle crown badges and profile roles
+    // Toggle crown badges and profile roles across sidebar profile cards
     const crownBadges = document.querySelectorAll('.profile-role');
+    // Loop through each profile role element
     crownBadges.forEach(role => {
+      // Set role badge HTML based on premium membership status
       role.innerHTML = isPremium 
         ? '<span style="color: #f1c40f; font-weight: 700; display: flex; align-items: center; gap: 4px;"><svg style="width: 12px; height: 12px; fill: #f1c40f;"><use href="#icon-crown"></use></svg> Premium Member</span>' 
         : 'Standard Member';
@@ -1734,51 +1780,122 @@
 
     // Hide or modify sidebar upgrade button
     if (elements.sidebarUpgradeBtn) {
-      elements.sidebarUpgradeBtn.style.display = isPremium ? 'none' : 'flex';
+      // Completely hide the sidebar upgrade trigger button when paid
+      elements.sidebarUpgradeBtn.style.setProperty('display', isPremium ? 'none' : 'flex', 'important');
     }
+
+    // Dynamic visibility for the AI Insights banner upgrade button
+    const insightsUpgradeBtn = document.getElementById('insightsUpgradeBtn');
+    // Check if the banner button is present in the DOM
+    if (insightsUpgradeBtn) {
+      // Hide button for paid members, show for standard users
+      insightsUpgradeBtn.style.setProperty('display', isPremium ? 'none' : 'inline-flex', 'important');
+    }
+
+    // Dynamic visibility for the AI Insights active premium status badge
+    const insightsPremiumBadge = document.getElementById('insightsPremiumBadge');
+    // Check if the active badge element exists
+    if (insightsPremiumBadge) {
+      // Show badge for paid members, hide for standard users
+      insightsPremiumBadge.style.setProperty('display', isPremium ? 'inline-flex' : 'none', 'important');
+    }
+
+    // Dynamic visibility for Settings tab standard upgrade card
+    const settingsUpgradeCard = document.getElementById('settingsUpgradeCard');
+    // Check if settings upgrade card exists in DOM
+    if (settingsUpgradeCard) {
+      // Hide card when premium is paid, display when standard
+      settingsUpgradeCard.style.setProperty('display', isPremium ? 'none' : 'flex', 'important');
+    }
+
+    // Dynamic visibility for Settings tab active premium card
+    const settingsPremiumActiveCard = document.getElementById('settingsPremiumActiveCard');
+    // Check if settings premium active card exists in DOM
+    if (settingsPremiumActiveCard) {
+      // Display active status card for paid members, hide for standard users
+      settingsPremiumActiveCard.style.setProperty('display', isPremium ? 'flex' : 'none', 'important');
+    }
+
+    // Global sweep across any elements marked with the upgrade-only-element class
+    const upgradeOnlyElements = document.querySelectorAll('.upgrade-only-element');
+    // Loop over each element flagged for upgrade promotion only
+    upgradeOnlyElements.forEach(el => {
+      // Enforce display none with high priority for paid users
+      if (isPremium) {
+        // Hide element completely from paid members
+        el.style.setProperty('display', 'none', 'important');
+      }
+    });
 
     // Handle Premium tool lock configurations
     const premiumTools = [
-      elements.exportCsvBtn,
-      elements.importCsvBtn,
-      elements.exportJsonShareBtn,
-      elements.loadJsonBackupBtn,
-      elements.exportPdfBtn
+      elements.exportCsvBtn, // CSV transaction export button
+      elements.importCsvBtn, // CSV transaction import button
+      elements.exportJsonShareBtn, // JSON backup export button
+      elements.loadJsonBackupBtn, // JSON backup restore button
+      elements.exportPdfBtn // PDF monthly statement export button
     ];
 
+    // Read recorded count of free PDF exports used
     const freePdfUsed = settings.freePdfExportsUsed || 0;
 
+    // Loop through each premium tool element to update interactive states and titles
     premiumTools.forEach(tool => {
+      // Check if tool element reference is valid
       if (tool) {
+        // Remove disabled attribute to allow custom click handling
         tool.removeAttribute('disabled');
+        // Configure unlocked styling and descriptions for paid users
         if (isPremium) {
+          // Set full opacity for unlocked state
           tool.style.opacity = '1';
+          // Set pointer cursor
           tool.style.cursor = 'pointer';
+          // Set tooltip for CSV export
           if (tool.id === 'exportCsvBtn') tool.title = 'Export transactions to CSV';
+          // Set tooltip for CSV import
           if (tool.id === 'importCsvBtn') tool.title = 'Import transactions from CSV';
+          // Set tooltip for JSON export
           if (tool.id === 'exportJsonShareBtn') tool.title = 'Download JSON backup';
+          // Set tooltip for JSON import
           if (tool.id === 'loadJsonBackupBtn') tool.title = 'Upload JSON backup';
+          // Update PDF button text and icon for unlocked tier
           if (tool.id === 'exportPdfBtn') {
+            // Set tooltip for PDF statement
             tool.title = 'Export PDF monthly statement';
+            // Set button markup
             tool.innerHTML = '<svg style="width: 14px; height: 14px; fill: none; stroke: currentColor; stroke-width: 2; margin-right: 6px; vertical-align: middle;"><use href="#icon-print"></use></svg>PDF Report';
           }
         } else {
+          // Handle free trial for PDF statement
           if (tool.id === 'exportPdfBtn' && freePdfUsed === 0) {
+            // Full opacity for free trial
             tool.style.opacity = '1';
+            // Pointer cursor for free trial
             tool.style.cursor = 'pointer';
+            // Tooltip indicating 1 free export
             tool.title = '🎁 Free Trial: 1 PDF statement export remaining';
+            // Free trial button label
             tool.innerHTML = '<svg style="width: 14px; height: 14px; fill: none; stroke: currentColor; stroke-width: 2; margin-right: 6px; vertical-align: middle;"><use href="#icon-print"></use></svg>PDF Report (1 Free)';
           } else {
+            // Reduced opacity for locked state
             tool.style.opacity = '0.75';
+            // Pointer cursor for clicking to upgrade
             tool.style.cursor = 'pointer';
+            // Set locked tooltips prompting upgrade for unpaid members
             if (tool.id === 'exportPdfBtn') {
+              // Tooltip prompting upgrade
               tool.title = '🔒 Premium Feature: Click to upgrade to Premium';
+              // Lock icon label
               tool.innerHTML = '🔒 PDF Report';
             } else if (tool.id === 'exportCsvBtn') {
+              // Tooltip prompting CSV export upgrade
               tool.title = '🔒 Premium Feature: Click to unlock CSV Export';
             } else if (tool.id === 'importCsvBtn') {
+              // Tooltip prompting CSV import upgrade
               tool.title = '🔒 Premium Feature: Click to unlock CSV Import';
             } else {
+              // Fallback locked tooltip
               tool.title = '🔒 Premium Feature: Click to upgrade to Premium';
             }
           }
@@ -1786,41 +1903,86 @@
       }
     });
 
-    // Manage Premium Theme Picker layout
+    // Manage Premium Theme Picker notice message
     const themeNotice = document.getElementById('premiumThemeNotice');
+    // Check if theme notice element exists in DOM
     if (themeNotice) {
+      // Set celebratory message for paid users or upgrade prompt for standard users
       themeNotice.innerHTML = isPremium 
         ? '<span style="color: var(--color-success); font-weight: 700;">✓ Premium unlocked! Select your dashboard color layout below.</span>'
         : 'Upgrade to Premium Membership to select custom colors and layout designs.';
     }
 
+    // Manage theme badge in Settings tab
+    const themeBadge = document.getElementById('premiumThemeBadge');
+    // Check if theme badge element exists
+    if (themeBadge) {
+      // Update badge label and style based on membership
+      themeBadge.innerHTML = isPremium ? '👑 Unlocked' : '👑 Premium';
+      // Set background color according to unlock state
+      themeBadge.style.background = isPremium ? 'rgba(16, 185, 129, 0.2)' : 'linear-gradient(135deg, #f1c40f, #f39c12)';
+      // Set text color according to unlock state
+      themeBadge.style.color = isPremium ? 'var(--color-success)' : '#0b0f19';
+    }
+
+    // Manage receipt scanner badge in Transaction modal
+    const receiptScannerBadge = document.getElementById('receiptScannerPremiumBadge');
+    // Check if receipt scanner badge exists
+    if (receiptScannerBadge) {
+      // Update badge text according to membership state
+      receiptScannerBadge.innerHTML = isPremium ? '👑 Unlocked' : '👑 Premium';
+      // Set background style for receipt badge
+      receiptScannerBadge.style.background = isPremium ? 'rgba(16, 185, 129, 0.2)' : 'linear-gradient(135deg, #f1c40f, #f39c12)';
+      // Set font color for receipt badge
+      receiptScannerBadge.style.color = isPremium ? 'var(--color-success)' : '#0b0f19';
+    }
+
+    // Manage Premium Theme Selector buttons
     const themeButtons = document.querySelectorAll('.btn-theme-select');
+    // Loop through each theme button
     themeButtons.forEach(btn => {
+      // Read assigned theme key
       const themeVal = btn.getAttribute('data-theme-val');
+      // If user is premium, allow selecting all themes
       if (isPremium) {
+        // Set full opacity
         btn.style.opacity = '1';
+        // Remove grayscale filter
         btn.style.filter = 'none';
+        // Set pointer cursor
         btn.style.cursor = 'pointer';
         
-        // Highlight active theme
+        // Retrieve current active dashboard theme
         const activeTheme = settings.activeTheme || 'default';
+        // Highlight active theme button
         if (themeVal === activeTheme) {
+          // Add active CSS class
           btn.classList.add('active');
+          // Set active primary border color
           btn.style.borderColor = 'var(--color-primary)';
         } else {
+          // Remove active class
           btn.classList.remove('active');
+          // Reset border color
           btn.style.borderColor = 'var(--color-border)';
         }
       } else {
-        // Standard user limits
+        // Standard user limits: lock non-default themes
         if (themeVal !== 'default') {
+          // Dim non-default theme buttons
           btn.style.opacity = '0.4';
+          // Apply grayscale filter to convey locked state
           btn.style.filter = 'grayscale(1)';
+          // Show not-allowed cursor
           btn.style.cursor = 'not-allowed';
+          // Remove active class
           btn.classList.remove('active');
+          // Reset border color
           btn.style.borderColor = 'var(--color-border)';
         } else {
+          // Default theme is always active for standard users
           btn.classList.add('active');
+          // Highlight default theme border
           btn.style.borderColor = 'var(--color-primary)';
         }
       }
@@ -1925,15 +2087,24 @@
    * Generates and prints a complete formatted PDF Monthly Financial Statement.
    */
   function exportPdfStatement() {
+    // Obtain AppStore instance
     const store = window.AppStore;
+    // Retrieve active settings configuration object
     const settings = store.getSettings();
-    const isPremium = settings.isPremium;
+    // Validate whether current session has active premium membership either in settings or offline storage
+    const isPremium = !!(settings.isPremium || (typeof localStorage !== 'undefined' && localStorage.getItem('FINFLOW_PREMIUM_ACTIVE') === 'true'));
+    // Read count of free PDF statements exported
     const freePdfUsed = settings.freePdfExportsUsed || 0;
 
+    // Check if non-premium member has exceeded free trial quota
     if (!isPremium) {
+      // If free quota has been consumed, prompt upgrade
       if (freePdfUsed >= 1) {
-        openModal(elements.premiumUpgradeModal);
+        // Trigger guarded premium modal
+        window.openPremiumModal();
+        // Display notification alert explaining quota expiration
         alert('You have already used your 1 free PDF statement export. Please upgrade to Premium to unlock unlimited report exports!');
+        // Terminate export process
         return;
       } else {
         // Persist the 1-time usage count to settings
@@ -2107,6 +2278,8 @@
       window.AppCharts.updateCategoryChart(categoryBreakdown);
     }
   }
+  // Expose syncUI on global window so external events and callbacks can trigger view updates
+  window.syncUI = syncUI;
 
   /**
    * Generates proactive AI Insights based on user transaction history, budgets, and savings goals.
@@ -2386,17 +2559,22 @@
     try {
       const store = window.AppStore;
       const settings = store.getSettings();
-      const isPremium = settings.isPremium;
+      // Validate whether active user has paid premium subscription via settings or local storage
+      const isPremium = !!(settings.isPremium || (typeof localStorage !== 'undefined' && localStorage.getItem('FINFLOW_PREMIUM_ACTIVE') === 'true'));
 
       // Remove legacy localstorage key if present
       localStorage.removeItem('FINFLOW_AI_QUERIES_COUNT');
 
+      // Retrieve total questions asked so far by this user
       let queryCount = settings.aiQueriesCount || 0;
 
       // Check free trial query count for non-premium members
       if (!isPremium && queryCount >= 2) {
-        openModal(elements.premiumUpgradeModal);
+        // Trigger guarded premium modal
+        window.openPremiumModal();
+        // Notify user that the free quota of AI coach questions is exhausted
         alert('You have used your 2 free AI Coach trial questions. Upgrade to Premium for unlimited 24/7 AI financial coaching!');
+        // Terminate sending procedure
         return;
       }
 
@@ -2952,6 +3130,10 @@ Ask me specific financial questions like:
       }
     });
 
+    // Synchronize premium UI layout states across active panels
+    renderPremiumLayout();
+    
+    // Check if switching to dashboard view and trigger charts update
     if (targetTab === 'dashboard' && window.AppCharts && typeof window.AppCharts.updateCharts === 'function') {
       setTimeout(() => {
         window.AppCharts.updateCharts();
@@ -3906,14 +4088,19 @@ Ask me specific financial questions like:
 
     // 23. Premium Tiers Actions
     if (elements.sidebarUpgradeBtn) {
+      // Bind click on sidebar upgrade button to guarded modal opener
       elements.sidebarUpgradeBtn.addEventListener('click', () => {
-        openModal(elements.premiumUpgradeModal);
+        // Execute guarded openPremiumModal function
+        window.openPremiumModal();
       });
     }
 
+    // Attach click listeners to all upgrade trigger buttons across the interface
     document.querySelectorAll('.upgrade-trigger-btn').forEach(btn => {
+      // Bind click handler on each upgrade button
       btn.addEventListener('click', () => {
-        openModal(elements.premiumUpgradeModal);
+        // Route through guarded openPremiumModal function
+        window.openPremiumModal();
       });
     });
 

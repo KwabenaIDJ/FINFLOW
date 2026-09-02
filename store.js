@@ -734,13 +734,25 @@
         const userId = session.user.id;
         setupRealtimeSync(userId);
 
-        // Fetch Profile
+        // Fetch Profile from Supabase database
         const { data: profile } = await client.from('profiles').select('*').eq('id', userId).single();
         if (profile) {
           this.data.settings.userName = profile.user_name || this.data.settings.userName;
           this.data.settings.currency = profile.currency || this.data.settings.currency;
           this.data.settings.monthlySavingsGoal = profile.monthly_savings_goal || this.data.settings.monthlySavingsGoal;
-          this.data.settings.isPremium = profile.is_premium ?? this.data.settings.isPremium;
+          
+          // Preserve paid Premium status so cloud sync never downgrades a paid member to standard
+          const isPaidLocally = this.data.settings.isPremium === true || localStorage.getItem('FINFLOW_PREMIUM_ACTIVE') === 'true';
+          // Combine local paid state and cloud premium status
+          this.data.settings.isPremium = isPaidLocally || (profile.is_premium === true);
+
+          // If user is paid locally but cloud profile shows false, update Supabase cloud profile automatically
+          if (isPaidLocally && !profile.is_premium) {
+            try {
+              await client.from('profiles').update({ is_premium: true }).eq('id', userId);
+            } catch (e) {}
+          }
+
           this.data.settings.aiQueriesCount = profile.ai_queries_count ?? this.data.settings.aiQueriesCount;
           if (profile.profile_pic !== undefined && profile.profile_pic !== null) {
             this.data.settings.profilePic = profile.profile_pic;
@@ -1111,14 +1123,27 @@
     /**
      * Verifies if monthly subscription is still active (30 days) or expired.
      */
+    /**
+     * Verifies if monthly subscription is still active (30 days) or expired.
+     */
     checkPremiumExpiry() {
+      // Guard check to ensure active data and settings structures exist in memory
       if (!this.data || !this.data.settings) return;
+      // Evaluate if current active profile is flagged as a Premium member
       if (this.data.settings.isPremium) {
+        // Retrieve the expiration timestamp from settings
         const expiry = this.data.settings.premiumExpiryDate;
-        // If 30-day period has elapsed, expire premium status
+        // If 30-day period has elapsed, expire premium status and clear flags
         if (expiry && Date.now() > Number(expiry)) {
+          // Reset premium flag to false in memory
           this.data.settings.isPremium = false;
+          // Clear the expiration timestamp reference
           this.data.settings.premiumExpiryDate = null;
+          // Reset subscription plan type to null
+          this.data.settings.premiumPlanType = null;
+          // Remove local storage flag indicating active premium status
+          try { localStorage.removeItem('FINFLOW_PREMIUM_ACTIVE'); } catch (e) {}
+          // Persist expired status across storage and cloud sync
           this.save();
         }
       }
@@ -1128,7 +1153,9 @@
      * Returns the settings configuration object from memory.
      */
     getSettings() {
+      // Verify whether premium duration is still active before returning settings
       this.checkPremiumExpiry();
+      // Return the current settings data object
       return this.data.settings;
     },
 
@@ -1148,17 +1175,31 @@
      * Sets user premium status with a 30-day monthly subscription expiration timestamp.
      */
     setPremiumStatus(isPremium, planType) {
+      // Record undo stack snapshot prior to state mutation
       this.pushState();
+      // Check if user status is being upgraded or revoked
       if (isPremium) {
+        // Set premium boolean flag to true in settings memory
         this.data.settings.isPremium = true;
-        this.data.settings.premiumPlanType = planType || 'annual';
+        // Record active subscription plan type or default to monthly
+        this.data.settings.premiumPlanType = planType || 'monthly';
+        // Calculate subscription validity days (30 days for monthly, 365 for annual)
         const durationDays = (planType === 'monthly') ? 30 : 365;
+        // Compute and store future expiration timestamp
         this.data.settings.premiumExpiryDate = Date.now() + (durationDays * 24 * 60 * 60 * 1000);
+        // Persist active premium marker in browser localStorage for offline durability
+        try { localStorage.setItem('FINFLOW_PREMIUM_ACTIVE', 'true'); } catch (e) {}
       } else {
+        // Set premium boolean flag to false in settings memory
         this.data.settings.isPremium = false;
+        // Wipe active plan type record
         this.data.settings.premiumPlanType = null;
+        // Wipe expiration timestamp record
         this.data.settings.premiumExpiryDate = null;
+        // Remove offline premium persistence marker from localStorage
+        try { localStorage.removeItem('FINFLOW_PREMIUM_ACTIVE'); } catch (e) {}
       }
+      // Save data changes to localStorage and initiate cloud synchronization
       this.save();
     },
 

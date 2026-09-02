@@ -209,9 +209,13 @@
         <svg style="stroke: var(--color-danger); fill: none;"><use href="#icon-logout"></use></svg>
         <span style="color: var(--color-danger); font-weight: 600;">Log Out</span>
       </a>
-      <button type="button" class="nav-item upgrade-nav-item" id="sidebarUpgradeBtn" onclick="window.openPremiumModal(); closeMobileSidebar();" style="width: calc(100% - 24px); border: 1px solid rgba(243, 156, 18, 0.4); background: linear-gradient(135deg, rgba(241, 196, 15, 0.2), rgba(243, 156, 18, 0.2)); color: #f1c40f; margin: 8px 12px; padding: 12px 14px; font-weight: 800; font-size: 0.9rem; font-family: inherit; border-radius: var(--border-radius-sm); cursor: pointer; display: flex; align-items: center; gap: 10px; text-align: left;">
+      <!-- Sidebar button to trigger upgrade modal (only visible to non-premium members) -->
+      <button type="button" class="nav-item upgrade-nav-item upgrade-only-element" id="sidebarUpgradeBtn" onclick="window.openPremiumModal(); closeMobileSidebar();" style="width: calc(100% - 24px); border: 1px solid rgba(243, 156, 18, 0.4); background: linear-gradient(135deg, rgba(241, 196, 15, 0.2), rgba(243, 156, 18, 0.2)); color: #f1c40f; margin: 8px 12px; padding: 12px 14px; font-weight: 800; font-size: 0.9rem; font-family: inherit; border-radius: var(--border-radius-sm); cursor: pointer; display: flex; align-items: center; gap: 10px; text-align: left;">
+        <!-- Crown icon SVG indicating premium tier -->
         <svg style="width: 18px; height: 18px; fill: #f1c40f; flex-shrink: 0;"><use href="#icon-crown"></use></svg>
+        <!-- Button label text indicating Go Premium -->
         <span>Go Premium</span>
+      <!-- Closing button tag for sidebar upgrade trigger -->
       </button>
       <button type="button" class="nav-item" id="sidebarHelpBtn" onclick="window.startTour(); closeMobileSidebar();" style="cursor: pointer; background: transparent; border: none; width: 100%; text-align: left; font-family: inherit; font-size: inherit; color: inherit; display: flex; align-items: center; gap: 10px; padding: 10px 14px;">
         <svg><use href="#icon-help"></use></svg>
@@ -370,9 +374,18 @@
               <span style="font-size: 0.74rem; color: var(--text-muted);">Automated spending leak detection & 90-day predictive cash flow runway</span>
             </div>
           </div>
-          <button type="button" class="btn btn-secondary btn-sm" onclick="window.openPremiumModal()" style="font-size: 0.78rem; font-weight: 700; background: linear-gradient(135deg, #f1c40f, #f39c12); border: none; color: #0b0f19; padding: 6px 14px; border-radius: 20px; display: flex; align-items: center; gap: 6px; cursor: pointer; box-shadow: 0 4px 12px rgba(241, 196, 15, 0.3);">
+          <!-- Button to trigger premium upgrade modal (visible ONLY to non-premium members) -->
+          <button type="button" class="btn btn-secondary btn-sm upgrade-trigger-btn upgrade-only-element" id="insightsUpgradeBtn" onclick="window.openPremiumModal()" style="font-size: 0.78rem; font-weight: 700; background: linear-gradient(135deg, #f1c40f, #f39c12); border: none; color: #0b0f19; padding: 6px 14px; border-radius: 20px; display: flex; align-items: center; gap: 6px; cursor: pointer; box-shadow: 0 4px 12px rgba(241, 196, 15, 0.3);">
+            <!-- Sparkles emoji and upgrade CTA text -->
             ✨ Upgrade to Premium
+          <!-- Closing button tag for banner upgrade trigger -->
           </button>
+          <!-- Active Premium badge (visible ONLY when user has paid for Premium) -->
+          <span id="insightsPremiumBadge" style="display: none; font-size: 0.76rem; font-weight: 800; background: rgba(241, 196, 15, 0.15); border: 1px solid rgba(241, 196, 15, 0.4); color: #f1c40f; padding: 5px 12px; border-radius: 20px; align-items: center; gap: 5px;">
+            <!-- Crown badge icon and active status indicator -->
+            👑 Premium Active
+          <!-- Closing span tag for premium badge -->
+          </span>
         </div>
 
         <div id="aiInsightsContent" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 14px;">
@@ -1022,7 +1035,56 @@
       </div>
 
       <div class="card settings-container">
+        <!-- Form container for managing user configurations -->
         <form id="settingsForm">
+          <!-- Membership Status Banner for Unpaid / Standard Tier (Hidden when paid) -->
+          <div id="settingsUpgradeCard" class="upgrade-only-element" style="background: linear-gradient(135deg, rgba(241, 196, 15, 0.1), rgba(243, 156, 18, 0.15)); border: 1px solid rgba(243, 156, 18, 0.4); border-radius: var(--border-radius-md); padding: 14px 18px; margin-bottom: 20px; display: flex; align-items: center; justify-content: space-between; gap: 12px; flex-wrap: wrap;">
+            <!-- Informational text container describing standard tier limits -->
+            <div>
+              <!-- Standard plan title heading with crown icon -->
+              <div style="font-weight: 700; color: #f1c40f; font-size: 0.92rem; display: flex; align-items: center; gap: 6px;">
+                <!-- Crown icon for membership status -->
+                <span>👑</span>
+                <!-- Membership tier title text -->
+                <span>Standard Membership</span>
+              <!-- Closing div tag for membership tier title container -->
+              </div>
+              <!-- Descriptive subtext about premium benefits -->
+              <div style="font-size: 0.78rem; color: var(--text-muted); margin-top: 4px;">
+                <!-- Explanation of unlocked features upon upgrading -->
+                Upgrade to FinFlow Premium (GH₵13.99/mo) to unlock custom themes, unlimited PDF reports, CSV export/import & AI diagnostics.
+              <!-- Closing div tag for subtext description -->
+              </div>
+            <!-- Closing div tag for membership information block -->
+            </div>
+            <!-- Action button to open checkout modal for standard members -->
+            <button type="button" class="btn btn-primary btn-sm upgrade-trigger-btn" onclick="window.openPremiumModal()" style="font-weight: 800; background: linear-gradient(135deg, #f1c40f, #f39c12); color: #0b0f19; border: none; padding: 8px 16px; border-radius: 20px; cursor: pointer; white-space: nowrap;">
+              <!-- Button text to upgrade to premium -->
+              Upgrade to Premium
+            <!-- Closing button tag for settings upgrade CTA -->
+            </button>
+          <!-- Closing div tag for settings upgrade card -->
+          </div>
+          <!-- Membership Status Banner for Paid Premium Tier (Hidden when standard) -->
+          <div id="settingsPremiumActiveCard" style="display: none; background: rgba(16, 185, 129, 0.1); border: 1px solid rgba(16, 185, 129, 0.3); border-radius: var(--border-radius-md); padding: 14px 18px; margin-bottom: 20px; align-items: center; justify-content: space-between; gap: 12px; flex-wrap: wrap;">
+            <!-- Left flex container containing icon and active premium details -->
+            <div style="display: flex; align-items: center; gap: 10px;">
+              <!-- Premium gold crown icon -->
+              <span style="font-size: 1.4rem;">👑</span>
+              <!-- Text details container for premium tier -->
+              <div>
+                <!-- Active premium membership headline -->
+                <div style="font-weight: 800; color: var(--color-success); font-size: 0.92rem;">FinFlow Premium Active</div>
+                <!-- Subtext confirming unlocked capabilities -->
+                <div style="font-size: 0.78rem; color: var(--text-muted); margin-top: 2px;">All premium features are active: Unlimited AI diagnostics, PDF/CSV exports, OCR scanning & themes.</div>
+              <!-- Closing div tag for premium details text container -->
+              </div>
+            <!-- Closing div tag for icon and details flex container -->
+            </div>
+            <!-- Active subscription status badge -->
+            <span style="font-size: 0.75rem; font-weight: 700; color: var(--color-success); background: rgba(16, 185, 129, 0.2); padding: 4px 10px; border-radius: 12px;">Active Member</span>
+          <!-- Closing div tag for settings premium active card -->
+          </div>
           <!-- Profile Picture Picker -->
           <div class="form-group" style="display: flex; align-items: center; gap: 16px; margin-bottom: 20px;">
             <div id="settingsAvatarPreview" class="profile-avatar" style="width: 60px; height: 60px; font-size: 1.5rem; border-radius: 50%; background: var(--color-primary-glow); color: var(--color-primary); display: flex; align-items: center; justify-content: center; font-weight: 700; border: 2px solid var(--color-primary); overflow: hidden; background-size: cover; background-position: center; flex-shrink: 0;">U</div>
@@ -1079,12 +1141,20 @@
 
           <!-- Premium Theme Selection -->
           <div class="form-group" style="margin-top: 15px;">
+            <!-- Label for the premium dashboard theme section -->
             <label style="display: flex; align-items: center; justify-content: space-between; font-weight: 600; font-size: 0.9rem; color: var(--text-main);">
+              <!-- Section title for dashboard themes -->
               <span>Premium Dashboard Theme</span>
+              <!-- Dynamic badge showing whether theme selection is unlocked -->
               <span id="premiumThemeBadge" style="background: linear-gradient(135deg, #f1c40f, #f39c12); color: #0b0f19; font-size: 0.68rem; font-weight: 800; padding: 2px 6px; border-radius: 4px; display: flex; align-items: center; gap: 3px;">
+                <!-- Crown icon and premium status badge text -->
                 👑 Premium
+              <!-- Closing span tag for theme badge -->
               </span>
+            <!-- Closing label tag for theme selector -->
             </label>
+            <!-- Dynamic helper notice showing unlocked status or upgrade requirement -->
+            <p id="premiumThemeNotice" style="font-size: 0.78rem; color: var(--text-muted); margin: 4px 0 10px 0;"></p>
             <div class="theme-options-grid" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(130px, 1fr)); gap: 10px; margin-top: 8px;">
               <button type="button" class="btn-theme-select active" data-theme-val="default" style="padding: 10px; border-radius: 8px; border: 2px solid var(--color-primary); background: var(--bg-secondary); color: var(--text-main); font-size: 0.76rem; cursor: pointer; text-align: center; font-family: inherit;">
                 <div style="font-size: 1.1rem; margin-bottom: 4px;">🔵</div>
@@ -1163,8 +1233,10 @@
         <!-- OCR Receipt Scanner (Premium Feature) -->
         <div style="background: rgba(168, 85, 247, 0.08); border: 1px dashed rgba(168, 85, 247, 0.4); padding: 12px; border-radius: var(--border-radius-sm); margin-bottom: 16px; text-align: center;">
           <div style="font-size: 0.78rem; font-weight: 700; color: #a855f7; margin-bottom: 6px; display: flex; align-items: center; justify-content: center; gap: 4px;">
+            <!-- OCR Scanner headline title text -->
             <span>📸 Smart Receipt & Invoice OCR Scanner</span>
-            <span style="background: linear-gradient(135deg, #f1c40f, #f39c12); color: #0b0f19; font-size: 0.62rem; padding: 1px 5px; border-radius: 4px;">👑 Premium</span>
+            <!-- OCR Scanner tier badge indicating whether feature is premium or unlocked -->
+            <span id="receiptScannerPremiumBadge" style="background: linear-gradient(135deg, #f1c40f, #f39c12); color: #0b0f19; font-size: 0.62rem; padding: 1px 5px; border-radius: 4px;">👑 Premium</span>
           </div>
           <button type="button" class="btn btn-secondary btn-sm" id="scanReceiptBtn" style="font-size: 0.78rem; font-weight: 700; width: 100%; display: flex; align-items: center; justify-content: center; gap: 6px; background: rgba(168, 85, 247, 0.15); color: #a855f7; border: 1px solid rgba(168, 85, 247, 0.3);">
             📷 Snap or Upload Receipt Photo
