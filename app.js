@@ -2075,150 +2075,823 @@
   }
 
   /**
-   * Generates and prints a complete formatted PDF Monthly Financial Statement.
+   * Generates and prints an executive, bank-standard PDF Financial Statement with period filtering,
+   * category breakdown summaries, running balances, and accurate active currency conversions.
    */
-  function exportPdfStatement() {
-    // Obtain AppStore instance
+  function generateBankGradeStatement(period = 'current_month', includeBreakdown = true, includeAuditStamp = true) {
+    // Reference AppStore instance
     const store = window.AppStore;
-    // Retrieve active settings configuration object
+    // Safety check for store availability
+    if (!store) return;
+    // Retrieve active settings configuration
     const settings = store.getSettings();
-    // Validate whether current session has active premium membership either in settings or offline storage
+    // Validate active premium tier membership
     const isPremium = !!(settings.isPremium || (typeof localStorage !== 'undefined' && localStorage.getItem('FINFLOW_PREMIUM_ACTIVE') === 'true'));
-    // Read count of free PDF statements exported
-    const freePdfUsed = settings.freePdfExportsUsed || 0;
-
-    // Check if non-premium member has exceeded free trial quota
+    // Block non-premium users from generating bank-grade statement
     if (!isPremium) {
-      // If free quota has been consumed, prompt upgrade
-      if (freePdfUsed >= 1) {
-        // Trigger guarded premium modal
-        window.openPremiumModal();
-        // Display notification alert explaining quota expiration
-        alert('You have already used your 1 free PDF statement export. Please upgrade to Premium to unlock unlimited report exports!');
-        // Terminate export process
-        return;
-      } else {
-        // Persist the 1-time usage count to settings
-        store.updateSettings({ freePdfExportsUsed: 1 });
-        // Update premium visual elements instantly
-        renderPremiumLayout();
-        alert('🎁 You are using your 1-time Free Trial PDF Report Export. Future PDF reports require upgrading to Premium!');
-      }
+      // Open premium subscription upgrade modal
+      if (typeof window.openPremiumModal === 'function') window.openPremiumModal();
+      // Inform user about premium requirement
+      alert('🔒 Bank-Grade Official PDF Statement Export is reserved exclusively for Premium members. Please upgrade to Premium!');
+      // Abort execution immediately
+      return;
+    // End isPremium check
     }
-    const currency = settings.currency;
-    const transactions = getFilteredTransactions();
-    const balance = store.getBalance();
-    const today = new Date().toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' });
+    // Active currency symbol
+    const activeCurrency = settings.currency || 'GH₵';
+    // Retrieve all recorded transactions
+    const allTransactions = store.getTransactions() || [];
 
-    let incomeTotal = 0;
-    let expenseTotal = 0;
-    transactions.forEach(tx => {
-      if (tx.type === 'income') incomeTotal += tx.amount;
-      else expenseTotal += tx.amount;
+    // Reference current timestamp
+    const now = new Date();
+    // Default start date and end date boundaries
+    let startDate = null;
+    // End date boundary set to end of current day
+    let endDate = new Date(now.getFullYear(), now.getMonth(), now.getDate(), 23, 59, 59);
+    // Descriptive statement period title
+    let periodTitle = 'Current Month';
+
+    // Calculate boundary timestamps based on selected statement period
+    if (period === 'current_month') {
+      // First day of current month
+      startDate = new Date(now.getFullYear(), now.getMonth(), 1);
+      // Period title string
+      periodTitle = now.toLocaleDateString('en-US', { month: 'long', year: 'numeric' });
+    } else if (period === 'previous_month') {
+      // First day of previous month
+      startDate = new Date(now.getFullYear(), now.getMonth() - 1, 1);
+      // Last day of previous month
+      endDate = new Date(now.getFullYear(), now.getMonth(), 0, 23, 59, 59);
+      // Title string for previous month
+      periodTitle = startDate.toLocaleDateString('en-US', { month: 'long', year: 'numeric' });
+    } else if (period === 'last_3_months') {
+      // Ninety days past
+      startDate = new Date(now.getTime() - (90 * 24 * 60 * 60 * 1000));
+      // Title string for past 90 days
+      periodTitle = 'Past 90 Days (' + startDate.toLocaleDateString() + ' - ' + now.toLocaleDateString() + ')';
+    } else if (period === 'year_to_date') {
+      // First day of current year
+      startDate = new Date(now.getFullYear(), 0, 1);
+      // Title string for year-to-date
+      periodTitle = 'Year to Date ' + now.getFullYear();
+    } else if (period === 'all_time') {
+      // Far past start date
+      startDate = new Date(2000, 0, 1);
+      // All time label
+      periodTitle = 'All-Time Comprehensive Ledger';
+    // End period check
+    }
+
+    // Sort transactions chronologically: oldest to newest
+    const sortedTxs = [...allTransactions].sort((a, b) => new Date(a.date) - new Date(b.date));
+
+    // Calculate opening balance prior to period start date
+    let openingBalanceGhs = 0;
+    // Filtered transaction array for target period
+    const periodTxs = [];
+
+    // Traverse all transactions to separate opening balance from period transactions
+    sortedTxs.forEach(tx => {
+      // Parse transaction date
+      const txDate = new Date(tx.date);
+      // If transaction occurred before period start date
+      if (startDate && txDate < startDate) {
+        // Inflows increase opening balance
+        if (tx.type === 'income') openingBalanceGhs += Number(tx.amount || 0);
+        // Outflows decrease opening balance
+        else openingBalanceGhs -= Number(tx.amount || 0);
+      // If transaction falls within period boundaries
+      } else if (txDate <= endDate) {
+        // Collect in period list
+        periodTxs.push(tx);
+      // End date check
+      }
+    // End transaction loop
     });
 
-    const printWin = window.open('', '_blank', 'width=900,height=800');
+    // Inflow and outflow accumulators
+    let totalInflowGhs = 0;
+    let totalOutflowGhs = 0;
+    // Category expense totals map
+    const categoryTotals = {};
+    // Running balance tracker initialized to opening balance
+    let currentRunningGhs = openingBalanceGhs;
+
+    // Map period transactions to formatted statement rows
+    const ledgerRows = periodTxs.map(tx => {
+      // Boolean type check
+      const isIncome = (tx.type === 'income');
+      // Numeric transaction amount
+      const amt = Number(tx.amount || 0);
+      // Update totals and running balance
+      if (isIncome) {
+        // Add to total inflow
+        totalInflowGhs += amt;
+        // Increase running balance
+        currentRunningGhs += amt;
+      } else {
+        // Add to total outflow
+        totalOutflowGhs += amt;
+        // Decrease running balance
+        currentRunningGhs -= amt;
+        // Category key
+        const cat = tx.category || 'Other';
+        // Accumulate category expense sum
+        categoryTotals[cat] = (categoryTotals[cat] || 0) + amt;
+      // End income/expense check
+      }
+
+      // Convert amount to active currency
+      const txConverted = convertCurrencyAmount(amt, activeCurrency, 'GH₵');
+      // Convert running balance to active currency
+      const runningConverted = convertCurrencyAmount(currentRunningGhs, activeCurrency, 'GH₵');
+
+      // Return formatted ledger row
+      return {
+        // Formatted date string
+        date: tx.date,
+        // Description text
+        description: tx.description || tx.note || '-',
+        // Category name
+        category: tx.category || 'General',
+        // Transaction type
+        type: tx.type,
+        // Formatted amount with sign
+        amountFormatted: `${isIncome ? '+' : '-'}${activeCurrency} ${txConverted.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`,
+        // Formatted running balance
+        runningBalanceFormatted: `${activeCurrency} ${runningConverted.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`
+      // End row object
+      };
+    // End ledger rows map
+    });
+
+    // Calculate net cash flow and ending balance
+    const netCashFlowGhs = totalInflowGhs - totalOutflowGhs;
+    const closingBalanceGhs = openingBalanceGhs + netCashFlowGhs;
+
+    // Convert executive KPI values to active currency
+    const openingConverted = convertCurrencyAmount(openingBalanceGhs, activeCurrency, 'GH₵');
+    const inflowConverted = convertCurrencyAmount(totalInflowGhs, activeCurrency, 'GH₵');
+    const outflowConverted = convertCurrencyAmount(totalOutflowGhs, activeCurrency, 'GH₵');
+    const netFlowConverted = convertCurrencyAmount(netCashFlowGhs, activeCurrency, 'GH₵');
+    const closingConverted = convertCurrencyAmount(closingBalanceGhs, activeCurrency, 'GH₵');
+
+    // Generate unique audit reference code
+    const refCode = 'FF-' + now.getFullYear() + '-' + Math.random().toString(36).substring(2, 8).toUpperCase();
+    // Formatted issue timestamp string
+    const issueDateStr = now.toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' });
+
+    // Open print preview browser window
+    const printWin = window.open('', '_blank', 'width=960,height=900');
+    // Guard against popup blocker
     if (!printWin) {
-      alert('Please allow popups to generate your PDF Financial Statement.');
+      // Alert user to enable popups
+      alert('Please allow popups to generate and print your official PDF statement.');
+      // Exit function
       return;
+    // End popup check
     }
 
+    // Build certified bank-grade statement HTML template
     const htmlContent = `
-      <!DOCTYPE html>
-      <html>
-      <head>
-        <title>Financial Statement - ${settings.userName}</title>
-        <style>
-          body { font-family: 'Helvetica Neue', Arial, sans-serif; color: #1e293b; padding: 40px; margin: 0; background: #fff; }
-          .header { display: flex; justify-content: space-between; align-items: flex-start; border-bottom: 2px solid #6366f1; padding-bottom: 20px; margin-bottom: 30px; }
-          .brand { font-size: 24px; font-weight: 800; color: #4f46e5; }
-          .subtitle { font-size: 13px; color: #64748b; margin-top: 4px; }
-          .meta { text-align: right; font-size: 13px; color: #475569; }
-          .summary-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px; margin-bottom: 30px; }
-          .kpi-box { background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 8px; padding: 16px; text-align: center; }
-          .kpi-title { font-size: 11px; font-weight: 700; text-transform: uppercase; color: #64748b; margin-bottom: 6px; }
-          .kpi-num { font-size: 20px; font-weight: 800; color: #0f172a; }
-          table { width: 100%; border-collapse: collapse; margin-top: 15px; font-size: 13px; }
-          th { background: #f1f5f9; text-align: left; padding: 10px 12px; font-weight: 700; border-bottom: 1px solid #cbd5e1; }
-          td { padding: 10px 12px; border-bottom: 1px solid #e2e8f0; }
-          .income { color: #059669; font-weight: 600; }
-          .expense { color: #dc2626; font-weight: 600; }
-          .footer { margin-top: 50px; padding-top: 20px; border-top: 1px solid #e2e8f0; display: flex; justify-content: space-between; font-size: 12px; color: #64748b; }
-          @media print { body { padding: 0; } }
-        </style>
-      </head>
-      <body>
-        <div class="header">
-          <div>
-            <div class="brand">FinFlow Financial Dashboard</div>
-            <div class="subtitle">Official Executive Financial Statement & Ledger Export</div>
-          </div>
-          <div class="meta">
-            <div><strong>Account Holder:</strong> ${settings.userName}</div>
-            <div><strong>Date:</strong> ${today}</div>
-            <div><strong>Currency:</strong> ${currency}</div>
-          </div>
-        </div>
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>FinFlow Financial Statement - ${escapeHTML(settings.userName || 'Account')} (${periodTitle})</title>
+  <style>
+    @page { size: A4; margin: 15mm; }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+      color: #0f172a;
+      background: #ffffff;
+      margin: 0;
+      padding: 24px;
+      font-size: 12px;
+      line-height: 1.4;
+    }
+    .statement-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      border-bottom: 2px solid #0284c7;
+      padding-bottom: 16px;
+      margin-bottom: 20px;
+    }
+    .brand-title {
+      font-size: 26px;
+      font-weight: 900;
+      color: #0f172a;
+      letter-spacing: -0.5px;
+    }
+    .brand-title span { color: #0284c7; }
+    .doc-badge {
+      display: inline-block;
+      background: #e0f2fe;
+      color: #0369a1;
+      padding: 3px 8px;
+      border-radius: 4px;
+      font-size: 10px;
+      font-weight: 700;
+      text-transform: uppercase;
+      margin-top: 4px;
+    }
+    .meta-box {
+      text-align: right;
+      font-size: 11px;
+      color: #475569;
+    }
+    .meta-box strong { color: #0f172a; }
+    .kpi-summary-grid {
+      display: grid;
+      grid-template-columns: repeat(5, 1fr);
+      gap: 10px;
+      margin-bottom: 24px;
+    }
+    .kpi-tile {
+      background: #f8fafc;
+      border: 1px solid #e2e8f0;
+      border-radius: 6px;
+      padding: 10px;
+      text-align: center;
+    }
+    .kpi-tile.highlight {
+      background: #f0f9ff;
+      border-color: #bae6fd;
+    }
+    .kpi-label {
+      font-size: 9px;
+      text-transform: uppercase;
+      font-weight: 700;
+      color: #64748b;
+      margin-bottom: 4px;
+    }
+    .kpi-amount {
+      font-size: 14px;
+      font-weight: 800;
+      color: #0f172a;
+    }
+    .kpi-amount.income { color: #059669; }
+    .kpi-amount.expense { color: #dc2626; }
+    .section-heading {
+      font-size: 13px;
+      font-weight: 800;
+      color: #1e293b;
+      margin: 20px 0 8px 0;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      border-bottom: 1px solid #cbd5e1;
+      padding-bottom: 4px;
+    }
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 11px;
+      margin-bottom: 16px;
+    }
+    th {
+      background: #f1f5f9;
+      text-align: left;
+      padding: 8px 10px;
+      font-weight: 700;
+      color: #475569;
+      border-bottom: 1.5px solid #cbd5e1;
+    }
+    td {
+      padding: 7px 10px;
+      border-bottom: 1px solid #f1f5f9;
+      color: #1e293b;
+    }
+    tr:nth-child(even) td {
+      background: #fafafa;
+    }
+    .text-right { text-align: right; }
+    .text-income { color: #059669; font-weight: 700; }
+    .text-expense { color: #dc2626; font-weight: 700; }
+    .audit-stamp {
+      margin-top: 30px;
+      padding: 12px 16px;
+      background: #f8fafc;
+      border: 1px dashed #94a3b8;
+      border-radius: 6px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      font-size: 10px;
+      color: #64748b;
+    }
+    .stamp-seal {
+      font-weight: 800;
+      color: #0284c7;
+      border: 1.5px solid #0284c7;
+      padding: 4px 8px;
+      border-radius: 4px;
+      letter-spacing: 0.5px;
+      text-transform: uppercase;
+    }
+    .footer {
+      margin-top: 30px;
+      padding-top: 10px;
+      border-top: 1px solid #e2e8f0;
+      display: flex;
+      justify-content: space-between;
+      font-size: 10px;
+      color: #94a3b8;
+    }
+    @media print {
+      body { padding: 0; }
+      .no-print { display: none; }
+    }
+  </style>
+</head>
+<body>
+  <div class="statement-header">
+    <div>
+      <div class="brand-title">Fin<span>Flow</span></div>
+      <div style="font-size: 11px; color: #64748b; margin-top: 2px;">Official Certified Financial Statement & Audit Ledger</div>
+      <span class="doc-badge">Verified Client Record</span>
+    </div>
+    <div class="meta-box">
+      <div><strong>Account Holder:</strong> ${escapeHTML(settings.userName || 'Account Member')}</div>
+      <div><strong>Statement Period:</strong> ${periodTitle}</div>
+      <div><strong>Issued:</strong> ${issueDateStr}</div>
+      <div><strong>Reference ID:</strong> ${refCode}</div>
+      <div><strong>Base Currency:</strong> ${activeCurrency}</div>
+    </div>
+  </div>
 
-        <div class="summary-grid">
-          <div class="kpi-box">
-            <div class="kpi-title">Net Worth</div>
-            <div class="kpi-num">${formatMoney(balance.total, currency)}</div>
-          </div>
-          <div class="kpi-box">
-            <div class="kpi-title">Liquid Cash</div>
-            <div class="kpi-num">${formatMoney(balance.cash, currency)}</div>
-          </div>
-          <div class="kpi-box">
-            <div class="kpi-title">Selected Inflows</div>
-            <div class="kpi-num income">${formatMoney(incomeTotal, currency)}</div>
-          </div>
-          <div class="kpi-box">
-            <div class="kpi-title">Selected Outflows</div>
-            <div class="kpi-num expense">${formatMoney(expenseTotal, currency)}</div>
-          </div>
-        </div>
+  <!-- KPI Cash Flow Executive Summary -->
+  <div class="kpi-summary-grid">
+    <div class="kpi-tile">
+      <div class="kpi-label">Opening Balance</div>
+      <div class="kpi-amount">${activeCurrency} ${openingConverted.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</div>
+    </div>
+    <div class="kpi-tile">
+      <div class="kpi-label">Total Money In</div>
+      <div class="kpi-amount income">+${activeCurrency} ${inflowConverted.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</div>
+    </div>
+    <div class="kpi-tile">
+      <div class="kpi-label">Total Money Out</div>
+      <div class="kpi-amount expense">-${activeCurrency} ${outflowConverted.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</div>
+    </div>
+    <div class="kpi-tile">
+      <div class="kpi-label">Net Cash Flow</div>
+      <div class="kpi-amount" style="color: ${netCashFlowGhs >= 0 ? '#059669' : '#dc2626'};">${netCashFlowGhs >= 0 ? '+' : ''}${activeCurrency} ${netFlowConverted.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</div>
+    </div>
+    <div class="kpi-tile highlight">
+      <div class="kpi-label">Closing Balance</div>
+      <div class="kpi-amount" style="color: #0284c7;">${activeCurrency} ${closingConverted.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</div>
+    </div>
+  </div>
 
-        <h3 style="font-size: 16px; margin-bottom: 8px;">Itemized Financial Ledger (${transactions.length} entries)</h3>
-        <table>
-          <thead>
+  ${includeBreakdown && Object.keys(categoryTotals).length > 0 ? `
+    <!-- Category Expenditure Breakdown -->
+    <div class="section-heading">
+      <span>Category Expense Distribution</span>
+      <span style="font-size: 10px; font-weight: 500; color: #64748b;">${Object.keys(categoryTotals).length} active categories</span>
+    </div>
+    <table>
+      <thead>
+        <tr>
+          <th>Category Name</th>
+          <th class="text-right">Total Spent</th>
+          <th class="text-right">Share of Outflows</th>
+        </tr>
+      </thead>
+      <tbody>
+        ${Object.keys(categoryTotals).sort((a,b) => categoryTotals[b] - categoryTotals[a]).map(cat => {
+          const catConverted = convertCurrencyAmount(categoryTotals[cat], activeCurrency, 'GH₵');
+          const share = totalOutflowGhs > 0 ? ((categoryTotals[cat] / totalOutflowGhs) * 100).toFixed(1) : '0.0';
+          return `
             <tr>
-              <th>Date</th>
-              <th>Description</th>
-              <th>Category</th>
-              <th>Type</th>
-              <th>Amount</th>
+              <td><strong>${escapeHTML(cat)}</strong></td>
+              <td class="text-right text-expense">${activeCurrency} ${catConverted.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</td>
+              <td class="text-right">${share}%</td>
             </tr>
-          </thead>
-          <tbody>
-            ${transactions.map(tx => `
-              <tr>
-                <td>${tx.date}</td>
-                <td>${tx.description}</td>
-                <td>${tx.category}</td>
-                <td>${tx.type.toUpperCase()}</td>
-                <td class="${tx.type}">${tx.type === 'income' ? '+' : '-'}${formatMoney(tx.amount, currency)}</td>
-              </tr>
-            `).join('')}
-          </tbody>
-        </table>
+          `;
+        }).join('')}
+      </tbody>
+    </table>
+  ` : ''}
 
-        <div class="footer">
-          <div>FinFlow — Personal Financial Management Software Platform</div>
-          <div>Compliance Review & Support: finflow64@gmail.com</div>
-        </div>
+  <!-- Chronological Transaction Ledger with Running Balance -->
+  <div class="section-heading">
+    <span>Itemized Transaction Ledger (${ledgerRows.length} Entries)</span>
+    <span style="font-size: 10px; font-weight: 500; color: #64748b;">All figures in ${activeCurrency}</span>
+  </div>
+  ${ledgerRows.length === 0 ? `
+    <div style="padding: 24px; text-align: center; color: #64748b; background: #f8fafc; border-radius: 6px;">
+      No transactions recorded for the selected statement period.
+    </div>
+  ` : `
+    <table>
+      <thead>
+        <tr>
+          <th style="width: 85px;">Date</th>
+          <th>Description</th>
+          <th style="width: 120px;">Category</th>
+          <th style="width: 70px;">Type</th>
+          <th class="text-right" style="width: 110px;">Amount</th>
+          <th class="text-right" style="width: 110px;">Running Balance</th>
+        </tr>
+      </thead>
+      <tbody>
+        ${ledgerRows.map(row => `
+          <tr>
+            <td>${row.date}</td>
+            <td><strong>${escapeHTML(row.description)}</strong></td>
+            <td>${escapeHTML(row.category)}</td>
+            <td style="text-transform: uppercase; font-size: 9px; font-weight: 700; color: ${row.type === 'income' ? '#059669' : '#dc2626'};">${row.type}</td>
+            <td class="text-right ${row.type === 'income' ? 'text-income' : 'text-expense'}">${row.amountFormatted}</td>
+            <td class="text-right" style="font-weight: 700;">${row.runningBalanceFormatted}</td>
+          </tr>
+        `).join('')}
+      </tbody>
+    </table>
+  `}
 
-        <script>
-          window.onload = function() {
-            window.print();
-          };
-        </script>
-      </body>
-      </html>
+  ${includeAuditStamp ? `
+    <!-- Certified Official Statement Audit Stamp -->
+    <div class="audit-stamp">
+      <div>
+        <div style="font-weight: 700; color: #0f172a; margin-bottom: 2px;">AUDIT TRAIL & ENCRYPTION VERIFICATION</div>
+        <div>Generated from client encrypted ledger database • Zero watermark • FinFlow Cloud Systems</div>
+      </div>
+      <div class="stamp-seal">Official Verified Statement</div>
+    </div>
+  ` : ''}
+
+  <div class="footer">
+    <div>FinFlow Personal Financial Management Platform</div>
+    <div>Support & Inquiries: finflow64@gmail.com • Confidential</div>
+  </div>
+
+  <script>
+    window.onload = function() {
+      setTimeout(function() {
+        window.print();
+      }, 300);
+    };
+  </script>
+</body>
+</html>
     `;
 
+    // Write rendered HTML into print window
     printWin.document.write(htmlContent);
+    // Close document stream to trigger onload
     printWin.document.close();
+  // End generateBankGradeStatement
+  }
+
+  /**
+   * PDF Statement entry point. Prompts premium upgrade for unpaid members or opens period configuration modal.
+   */
+  function exportPdfStatement() {
+    // Reference AppStore instance
+    const store = window.AppStore;
+    // Retrieve settings configuration
+    const settings = store ? store.getSettings() : {};
+    // Check if session has active premium membership
+    const isPremium = !!(settings.isPremium || (typeof localStorage !== 'undefined' && localStorage.getItem('FINFLOW_PREMIUM_ACTIVE') === 'true'));
+
+    // Guard: Statement export is a premium feature
+    if (!isPremium) {
+      // Trigger premium membership upgrade modal
+      if (typeof window.openPremiumModal === 'function') {
+        // Open premium modal
+        window.openPremiumModal();
+      // End open check
+      }
+      // Inform user about premium feature
+      alert('🔒 Bank-Grade Official PDF Statement Export is a Premium feature. Upgrade to Premium to generate certified financial statements!');
+      // Terminate execution
+      return;
+    // End isPremium check
+    }
+
+    // Open Statement Period Selection Modal
+    const statementModal = document.getElementById('statementModal');
+    // Open modal if found
+    if (statementModal && typeof window.openModal === 'function') {
+      // Open statement modal
+      window.openModal(statementModal);
+    // Fallback if modal not present
+    } else {
+      // Generate current month statement directly
+      generateBankGradeStatement('current_month', true, true);
+    // End modal check
+    }
+  // End exportPdfStatement
+  }
+
+  // Active filter state for debts panel ('all', 'owe', 'lent', 'settled')
+  let activeDebtFilter = 'all';
+
+  /**
+   * Renders the Debts & Loans / IOUs tracker interface.
+   * Calculates liabilities, receivables, net position in active currency, and renders interactive debt cards.
+   */
+  function renderDebts() {
+    // Reference AppStore
+    const store = window.AppStore;
+    // Exit if store not available
+    if (!store) return;
+    // Retrieve active settings
+    const settings = store.getSettings();
+    // Read active currency
+    const activeCurrency = settings.currency || 'GH₵';
+    // Retrieve list of debts
+    const debts = store.getDebts();
+    // Grid container DOM element
+    const debtsGrid = document.getElementById('debtsGrid');
+    // Exit if debts grid not in DOM
+    if (!debtsGrid) return;
+
+    // Accumulators for liabilities and receivables in base currency (GH₵)
+    let totalOweGhs = 0;
+    let totalLentGhs = 0;
+    let activeOweCount = 0;
+    let activeLentCount = 0;
+
+    // Calculate totals across all active debts
+    debts.forEach(d => {
+      // Calculate remaining unpaid principal balance
+      const remainingGhs = Math.max(0, (Number(d.amount) || 0) - (Number(d.repaid) || 0));
+      // Accumulate active debts
+      if (d.status !== 'settled') {
+        // If money I borrowed
+        if (d.type === 'owe') {
+          // Add to liabilities sum
+          totalOweGhs += remainingGhs;
+          // Increment count
+          activeOweCount++;
+        // If money I lent out
+        } else {
+          // Add to receivables sum
+          totalLentGhs += remainingGhs;
+          // Increment count
+          activeLentCount++;
+        // End type condition
+        }
+      // End settled condition
+      }
+    // End debts calculation loop
+    });
+
+    // Convert liabilities and receivables to active currency
+    const convertedTotalOwe = convertCurrencyAmount(totalOweGhs, activeCurrency, 'GH₵');
+    const convertedTotalLent = convertCurrencyAmount(totalLentGhs, activeCurrency, 'GH₵');
+    // Net debt position (Receivables - Liabilities)
+    const netPosition = convertedTotalLent - convertedTotalOwe;
+
+    // Retrieve KPI value DOM elements
+    const debtsTotalOweElem = document.getElementById('debtsTotalOwe');
+    const debtsTotalLentElem = document.getElementById('debtsTotalLent');
+    const debtsNetPositionElem = document.getElementById('debtsNetPosition');
+    const debtsTotalOweSub = document.getElementById('debtsTotalOweSub');
+    const debtsTotalLentSub = document.getElementById('debtsTotalLentSub');
+    const debtsNetPositionSub = document.getElementById('debtsNetPositionSub');
+
+    // Update KPI card text contents
+    if (debtsTotalOweElem) debtsTotalOweElem.textContent = `${activeCurrency} ${convertedTotalOwe.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+    if (debtsTotalLentElem) debtsTotalLentElem.textContent = `${activeCurrency} ${convertedTotalLent.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+    if (debtsNetPositionElem) {
+      // Set formatted net balance with sign
+      debtsNetPositionElem.textContent = `${netPosition >= 0 ? '+' : ''}${activeCurrency} ${netPosition.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+      // Color green for positive or red for negative
+      debtsNetPositionElem.style.color = (netPosition >= 0) ? '#10b981' : '#ef4444';
+    // End net position check
+    }
+    // Update subtext labels
+    if (debtsTotalOweSub) debtsTotalOweSub.textContent = `${activeOweCount} active liability${activeOweCount === 1 ? '' : 'ies'}`;
+    if (debtsTotalLentSub) debtsTotalLentSub.textContent = `${activeLentCount} active receivable${activeLentCount === 1 ? '' : 's'}`;
+    if (debtsNetPositionSub) debtsNetPositionSub.textContent = (netPosition >= 0) ? 'Positive Net Balance' : 'Outstanding Net Liability';
+
+    // Apply active filter tab
+    let filteredDebts = debts;
+    if (activeDebtFilter === 'owe') {
+      // Only active borrowed debts
+      filteredDebts = debts.filter(d => d.type === 'owe' && d.status !== 'settled');
+    } else if (activeDebtFilter === 'lent') {
+      // Only active lent loans
+      filteredDebts = debts.filter(d => d.type === 'lent' && d.status !== 'settled');
+    } else if (activeDebtFilter === 'settled') {
+      // Fully settled debts
+      filteredDebts = debts.filter(d => d.status === 'settled');
+    // End filter condition
+    }
+
+    // Update counter text
+    const countStats = document.getElementById('debtCountStats');
+    if (countStats) countStats.textContent = `Showing ${filteredDebts.length} of ${debts.length} record${debts.length === 1 ? '' : 's'}`;
+
+    // Render empty state if no matching debts
+    if (filteredDebts.length === 0) {
+      // Display empty placeholder banner
+      debtsGrid.innerHTML = `
+        <div class="empty-state" style="grid-column: 1 / -1; text-align: center; padding: 40px 20px; background: var(--bg-card); border-radius: var(--border-radius-md); border: 1px dashed var(--color-border);">
+          <div style="font-size: 2.2rem; margin-bottom: 10px;">🤝</div>
+          <h3 style="font-size: 1.1rem; color: var(--text-main); margin-bottom: 6px;">No Debts or Loans Recorded</h3>
+          <p style="color: var(--text-muted); font-size: 0.85rem; max-width: 400px; margin: 0 auto 16px;">
+            ${activeDebtFilter === 'settled' ? 'No settled debts found.' : 'Keep track of money borrowed or lent with partial repayment tracking.'}
+          </p>
+          <button type="button" class="btn btn-primary btn-sm" onclick="window.openModal(document.getElementById('addDebtModal'))">
+            + Add New Debt or Loan
+          </button>
+        </div>
+      `;
+      // Exit render
+      return;
+    // End empty check
+    }
+
+    // Render interactive debt cards
+    debtsGrid.innerHTML = filteredDebts.map(debt => {
+      // Determine if borrowed debt
+      const isOwe = (debt.type === 'owe');
+      // Determine if settled
+      const isSettled = (debt.status === 'settled');
+      // Convert figures to active currency
+      const totalConverted = convertCurrencyAmount(debt.amount, activeCurrency, 'GH₵');
+      const repaidConverted = convertCurrencyAmount(debt.repaid || 0, activeCurrency, 'GH₵');
+      const remainingConverted = Math.max(0, totalConverted - repaidConverted);
+      // Calculate repayment percentage
+      const percent = debt.amount > 0 ? Math.min(100, Math.round(((debt.repaid || 0) / debt.amount) * 100)) : 0;
+      
+      // Color schemes
+      const badgeColor = isOwe ? '#ef4444' : '#10b981';
+      const badgeBg = isOwe ? 'rgba(239, 68, 68, 0.12)' : 'rgba(16, 185, 129, 0.12)';
+      const typeLabel = isOwe ? 'I Owe (Borrowed)' : 'Owed to Me (Lent)';
+
+      // Check overdue date status
+      let isOverdue = false;
+      let dueDateFormatted = '';
+      if (debt.dueDate) {
+        // Parse target due date
+        const dDate = new Date(debt.dueDate);
+        // Format readable date
+        dueDateFormatted = dDate.toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' });
+        // Check if overdue
+        if (!isSettled && dDate < new Date().setHours(0,0,0,0)) {
+          // Flag as overdue
+          isOverdue = true;
+        // End overdue check
+        }
+      // End due date check
+      }
+
+      // Return card HTML template
+      return `
+        <div class="card goal-card" style="display: flex; flex-direction: column; justify-content: space-between; border-top: 3px solid ${isSettled ? '#64748b' : badgeColor};">
+          <div>
+            <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 12px; gap: 8px;">
+              <div>
+                <span class="badge" style="background: ${badgeBg}; color: ${badgeColor}; font-size: 0.72rem; font-weight: 700; margin-bottom: 4px; display: inline-block;">
+                  ${typeLabel}
+                </span>
+                <h3 style="font-size: 1.15rem; font-weight: 800; color: var(--text-main); margin: 0;">${escapeHTML(debt.person)}</h3>
+              </div>
+              <span class="badge" style="background: ${isSettled ? 'rgba(16, 185, 129, 0.15)' : 'rgba(148, 163, 184, 0.15)'}; color: ${isSettled ? '#10b981' : 'var(--text-muted)'}; font-size: 0.72rem; font-weight: 700;">
+                ${isSettled ? '🎉 Settled' : 'Active'}
+              </span>
+            </div>
+
+            ${debt.note ? `<p style="font-size: 0.82rem; color: var(--text-muted); margin-bottom: 14px; line-height: 1.4;">${escapeHTML(debt.note)}</p>` : ''}
+
+            <!-- Repayment Progress Bar -->
+            <div style="margin-bottom: 14px;">
+              <div style="display: flex; justify-content: space-between; font-size: 0.78rem; font-weight: 700; margin-bottom: 6px;">
+                <span style="color: var(--text-muted);">Repayment Progress</span>
+                <span style="color: ${badgeColor};">${percent}%</span>
+              </div>
+              <div style="height: 7px; background: var(--bg-secondary); border-radius: 10px; overflow: hidden; border: 1px solid var(--color-border);">
+                <div style="height: 100%; width: ${percent}%; background: ${isSettled ? '#10b981' : badgeColor}; border-radius: 10px; transition: width 0.4s ease;"></div>
+              </div>
+            </div>
+
+            <!-- Figures Breakdown -->
+            <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; background: var(--bg-secondary); padding: 10px; border-radius: var(--border-radius-sm); margin-bottom: 14px; text-align: center;">
+              <div>
+                <div style="font-size: 0.68rem; color: var(--text-muted); text-transform: uppercase; font-weight: 700;">Total</div>
+                <div style="font-size: 0.88rem; font-weight: 800; color: var(--text-main);">${activeCurrency} ${totalConverted.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</div>
+              </div>
+              <div>
+                <div style="font-size: 0.68rem; color: var(--text-muted); text-transform: uppercase; font-weight: 700;">Repaid</div>
+                <div style="font-size: 0.88rem; font-weight: 800; color: #10b981;">${activeCurrency} ${repaidConverted.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</div>
+              </div>
+              <div>
+                <div style="font-size: 0.68rem; color: var(--text-muted); text-transform: uppercase; font-weight: 700;">Remaining</div>
+                <div style="font-size: 0.88rem; font-weight: 800; color: ${isSettled ? '#10b981' : badgeColor};">${activeCurrency} ${remainingConverted.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</div>
+              </div>
+            </div>
+
+            ${debt.dueDate ? `
+              <div style="display: flex; align-items: center; gap: 6px; font-size: 0.76rem; margin-bottom: 14px; color: ${isOverdue ? '#ef4444' : 'var(--text-muted)'}; font-weight: 600;">
+                <span>📅 Due: ${dueDateFormatted}</span>
+                ${isOverdue ? '<span class="badge" style="background: rgba(239, 68, 68, 0.15); color: #ef4444; font-size: 0.68rem; padding: 2px 6px;">Overdue</span>' : ''}
+              </div>
+            ` : ''}
+          </div>
+
+          <!-- Actions -->
+          <div style="display: flex; gap: 8px; border-top: 1px solid var(--color-border); padding-top: 12px; margin-top: auto;">
+            ${!isSettled ? `
+              <button type="button" class="btn btn-primary btn-sm btn-repay-debt" data-id="${debt.id}" data-person="${escapeHTML(debt.person)}" data-remaining="${remainingConverted}" data-currency="${activeCurrency}" data-type="${debt.type}" style="flex: 1; font-size: 0.8rem; padding: 8px 12px; font-weight: 700;">
+                Log Payment
+              </button>
+            ` : `
+              <button type="button" class="btn btn-secondary btn-sm" disabled style="flex: 1; font-size: 0.8rem; padding: 8px 12px; opacity: 0.7;">
+                Fully Settled
+              </button>
+            `}
+            <button type="button" class="btn btn-secondary btn-sm btn-delete-debt" data-id="${debt.id}" data-person="${escapeHTML(debt.person)}" style="padding: 8px 12px; color: var(--color-danger);" title="Delete Debt">
+              <svg style="width: 14px; height: 14px; fill: none; stroke: currentColor; stroke-width: 2;"><use href="#icon-trash"></use></svg>
+            </button>
+          </div>
+        </div>
+      `;
+    // End debts cards map
+    }).join('');
+
+    // Attach Event Listeners to Debt Cards
+    debtsGrid.querySelectorAll('.btn-repay-debt').forEach(btn => {
+      // Click listener for logging debt payment
+      btn.addEventListener('click', () => {
+        // Extract debt attributes
+        const id = btn.getAttribute('data-id');
+        const person = btn.getAttribute('data-person');
+        const remaining = Number(btn.getAttribute('data-remaining')) || 0;
+        const currency = btn.getAttribute('data-currency');
+        const type = btn.getAttribute('data-type');
+        // Open repayment dialog
+        openRepayDebtModal(id, person, remaining, currency, type);
+      // End click listener
+      });
+    // End forEach
+    });
+
+    // Attach Delete Listeners
+    debtsGrid.querySelectorAll('.btn-delete-debt').forEach(btn => {
+      // Click listener for deleting debt
+      btn.addEventListener('click', () => {
+        // Extract ID and Person name
+        const id = btn.getAttribute('data-id');
+        const person = btn.getAttribute('data-person');
+        // Confirm deletion with user
+        if (confirm(`Are you sure you want to delete the debt record for "${person}"?`)) {
+          // Delete debt from store
+          store.deleteDebt(id);
+          // Refresh user interface
+          syncUI();
+        // End confirm check
+        }
+      // End click listener
+      });
+    // End forEach
+    });
+  // End renderDebts
+  }
+
+  /**
+   * Opens the Repayment Modal pre-filled with the target debt's details.
+   */
+  function openRepayDebtModal(debtId, person, remainingConverted, currency, type) {
+    // Reference modal and form inputs
+    const modal = document.getElementById('repayDebtModal');
+    const idInput = document.getElementById('repayDebtId');
+    const personLabel = document.getElementById('repayDebtPersonLabel');
+    const remainingLabel = document.getElementById('repayDebtRemainingLabel');
+    const amountInput = document.getElementById('repayDebtAmount');
+    const title = document.getElementById('repayDebtModalTitle');
+
+    // Populate debt ID hidden field
+    if (idInput) idInput.value = debtId;
+    // Set dynamic modal title
+    if (title) title.textContent = (type === 'owe') ? 'Pay Back Debt' : 'Record Received Loan Payment';
+    // Set person label
+    if (personLabel) personLabel.textContent = `${(type === 'owe') ? 'Owed to' : 'Lent to'}: ${person}`;
+    // Set remaining balance display
+    if (remainingLabel) remainingLabel.textContent = `Remaining Balance: ${currency} ${remainingConverted.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+    // Configure repayment input
+    if (amountInput) {
+      // Clear previous value
+      amountInput.value = '';
+      // Set maximum to remaining amount
+      amountInput.max = remainingConverted;
+      // Set helpful placeholder
+      amountInput.placeholder = `Up to ${remainingConverted.toFixed(2)}`;
+    // End amountInput check
+    }
+
+    // Open modal dialog
+    if (modal && typeof window.openModal === 'function') {
+      // Trigger modal open
+      window.openModal(modal);
+    // End openModal check
+    }
+  // End openRepayDebtModal
   }
 
   /**
@@ -2245,6 +2918,8 @@
     renderSavingsGoals();
     renderSettings();
     renderTodos();
+    // Render debts and money lent tracker cards and summary metrics
+    renderDebts();
     renderDiagnostics();
     renderDailyAdvice();
     renderFinancialGuide();
@@ -3320,29 +3995,7 @@ Ask me specific financial questions like:
       });
     }
 
-    // Export PDF Financial Statement Listener
-    const exportPdfBtn = document.getElementById('exportPdfBtn');
-    if (exportPdfBtn) {
-      exportPdfBtn.addEventListener('click', (e) => {
-        const store = window.AppStore;
-        const settings = store ? store.getSettings() : {};
-        const isPremium = settings.isPremium;
-        const freePdfUsed = settings.freePdfExportsUsed || 0;
-
-        if (!isPremium && freePdfUsed > 0) {
-          if (e) e.preventDefault();
-          window.openPremiumModal();
-          alert('🔒 PDF Report Export is a Premium feature. Upgrade to Premium for GH₵13.99/mo to generate unlimited PDF reports!');
-          return;
-        }
-
-        if (!isPremium && freePdfUsed === 0) {
-          store.updateSettings({ freePdfExportsUsed: 1 });
-        }
-
-        exportPdfStatement();
-      });
-    }
+    // Export PDF listener handled centrally in Section 25 via exportPdfStatement()
 
     // 5. Add Transaction dialog trigger binding
     elements.addTxBtn.addEventListener('click', () => {
@@ -3859,111 +4512,209 @@ Ask me specific financial questions like:
 
     // 23. Smart receipt OCR scanning removed in favor of manual recording
 
-    // 25. Enhanced PDF Statement Generator (#exportPdfBtn)
+    // 25. Bank-Grade Official PDF Statement Generator (#exportPdfBtn)
     if (elements.exportPdfBtn) {
+      // Attach click listener to export PDF statement button
       elements.exportPdfBtn.addEventListener('click', (e) => {
-        const store = window.AppStore;
-        const s = store.getSettings();
-        if (!s.isPremium) {
-          if (e) e.preventDefault();
-          window.openPremiumModal();
-          alert('🔒 High-Fidelity PDF Statement Export is a Premium Feature. Upgrade to Premium for GH₵13.99/mo!');
-          return;
-        }
-
-        const bal = store.getBalance();
-        const txs = store.getTransactions();
-        const printWin = window.open('', '_blank', 'width=900,height=800');
-        if (!printWin) {
-          alert('Please allow popups to download your PDF Statement.');
-          return;
-        }
-
-        const html = `<!DOCTYPE html>
-<html>
-<head>
-  <title>FinFlow Verified Financial Statement - ${s.userName}</title>
-  <style>
-    body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; padding: 40px; color: #1e293b; background: #fff; }
-    .header { display: flex; justify-content: space-between; align-items: center; border-bottom: 3px solid #06b6d4; padding-bottom: 20px; margin-bottom: 30px; }
-    .logo { font-size: 1.8rem; font-weight: 900; color: #0f172a; }
-    .logo span { color: #06b6d4; }
-    .badge { background: #06b6d4; color: #fff; padding: 4px 10px; border-radius: 4px; font-size: 0.75rem; font-weight: 700; }
-    .grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 20px; margin-bottom: 30px; }
-    .card { background: #f8fafc; border: 1px solid #e2e8f0; padding: 16px; border-radius: 8px; }
-    .card-title { font-size: 0.75rem; color: #64748b; text-transform: uppercase; font-weight: 700; margin-bottom: 6px; }
-    .card-val { font-size: 1.3rem; font-weight: 800; color: #0f172a; }
-    table { width: 100%; border-collapse: collapse; margin-top: 20px; }
-    th { background: #f1f5f9; text-align: left; padding: 10px; font-size: 0.8rem; color: #475569; border-bottom: 2px solid #cbd5e1; }
-    td { padding: 10px; border-bottom: 1px solid #e2e8f0; font-size: 0.85rem; }
-    .footer { margin-top: 40px; border-top: 1px solid #e2e8f0; padding-top: 20px; text-align: center; font-size: 0.75rem; color: #94a3b8; }
-  </style>
-</head>
-<body>
-  <div class="header">
-    <div>
-      <div class="logo">Fin<span>Flow</span></div>
-      <div style="font-size: 0.85rem; color: #64748b; margin-top: 4px;">Verified Financial Statement & Audit Report</div>
-    </div>
-    <div style="text-align: right;">
-      <span class="badge">👑 PREMIUM VERIFIED</span>
-      <div style="font-size: 0.8rem; color: #64748b; margin-top: 6px;">Issued: ${new Date().toLocaleDateString()}</div>
-      <div style="font-size: 0.8rem; color: #64748b;">Account: ${s.userName}</div>
-    </div>
-  </div>
-
-  <div class="grid">
-    <div class="card">
-      <div class="card-title">Total Net Worth</div>
-      <div class="card-val">${s.currency} ${(bal.total || 0).toLocaleString()}</div>
-    </div>
-    <div class="card">
-      <div class="card-title">Total Inflow</div>
-      <div class="card-val" style="color: #10b981;">${s.currency} ${(bal.income || 0).toLocaleString()}</div>
-    </div>
-    <div class="card">
-      <div class="card-title">Total Outflow</div>
-      <div class="card-val" style="color: #ef4444;">${s.currency} ${(bal.expenses || 0).toLocaleString()}</div>
-    </div>
-  </div>
-
-  <h3 style="font-size: 1rem; color: #0f172a; margin-bottom: 10px;">Recent Ledger Transactions (${txs.length} entries)</h3>
-  <table>
-    <thead>
-      <tr>
-        <th>Date</th>
-        <th>Category</th>
-        <th>Description</th>
-        <th>Type</th>
-        <th>Amount</th>
-      </tr>
-    </thead>
-    <tbody>
-      ${txs.slice(0, 30).map(t => `
-        <tr>
-          <td>${t.date}</td>
-          <td>${t.category}</td>
-          <td>${t.description || '-'}</td>
-          <td style="color: ${t.type === 'income' ? '#10b981' : '#ef4444'}; font-weight: 700;">${t.type.toUpperCase()}</td>
-          <td style="font-weight: 700;">${s.currency} ${Number(t.amount).toLocaleString()}</td>
-        </tr>
-      `).join('')}
-    </tbody>
-  </table>
-
-  <div class="footer">
-    FinFlow Official Financial Health Report • Generated by FinFlow Cloud Systems • Zero Watermark
-  </div>
-  <script>
-    window.onload = function() { window.print(); };
-  </script>
-</body>
-</html>`;
-
-        printWin.document.write(html);
-        printWin.document.close();
+        // Prevent default action
+        if (e) e.preventDefault();
+        // Invoke exportPdfStatement router
+        exportPdfStatement();
+      // End click listener
       });
+    // End exportPdfBtn check
     }
+
+    // 26. Bank-Grade Statement Form Submission
+    const statementForm = document.getElementById('statementForm');
+    if (statementForm) {
+      // Attach submit event listener to statement period form
+      statementForm.addEventListener('submit', (e) => {
+        // Prevent browser page reload
+        e.preventDefault();
+        // Extract statement period dropdown selection
+        const period = document.getElementById('statementPeriodSelect') ? document.getElementById('statementPeriodSelect').value : 'current_month';
+        // Extract include breakdown checkbox value
+        const includeBreakdown = document.getElementById('statementIncludeBreakdown') ? document.getElementById('statementIncludeBreakdown').checked : true;
+        // Extract include audit stamp checkbox value
+        const includeAuditStamp = document.getElementById('statementIncludeAuditStamp') ? document.getElementById('statementIncludeAuditStamp').checked : true;
+
+        // Close statement period modal
+        const modal = document.getElementById('statementModal');
+        // Check closeModal helper
+        if (modal && typeof window.closeModal === 'function') {
+          // Close modal
+          window.closeModal(modal);
+        // End closeModal check
+        }
+
+        // Generate and print executive bank-standard statement
+        generateBankGradeStatement(period, includeBreakdown, includeAuditStamp);
+      // End submit listener
+      });
+    // End statementForm check
+    }
+
+    // 27. Debts & Loans Event Bindings
+
+    // Open Add Debt Modal button trigger
+    const openAddDebtModalBtn = document.getElementById('openAddDebtModalBtn');
+    if (openAddDebtModalBtn) {
+      // Attach click listener to open modal button
+      openAddDebtModalBtn.addEventListener('click', () => {
+        // Reference modal element
+        const modal = document.getElementById('addDebtModal');
+        // Open modal dialog
+        if (modal && typeof window.openModal === 'function') {
+          // Open modal
+          window.openModal(modal);
+        // End openModal check
+        }
+      // End click listener
+      });
+    // End openAddDebtModalBtn check
+    }
+
+    // Add Debt Form Submission
+    const addDebtForm = document.getElementById('addDebtForm');
+    if (addDebtForm) {
+      // Attach submit listener
+      addDebtForm.addEventListener('submit', (e) => {
+        // Prevent default form submission
+        e.preventDefault();
+        // Reference AppStore instance
+        const store = window.AppStore;
+        // Safety check
+        if (!store) return;
+        // Extract form values
+        const type = document.getElementById('addDebtType') ? document.getElementById('addDebtType').value : 'owe';
+        const person = document.getElementById('addDebtPerson') ? document.getElementById('addDebtPerson').value.trim() : '';
+        const rawAmount = parseFloat(document.getElementById('addDebtAmount') ? document.getElementById('addDebtAmount').value : '0');
+        const dueDate = document.getElementById('addDebtDueDate') ? document.getElementById('addDebtDueDate').value : '';
+        const note = document.getElementById('addDebtNote') ? document.getElementById('addDebtNote').value.trim() : '';
+
+        // Validate numeric amount
+        if (isNaN(rawAmount) || rawAmount <= 0) {
+          // Alert user
+          alert('Please enter a valid principal amount.');
+          // Exit
+          return;
+        // End amount check
+        }
+
+        // Retrieve active currency
+        const activeCurrency = store.getSettings().currency || 'GH₵';
+        // Convert entered amount from active currency into base currency (GH₵)
+        const baseAmount = convertCurrencyAmount(rawAmount, 'GH₵', activeCurrency);
+
+        // Add debt to store
+        store.addDebt({
+          // Set classification
+          type,
+          // Set debtor/creditor name
+          person,
+          // Set base principal amount
+          amount: baseAmount,
+          // Set target due date
+          dueDate,
+          // Set descriptive note
+          note
+        // End addDebt
+        });
+
+        // Close add debt modal
+        const modal = document.getElementById('addDebtModal');
+        if (modal && typeof window.closeModal === 'function') {
+          // Close modal
+          window.closeModal(modal);
+        // End closeModal check
+        }
+        // Reset form inputs
+        addDebtForm.reset();
+        // Synchronize UI
+        syncUI();
+      // End submit listener
+      });
+    // End addDebtForm check
+    }
+
+    // Repay Debt Form Submission
+    const repayDebtForm = document.getElementById('repayDebtForm');
+    if (repayDebtForm) {
+      // Attach submit listener
+      repayDebtForm.addEventListener('submit', (e) => {
+        // Prevent page reload
+        e.preventDefault();
+        // Reference AppStore
+        const store = window.AppStore;
+        // Safety check
+        if (!store) return;
+        // Extract target debt ID
+        const debtId = document.getElementById('repayDebtId') ? document.getElementById('repayDebtId').value : '';
+        // Extract entered repayment amount
+        const rawPayAmount = parseFloat(document.getElementById('repayDebtAmount') ? document.getElementById('repayDebtAmount').value : '0');
+        // Extract ledger recording preference checkbox
+        const recordToLedger = document.getElementById('repayDebtRecordToLedger') ? document.getElementById('repayDebtRecordToLedger').checked : false;
+
+        // Validate entered repayment amount
+        if (isNaN(rawPayAmount) || rawPayAmount <= 0) {
+          // Alert user
+          alert('Please enter a valid repayment amount.');
+          // Exit
+          return;
+        // End amount check
+        }
+
+        // Active currency
+        const activeCurrency = store.getSettings().currency || 'GH₵';
+        // Convert entered repayment amount from active currency into base currency (GH₵)
+        const basePayAmount = convertCurrencyAmount(rawPayAmount, 'GH₵', activeCurrency);
+
+        // Record debt repayment in store
+        const updatedDebt = store.recordDebtRepayment(debtId, basePayAmount, recordToLedger);
+
+        // Close modal
+        const modal = document.getElementById('repayDebtModal');
+        if (modal && typeof window.closeModal === 'function') {
+          // Close modal
+          window.closeModal(modal);
+        // End closeModal check
+        }
+        // Reset form
+        repayDebtForm.reset();
+
+        // Check if debt has been fully settled
+        if (updatedDebt && updatedDebt.status === 'settled') {
+          // Congratulate user on settling debt
+          alert(`🎉 Great news! The debt record for "${updatedDebt.person}" is now fully settled!`);
+        // End settled check
+        }
+
+        // Refresh interface
+        syncUI();
+      // End submit listener
+      });
+    // End repayDebtForm check
+    }
+
+    // Debt Filter Buttons Binding
+    const debtFilterBtns = document.querySelectorAll('.btn-debt-filter');
+    // Loop through each filter pill button
+    debtFilterBtns.forEach(btn => {
+      // Click event listener
+      btn.addEventListener('click', (e) => {
+        // Remove active class from all filter buttons
+        debtFilterBtns.forEach(b => b.classList.remove('active'));
+        // Add active class to clicked button
+        e.currentTarget.classList.add('active');
+        // Set active debt filter state
+        activeDebtFilter = e.currentTarget.getAttribute('data-filter') || 'all';
+        // Re-render debts view
+        renderDebts();
+      // End click listener
+      });
+    // End forEach
+    });
 
     // 22. Financial Literacy Guide tab clicks and reading logs
     elements.guideTabLessonsBtn.addEventListener('click', () => {

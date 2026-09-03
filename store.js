@@ -149,6 +149,7 @@
       goals: [],        // Clean goals list
       portfolio: [],    // Clean investments portfolio
       todos: [],        // Clean tasks checklist
+      debts: [],        // Debts and money lent tracking array
       settings: {
         userName: 'User',        // Initial user profile display name
         currency: 'GH₵',          // Initial currency symbol
@@ -189,6 +190,12 @@
           this.data = getSeedData();
           this.save();
         } else {
+          // Ensure debts array exists in loaded user data
+          if (!this.data.debts) {
+            // Initialize empty debts array
+            this.data.debts = [];
+          // End debts check
+          }
           this.checkPremiumExpiry();
         }
       } else {
@@ -802,6 +809,39 @@
           }));
           await client.from('savings_goals').upsert(goalRows, { onConflict: 'id' });
         }
+
+        // 5. Sync Debts & Loans
+        if (this.data.debts && this.data.debts.length > 0) {
+          // Wrap in try-catch in case remote Supabase schema doesn't have debts table yet
+          try {
+            // Map local debts to Supabase table rows
+            const debtRows = this.data.debts.map(d => ({
+              // Unique debt ID
+              id: String(d.id),
+              // User identifier
+              user_id: userId,
+              // Debt classification
+              type: d.type,
+              // Person or creditor name
+              person: d.person,
+              // Principal amount
+              amount: Number(d.amount),
+              // Repaid amount
+              repaid: Number(d.repaid || 0),
+              // Due date
+              due_date: d.dueDate || null,
+              // Note
+              note: d.note || '',
+              // Status
+              status: d.status || 'active'
+            // End map
+            }));
+            // Attempt upsert to debts table
+            await client.from('debts').upsert(debtRows, { onConflict: 'id' });
+          // Catch table schema or network exceptions safely
+          } catch(dErr) {}
+        // End debts sync check
+        }
       } catch (cloudErr) {
         console.warn('Supabase cloud sync background error:', cloudErr);
       }
@@ -898,6 +938,39 @@
             targetDate: g.target_date
           }));
         }
+
+        // Fetch Debts & Loans (if debts table exists in cloud)
+        try {
+          // Query cloud debts table for this user
+          const { data: cloudDebts } = await client.from('debts').select('*').eq('user_id', userId);
+          // Check if cloud debts returned
+          if (cloudDebts && cloudDebts.length > 0) {
+            // Map cloud rows to store format
+            this.data.debts = cloudDebts.map(d => ({
+              // String debt ID
+              id: d.id,
+              // Debt type
+              type: d.type,
+              // Debtor/creditor name
+              person: d.person,
+              // Principal amount
+              amount: Number(d.amount),
+              // Repaid amount
+              repaid: Number(d.repaid || 0),
+              // Target due date
+              dueDate: d.due_date || '',
+              // Notes
+              note: d.note || '',
+              // Status
+              status: d.status || 'active',
+              // Timestamp
+              createdAt: d.created_at || new Date().toISOString()
+            // End map
+            }));
+          // End debts length check
+          }
+        // Catch any missing table or network errors safely
+        } catch(e) {}
 
         // Save active state to browser localStorage without triggering a circular cloud push
         this.saveLocally(true);
@@ -1343,6 +1416,188 @@
       if (!this.data.todos) this.data.todos = [];
       this.data.todos = this.data.todos.filter(t => t.id !== todoId);
       this.save();
+    },
+
+    // --- Debts & Loans / IOUs Tracker API ---
+
+    /**
+     * Retrieves all debts and loans tracked by the user.
+     */
+    getDebts() {
+      // Ensure debts array exists in active dataset
+      if (!this.data.debts) this.data.debts = [];
+      // Return cloned array of debts
+      return [...this.data.debts];
+    // End getDebts
+    },
+
+    /**
+     * Adds a new debt or loan entry.
+     */
+    addDebt({ type, person, amount, dueDate, note }) {
+      // Ensure debts array exists
+      if (!this.data.debts) this.data.debts = [];
+      // Push state snapshot for undo tracking
+      this.pushState();
+      // Construct new debt record
+      const newDebt = {
+        // Unique identifier string
+        id: 'debt_' + Date.now() + '_' + Math.random().toString(36).substring(2, 7),
+        // Debt classification: 'owe' (money I borrowed) or 'lent' (money I lent)
+        type: (type === 'lent') ? 'lent' : 'owe',
+        // Person or institution name
+        person: (person || 'Unnamed').trim(),
+        // Principal amount stored in base currency (GH₵)
+        amount: Math.max(0, Number(amount) || 0),
+        // Cumulative repayment amount initialized to zero
+        repaid: 0,
+        // Optional target repayment date string (YYYY-MM-DD)
+        dueDate: dueDate || '',
+        // Descriptive note
+        note: (note || '').trim(),
+        // Current status: active or settled
+        status: 'active',
+        // Creation ISO timestamp
+        createdAt: new Date().toISOString()
+      // End newDebt
+      };
+      // Prepend to debts list
+      this.data.debts.unshift(newDebt);
+      // Persist changes to local storage and trigger cloud sync
+      this.save();
+      // Return created debt object
+      return newDebt;
+    // End addDebt
+    },
+
+    /**
+     * Records a partial or full repayment toward an active debt.
+     */
+    recordDebtRepayment(debtId, repaymentAmount, recordToLedger = false) {
+      // Verify debts array exists
+      if (!this.data.debts) this.data.debts = [];
+      // Find index of matching debt
+      const debtIndex = this.data.debts.findIndex(d => d.id === debtId);
+      // Abort if debt not found
+      if (debtIndex === -1) return null;
+
+      // Push state snapshot for undo
+      this.pushState();
+      // Reference target debt object
+      const debt = this.data.debts[debtIndex];
+      // Parse repayment numeric amount
+      const payAmount = Math.max(0, Number(repaymentAmount) || 0);
+      // Update cumulative repaid amount capped at principal total
+      debt.repaid = Math.min(debt.amount, (Number(debt.repaid) || 0) + payAmount);
+      // Determine if debt has reached full settlement
+      if (debt.repaid >= debt.amount) {
+        // Mark debt as settled
+        debt.status = 'settled';
+      // Otherwise keep as active
+      } else {
+        // Mark debt as active
+        debt.status = 'active';
+      // End status check
+      }
+
+      // Check if user requested logging repayment into main transaction ledger
+      if (recordToLedger && payAmount > 0) {
+        // Paying back borrowed money is an expense; receiving repaid lent money is income
+        const txType = (debt.type === 'owe') ? 'expense' : 'income';
+        // Format descriptive summary
+        const txDesc = (debt.type === 'owe')
+          ? `Debt repayment to ${debt.person}`
+          : `Loan repayment received from ${debt.person}`;
+        // Add transaction entry into main financial ledger
+        this.addTransaction({
+          // Set transaction type
+          type: txType,
+          // Set category
+          category: (debt.type === 'owe') ? 'Utilities' : 'Other',
+          // Amount in base currency
+          amount: payAmount,
+          // Today's date
+          date: new Date().toISOString().split('T')[0],
+          // Descriptive summary
+          description: txDesc
+        // End addTransaction
+        });
+      // End recordToLedger check
+      }
+
+      // Persist changes and synchronize to cloud
+      this.save();
+      // Return updated debt
+      return debt;
+    // End recordDebtRepayment
+    },
+
+    /**
+     * Deletes a debt record permanently.
+     */
+    deleteDebt(debtId) {
+      // Verify debts array exists
+      if (!this.data.debts) return false;
+      // Push state snapshot for undo
+      this.pushState();
+      // Filter out debt matching specified ID
+      this.data.debts = this.data.debts.filter(d => d.id !== debtId);
+      // Persist changes to storage and cloud
+      this.save();
+      // Return success confirmation
+      return true;
+    // End deleteDebt
+    },
+
+    /**
+     * Calculates overall debt summary metrics (Total Owe, Total Lent, Net Balance).
+     */
+    getDebtSummary() {
+      // Ensure debts array exists
+      const debts = this.data.debts || [];
+      // Initialize accumulator metrics
+      let totalOwe = 0;
+      let totalLent = 0;
+      let totalSettled = 0;
+
+      // Loop through all debts
+      debts.forEach(debt => {
+        // Compute remaining principal balance
+        const remaining = Math.max(0, (Number(debt.amount) || 0) - (Number(debt.repaid) || 0));
+        // Accumulate active debts you owe
+        if (debt.type === 'owe' && debt.status !== 'settled') {
+          // Add remaining balance to total owed
+          totalOwe += remaining;
+        // Accumulate active loans owed to you
+        } else if (debt.type === 'lent' && debt.status !== 'settled') {
+          // Add remaining balance to total lent
+          totalLent += remaining;
+        // End type condition
+        }
+        // Count settled debts
+        if (debt.status === 'settled') {
+          // Increment settled counter
+          totalSettled++;
+        // End settled check
+        }
+      // End debts loop
+      });
+
+      // Return calculated summary metrics object
+      return {
+        // Total money borrowed and still owed
+        totalOwe,
+        // Total money lent out and pending recovery
+        totalLent,
+        // Net position (Owed to Me - I Owe)
+        netPosition: totalLent - totalOwe,
+        // Count of settled debts
+        settledCount: totalSettled,
+        // Total debts count
+        totalCount: debts.length
+      // End return object
+      };
+    // End getDebtSummary
     },
 
     // --- Summaries & Calculations ---

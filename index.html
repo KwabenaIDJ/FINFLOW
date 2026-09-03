@@ -45,6 +45,14 @@
       <circle cx="12" cy="12" r="6" />
       <circle cx="12" cy="12" r="2" />
     </symbol>
+    <!-- Debts & Loans / Credit Card Icon Symbol -->
+    <symbol id="icon-debt" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+      <!-- Card outline box -->
+      <rect x="2" y="5" width="20" height="14" rx="2" />
+      <!-- Horizontal magnetic strip -->
+      <line x1="2" y1="10" x2="22" y2="10" />
+    <!-- End icon-debt symbol -->
+    </symbol>
     <!-- Trending/Portfolio Icon -->
     <symbol id="icon-trending" viewBox="0 0 24 24">
       <polyline points="22 7 13.5 15.5 8.5 10.5 2 17" />
@@ -192,6 +200,14 @@
       <a class="nav-item" data-target="goals" onclick="window.switchTab('goals'); closeMobileSidebar();">
         <svg><use href="#icon-target"></use></svg>
         <span>Savings Goals</span>
+      </a>
+      <!-- Debts and Loans navigation link -->
+      <a class="nav-item" data-target="debts" onclick="window.switchTab('debts'); closeMobileSidebar();">
+        <!-- Credit card / debts icon -->
+        <svg><use href="#icon-debt"></use></svg>
+        <!-- Nav label -->
+        <span>Debts & Loans</span>
+      <!-- End debts nav item -->
       </a>
       <a class="nav-item" data-target="todos" onclick="window.switchTab('todos'); closeMobileSidebar();">
         <svg><use href="#icon-todo"></use></svg>
@@ -559,6 +575,115 @@
       <div class="goals-grid" id="goalsGrid">
         <!-- Dynamically populated -->
       </div>
+    </div>
+
+    <!-- ==================== PANEL: DEBTS & LOANS TRACKER ==================== -->
+    <div class="view-panel" id="debts-panel">
+      <!-- Header section with title and action button -->
+      <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; flex-wrap: wrap; gap: 12px;">
+        <!-- Header title group -->
+        <div class="header-title">
+          <!-- Main section heading -->
+          <h2>Debts & Loans Tracker</h2>
+          <!-- Subtitle explanation -->
+          <p>Track money you owe (borrowed) and money owed to you (lent), with partial repayment logging and status tracking.</p>
+        <!-- End header title group -->
+        </div>
+        <!-- Add debt button -->
+        <button class="btn btn-primary" id="openAddDebtModalBtn" style="display: flex; align-items: center; gap: 8px; font-weight: 700;">
+          <!-- Plus icon -->
+          <svg style="width: 16px; height: 16px; fill: none; stroke: currentColor; stroke-width: 2.5;"><use href="#icon-plus"></use></svg>
+          <!-- Button label -->
+          <span>+ Add Debt or Loan</span>
+        <!-- End add debt button -->
+        </button>
+      <!-- End header section -->
+      </div>
+
+      <!-- Debt Summary KPI Cards Grid -->
+      <div class="kpi-grid" style="grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); margin-bottom: 24px;">
+        <!-- KPI Card 1: Total I Owe -->
+        <div class="card kpi-card" style="border-left: 4px solid #ef4444;">
+          <!-- Card header -->
+          <div class="card-header">
+            <!-- Title -->
+            <span class="card-title">Total I Owe (Liabilities)</span>
+            <!-- Type badge -->
+            <span class="badge" style="background: rgba(239, 68, 68, 0.15); color: #ef4444; font-size: 0.72rem;">Borrowed</span>
+          <!-- End card header -->
+          </div>
+          <!-- Converted KPI value -->
+          <div class="kpi-value" id="debtsTotalOwe" style="color: #ef4444;">0.00</div>
+          <!-- Subtext indicator -->
+          <div class="kpi-subtext" id="debtsTotalOweSub">0 active debts</div>
+        <!-- End KPI Card 1 -->
+        </div>
+
+        <!-- KPI Card 2: Total Owed to Me -->
+        <div class="card kpi-card" style="border-left: 4px solid #10b981;">
+          <!-- Card header -->
+          <div class="card-header">
+            <!-- Title -->
+            <span class="card-title">Owed to Me (Receivables)</span>
+            <!-- Type badge -->
+            <span class="badge" style="background: rgba(16, 185, 129, 0.15); color: #10b981; font-size: 0.72rem;">Lent Out</span>
+          <!-- End card header -->
+          </div>
+          <!-- Converted KPI value -->
+          <div class="kpi-value" id="debtsTotalLent" style="color: #10b981;">0.00</div>
+          <!-- Subtext indicator -->
+          <div class="kpi-subtext" id="debtsTotalLentSub">0 active loans</div>
+        <!-- End KPI Card 2 -->
+        </div>
+
+        <!-- KPI Card 3: Net Debt Position -->
+        <div class="card kpi-card" style="border-left: 4px solid #6366f1;">
+          <!-- Card header -->
+          <div class="card-header">
+            <!-- Title -->
+            <span class="card-title">Net Debt Position</span>
+            <!-- Type badge -->
+            <span class="badge" style="background: rgba(99, 102, 241, 0.15); color: #818cf8; font-size: 0.72rem;">Difference</span>
+          <!-- End card header -->
+          </div>
+          <!-- Converted KPI value -->
+          <div class="kpi-value" id="debtsNetPosition" style="color: #818cf8;">0.00</div>
+          <!-- Subtext indicator -->
+          <div class="kpi-subtext" id="debtsNetPositionSub">Owed to Me - I Owe</div>
+        <!-- End KPI Card 3 -->
+        </div>
+      <!-- End KPI Cards Grid -->
+      </div>
+
+      <!-- Debt Filter Bar & Search Container -->
+      <div class="card" style="padding: 16px 20px; margin-bottom: 20px; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 12px;">
+        <!-- Filter Pills Group -->
+        <div style="display: flex; gap: 8px; flex-wrap: wrap;" id="debtsFilterGroup">
+          <!-- Filter All -->
+          <button type="button" class="btn btn-secondary btn-sm btn-debt-filter active" data-filter="all">All</button>
+          <!-- Filter I Owe -->
+          <button type="button" class="btn btn-secondary btn-sm btn-debt-filter" data-filter="owe">I Owe</button>
+          <!-- Filter Owed to Me -->
+          <button type="button" class="btn btn-secondary btn-sm btn-debt-filter" data-filter="lent">Owed to Me</button>
+          <!-- Filter Settled -->
+          <button type="button" class="btn btn-secondary btn-sm btn-debt-filter" data-filter="settled">Settled</button>
+        <!-- End Filter Pills Group -->
+        </div>
+        <!-- Status count indicator text -->
+        <div style="font-size: 0.82rem; color: var(--text-muted); font-weight: 600;" id="debtCountStats">
+          <!-- Dynamic count label -->
+          Showing 0 debts
+        <!-- End status indicator text -->
+        </div>
+      <!-- End Filter Bar Card -->
+      </div>
+
+      <!-- Debts Grid List Container -->
+      <div class="goals-grid" id="debtsGrid">
+        <!-- Debts cards dynamically populated in JavaScript -->
+      <!-- End debts grid container -->
+      </div>
+    <!-- End debts panel -->
     </div>
 
     <!-- ==================== PANEL: TODOS ==================== -->
@@ -1401,6 +1526,237 @@
         </div>
       </form>
     </div>
+  </div>
+
+  <!-- ==================== OVERLAY: ADD DEBT OR LOAN MODAL ==================== -->
+  <div class="modal-overlay" id="addDebtModal">
+    <!-- Modal content container -->
+    <div class="modal-content">
+      <!-- Modal header -->
+      <div class="modal-header">
+        <!-- Modal title -->
+        <h3 class="modal-title">Record Debt or Loan</h3>
+        <!-- Close dialog button -->
+        <button class="modal-close-btn" onclick="window.closeModal(this.closest('.modal-overlay'))" aria-label="Close dialog"><svg><use href="#icon-close"></use></svg></button>
+      <!-- End modal header -->
+      </div>
+      <!-- Add debt form -->
+      <form id="addDebtForm">
+        <!-- Classification selector group -->
+        <div class="form-group">
+          <!-- Classification label -->
+          <label for="addDebtType">Classification</label>
+          <!-- Type select dropdown -->
+          <select id="addDebtType" style="background: var(--bg-secondary); border: 1px solid var(--color-border); color: var(--text-main); border-radius: var(--border-radius-sm); padding: 10px; font-family: inherit; width: 100%;">
+            <!-- Option I Owe -->
+            <option value="owe">🔴 I Owe (Money I Borrowed / Liability)</option>
+            <!-- Option Owed to Me -->
+            <option value="lent">🟢 Owed to Me (Money I Lent Out / Asset)</option>
+          <!-- End type select -->
+          </select>
+        <!-- End classification group -->
+        </div>
+
+        <!-- Person or entity name group -->
+        <div class="form-group">
+          <!-- Person input label -->
+          <label for="addDebtPerson">Person or Institution Name</label>
+          <!-- Person text input -->
+          <input type="text" id="addDebtPerson" required placeholder="e.g. Uncle Kwame, Sarah, Bank Loan" style="background: var(--bg-secondary); border: 1px solid var(--color-border); color: var(--text-main); border-radius: var(--border-radius-sm); padding: 10px; font-family: inherit; width: 100%;">
+        <!-- End person group -->
+        </div>
+
+        <!-- Principal amount group -->
+        <div class="form-group">
+          <!-- Amount label -->
+          <label for="addDebtAmount">Principal Amount</label>
+          <!-- Amount numeric input -->
+          <input type="number" id="addDebtAmount" step="0.01" required min="0.01" placeholder="0.00" style="background: var(--bg-secondary); border: 1px solid var(--color-border); color: var(--text-main); border-radius: var(--border-radius-sm); padding: 10px; font-family: inherit; width: 100%;">
+        <!-- End amount group -->
+        </div>
+
+        <!-- Target due date group -->
+        <div class="form-group">
+          <!-- Due date label -->
+          <label for="addDebtDueDate">Target Due Date (Optional)</label>
+          <!-- Date picker input -->
+          <input type="date" id="addDebtDueDate" style="background: var(--bg-secondary); border: 1px solid var(--color-border); color: var(--text-main); border-radius: var(--border-radius-sm); padding: 10px; font-family: inherit; width: 100%;">
+        <!-- End due date group -->
+        </div>
+
+        <!-- Purpose note group -->
+        <div class="form-group">
+          <!-- Note label -->
+          <label for="addDebtNote">Purpose or Note (Optional)</label>
+          <!-- Note text input -->
+          <input type="text" id="addDebtNote" placeholder="e.g. Emergency car repair, lunch split" style="background: var(--bg-secondary); border: 1px solid var(--color-border); color: var(--text-main); border-radius: var(--border-radius-sm); padding: 10px; font-family: inherit; width: 100%;">
+        <!-- End note group -->
+        </div>
+
+        <!-- Modal footer actions -->
+        <div class="modal-footer">
+          <!-- Cancel modal button -->
+          <button type="button" class="btn btn-secondary btn-cancel-modal" onclick="window.closeModal(this.closest('.modal-overlay'))">Cancel</button>
+          <!-- Submit debt button -->
+          <button type="submit" class="btn btn-primary">Save Debt / Loan</button>
+        <!-- End modal footer -->
+        </div>
+      <!-- End add debt form -->
+      </form>
+    <!-- End modal content -->
+    </div>
+  <!-- End addDebtModal -->
+  </div>
+
+  <!-- ==================== OVERLAY: REPAY DEBT MODAL ==================== -->
+  <div class="modal-overlay" id="repayDebtModal">
+    <!-- Modal content container -->
+    <div class="modal-content">
+      <!-- Modal header -->
+      <div class="modal-header">
+        <!-- Repay modal dynamic title -->
+        <h3 class="modal-title" id="repayDebtModalTitle">Log Repayment</h3>
+        <!-- Close dialog button -->
+        <button class="modal-close-btn" onclick="window.closeModal(this.closest('.modal-overlay'))" aria-label="Close dialog"><svg><use href="#icon-close"></use></svg></button>
+      <!-- End modal header -->
+      </div>
+      <!-- Repay debt form -->
+      <form id="repayDebtForm">
+        <!-- Hidden target debt ID tracker -->
+        <input type="hidden" id="repayDebtId">
+
+        <!-- Balance Info Banner container -->
+        <div id="repayDebtSummaryBanner" style="background: var(--bg-secondary); border: 1px solid var(--color-border); border-radius: var(--border-radius-sm); padding: 14px; margin-bottom: 16px;">
+          <!-- Person label -->
+          <div style="font-size: 0.8rem; color: var(--text-muted); margin-bottom: 4px;" id="repayDebtPersonLabel">Person</div>
+          <!-- Remaining balance display -->
+          <div style="font-size: 1.2rem; font-weight: 800; color: var(--text-main);" id="repayDebtRemainingLabel">Remaining Balance</div>
+        <!-- End balance banner -->
+        </div>
+
+        <!-- Repayment amount group -->
+        <div class="form-group">
+          <!-- Amount label -->
+          <label for="repayDebtAmount">Amount to Pay / Settle</label>
+          <!-- Repayment numeric input -->
+          <input type="number" id="repayDebtAmount" step="0.01" required min="0.01" placeholder="0.00" style="background: var(--bg-secondary); border: 1px solid var(--color-border); color: var(--text-main); border-radius: var(--border-radius-sm); padding: 10px; font-family: inherit; width: 100%;">
+        <!-- End repayment amount group -->
+        </div>
+
+        <!-- Ledger integration checkbox group -->
+        <div class="form-group" style="margin-top: 10px;">
+          <!-- Checkbox label wrapper -->
+          <label style="display: flex; align-items: center; gap: 10px; cursor: pointer; font-size: 0.85rem;">
+            <!-- Checkbox input -->
+            <input type="checkbox" id="repayDebtRecordToLedger" checked style="width: 18px; height: 18px; accent-color: var(--color-primary);">
+            <!-- Explanation text -->
+            <span>Also record this payment as a transaction in my main financial ledger</span>
+          <!-- End checkbox label -->
+          </label>
+        <!-- End ledger integration group -->
+        </div>
+
+        <!-- Modal footer actions -->
+        <div class="modal-footer">
+          <!-- Cancel modal button -->
+          <button type="button" class="btn btn-secondary btn-cancel-modal" onclick="window.closeModal(this.closest('.modal-overlay'))">Cancel</button>
+          <!-- Confirm repayment button -->
+          <button type="submit" class="btn btn-primary" id="repayDebtSubmitBtn">Confirm Repayment</button>
+        <!-- End modal footer -->
+        </div>
+      <!-- End repay debt form -->
+      </form>
+    <!-- End modal content -->
+    </div>
+  <!-- End repayDebtModal -->
+  </div>
+
+  <!-- ==================== OVERLAY: BANK-GRADE PDF STATEMENT MODAL ==================== -->
+  <div class="modal-overlay" id="statementModal">
+    <!-- Modal content container -->
+    <div class="modal-content" style="max-width: 480px;">
+      <!-- Modal header -->
+      <div class="modal-header">
+        <!-- Modal title with print icon -->
+        <h3 class="modal-title" style="display: flex; align-items: center; gap: 8px;">
+          <!-- Print icon -->
+          <svg style="width: 20px; height: 20px; stroke: #06b6d4; fill: none;"><use href="#icon-print"></use></svg>
+          <!-- Title text -->
+          <span>Official Financial Statement</span>
+        <!-- End title -->
+        </h3>
+        <!-- Close dialog button -->
+        <button class="modal-close-btn" onclick="window.closeModal(this.closest('.modal-overlay'))" aria-label="Close dialog"><svg><use href="#icon-close"></use></svg></button>
+      <!-- End modal header -->
+      </div>
+      <!-- Statement configuration form -->
+      <form id="statementForm">
+        <!-- Explanatory description -->
+        <p style="color: var(--text-muted); font-size: 0.85rem; line-height: 1.5; margin-bottom: 16px;">
+          <!-- Description text -->
+          Generate a bank-grade certified financial statement for audits, loan applications, personal budgeting reviews, or monthly archiving.
+        <!-- End description -->
+        </p>
+
+        <!-- Statement Period selector group -->
+        <div class="form-group">
+          <!-- Period label -->
+          <label for="statementPeriodSelect">Statement Period</label>
+          <!-- Period select dropdown -->
+          <select id="statementPeriodSelect" style="background: var(--bg-secondary); border: 1px solid var(--color-border); color: var(--text-main); border-radius: var(--border-radius-sm); padding: 10px; font-family: inherit; width: 100%;">
+            <!-- Current Month option -->
+            <option value="current_month">Current Month</option>
+            <!-- Previous Month option -->
+            <option value="previous_month">Previous Month</option>
+            <!-- Last 3 Months option -->
+            <option value="last_3_months">Last 3 Months</option>
+            <!-- Year to Date option -->
+            <option value="year_to_date">Year to Date (YTD)</option>
+            <!-- All Time option -->
+            <option value="all_time">All-Time Comprehensive Ledger</option>
+          <!-- End period select -->
+          </select>
+        <!-- End period group -->
+        </div>
+
+        <!-- Options checkboxes group -->
+        <div class="form-group" style="margin-top: 14px;">
+          <!-- Category breakdown checkbox label -->
+          <label style="display: flex; align-items: center; gap: 10px; cursor: pointer; font-size: 0.85rem; margin-bottom: 8px;">
+            <!-- Checkbox -->
+            <input type="checkbox" id="statementIncludeBreakdown" checked style="width: 18px; height: 18px; accent-color: #06b6d4;">
+            <!-- Checkbox label text -->
+            <span>Include category spending breakdown table</span>
+          <!-- End label -->
+          </label>
+          <!-- Audit stamp checkbox label -->
+          <label style="display: flex; align-items: center; gap: 10px; cursor: pointer; font-size: 0.85rem;">
+            <!-- Checkbox -->
+            <input type="checkbox" id="statementIncludeAuditStamp" checked style="width: 18px; height: 18px; accent-color: #06b6d4;">
+            <!-- Checkbox label text -->
+            <span>Include certified bank-standard audit stamp & reference code</span>
+          <!-- End label -->
+          </label>
+        <!-- End options group -->
+        </div>
+
+        <!-- Modal footer actions -->
+        <div class="modal-footer" style="margin-top: 24px;">
+          <!-- Cancel modal button -->
+          <button type="button" class="btn btn-secondary btn-cancel-modal" onclick="window.closeModal(this.closest('.modal-overlay'))">Cancel</button>
+          <!-- Generate and print statement button -->
+          <button type="submit" class="btn btn-primary" style="background: linear-gradient(135deg, #06b6d4, #3b82f6); border: none; font-weight: 700;">
+            <!-- Button label -->
+            Generate & Print Statement
+          <!-- End button -->
+          </button>
+        <!-- End modal footer -->
+        </div>
+      <!-- End statement form -->
+      </form>
+    <!-- End modal content -->
+    </div>
+  <!-- End statementModal -->
   </div>
 
   <!-- ==================== OVERLAY: SHARE DASHBOARD MODAL ==================== -->
