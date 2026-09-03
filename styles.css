@@ -2223,3 +2223,97 @@ header {
   /* Webkit backdrop blur support */
   -webkit-backdrop-filter: blur(12px);
 }
+
+/* ==========================================================================
+   CUSTOMER SALES RECEIPT & PRINT STYLES
+   ========================================================================== */
+
+/* Responsive stack for receipt modal on mobile devices */
+@media (max-width: 768px) {
+  /* Collapse split view to stacked layout */
+  .receipt-modal-body {
+    /* Set single column layout */
+    grid-template-columns: 1fr !important;
+    /* Reduce gap */
+    gap: 16px !important;
+  /* End responsive collapse */
+  }
+/* End max-width 768px */
+}
+
+/* Direct print media rules for printing clean receipts */
+@media print {
+  /* When printing-receipt class is active on document body */
+  body.printing-receipt > *:not(#customerReceiptModal) {
+    /* Hide dashboard layout and sidebars */
+    display: none !important;
+  /* End hide */
+  }
+  /* Show receipt modal cleanly without dark backdrop */
+  body.printing-receipt #customerReceiptModal {
+    /* Display modal container */
+    display: block !important;
+    /* Static layout flow */
+    position: static !important;
+    /* Clean white print background */
+    background: #ffffff !important;
+    /* Clear padding */
+    padding: 0 !important;
+    /* Clear margin */
+    margin: 0 !important;
+  /* End modal display */
+  }
+  /* Reset modal content box for physical printer */
+  body.printing-receipt #customerReceiptModal .modal-content {
+    /* Remove box shadow */
+    box-shadow: none !important;
+    /* Remove borders */
+    border: none !important;
+    /* Full width print width */
+    max-width: 100% !important;
+    /* 100% width */
+    width: 100% !important;
+    /* Zero margin */
+    margin: 0 !important;
+    /* Zero padding */
+    padding: 0 !important;
+  /* End modal content reset */
+  }
+  /* Hide interactive form controls and header when printing */
+  body.printing-receipt #customerReceiptModal .modal-header,
+  body.printing-receipt #customerReceiptModal .receipt-config-column,
+  body.printing-receipt #customerReceiptModal .modal-footer,
+  body.printing-receipt #customerReceiptModal .modal-close-btn {
+    /* Hide from printer */
+    display: none !important;
+  /* End hide controls */
+  }
+  /* Expand receipt body for unconstrained print flow */
+  body.printing-receipt #customerReceiptModal .receipt-modal-body {
+    /* Block layout */
+    display: block !important;
+    /* Zero padding */
+    padding: 0 !important;
+    /* Zero margin */
+    margin: 0 !important;
+    /* Allow full expansion */
+    overflow: visible !important;
+    /* Remove max-height cap */
+    max-height: none !important;
+  /* End body expansion */
+  }
+  /* Remove artificial drop shadows and borders from printable paper preview */
+  body.printing-receipt #customerReceiptModal #receiptPaperWrapper {
+    /* Remove paper shadow */
+    box-shadow: none !important;
+    /* Remove outer border */
+    border: none !important;
+    /* Clean zero margins */
+    margin: 0 !important;
+    /* Full width print page */
+    width: 100% !important;
+  /* End paper wrapper print rules */
+  }
+/* End print media rules */
+}
+

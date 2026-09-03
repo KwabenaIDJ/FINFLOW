@@ -930,13 +930,34 @@
             </div>
           </div>
         </div>
-        <div style="display: flex; align-items: center; gap: 14px;">
+        <div style="display: flex; align-items: center; gap: 10px;">
+          <!-- Amount display -->
           <span class="tx-amount" style="font-weight: 800; font-family: monospace; font-size: 0.95rem;">${formattedAmount}</span>
+          <!-- Issue Receipt trigger button (available for income transactions or in business mode) -->
+          ${tx.type === 'income' ? `
+            <button class="btn btn-secondary btn-icon issue-receipt-btn" data-id="${tx.id}" title="Issue Official Customer Receipt" style="padding: 6px; min-width: 28px; height: 28px; color: #0284c7; border-color: rgba(2, 132, 199, 0.35);">
+              <svg style="width: 14px; height: 14px; fill: none; stroke: currentColor; stroke-width: 2;"><use href="#icon-receipt"></use></svg>
+            </button>
+          ` : ''}
+          <!-- Delete transaction button -->
           <button class="btn btn-secondary btn-icon delete-tx-btn" data-id="${tx.id}" title="Delete transaction" style="padding: 6px; min-width: 28px; height: 28px;">
             <svg style="width: 14px; height: 14px; fill: none; stroke: currentColor; stroke-width: 2;"><use href="#icon-trash"></use></svg>
           </button>
         </div>
       `;
+
+      // Bind issue customer receipt button listener
+      const receiptBtn = item.querySelector('.issue-receipt-btn');
+      // If receipt button exists for this transaction
+      if (receiptBtn) {
+        // Listen for click event
+        receiptBtn.addEventListener('click', () => {
+          // Open customer receipt modal pre-populated with this transaction
+          window.openCustomerReceipt(tx);
+        // End click listener
+        });
+      // End receiptBtn check
+      }
 
       // Bind delete button listener
       item.querySelector('.delete-tx-btn').addEventListener('click', (e) => {
@@ -3346,6 +3367,15 @@
       if (settingsTitle) settingsTitle.textContent = 'Profile & Settings';
       if (settingsSub) settingsSub.textContent = 'Manage your account name, preferred currency, and monthly budget aggregates.';
     // End isBusiness check
+    }
+
+    // Toggle header Issue Receipt button visibility (visible when managing a Business workspace)
+    const issueReceiptHeaderBtn = document.getElementById('issueReceiptHeaderBtn');
+    // If button element exists
+    if (issueReceiptHeaderBtn) {
+      // Show in Business mode, hide in Personal mode
+      issueReceiptHeaderBtn.style.display = isBusiness ? 'inline-flex' : 'none';
+    // End issueReceiptHeaderBtn check
     }
 
     // 4. Synchronize Popover Dropdown Account List
@@ -6854,6 +6884,468 @@ Ask me specific financial questions like:
     // End submit listener
     });
   // End addBizForm check
+  }
+
+  /* ==========================================================================
+     CUSTOMER SALES RECEIPT & COMMERCIAL INVOICING SYSTEM
+     ========================================================================== */
+
+  /**
+   * Synchronizes and redraws the live customer receipt paper preview based on active input field values.
+   */
+  window.updateReceiptLivePreview = function() {
+    // Reference application store
+    const store = window.AppStore;
+    // Retrieve active account
+    const activeAccount = store ? store.getActiveAccount() : { name: 'FinFlow Enterprise', businessCategory: 'Commercial Trade', currency: 'GH₵' };
+    // Company display name
+    const bizName = activeAccount.name || 'Commercial Enterprise';
+    // Company industry/category
+    const bizCategory = activeAccount.businessCategory || 'Trade & Services';
+    // Customer Name input element
+    const customerNameInput = document.getElementById('receiptCustomerName');
+    // Customer Contact input element
+    const customerContactInput = document.getElementById('receiptCustomerContact');
+    // Item description input element
+    const itemDescInput = document.getElementById('receiptItemDescription');
+    // Amount input element
+    const amountInput = document.getElementById('receiptAmountInput');
+    // Currency selector element
+    const currencySelect = document.getElementById('receiptCurrencySelect');
+    // Payment method selector element
+    const paymentMethodSelect = document.getElementById('receiptPaymentMethodSelect');
+    // Receipt number input element
+    const numberInput = document.getElementById('receiptNumberInput');
+    // Date input element
+    const dateInput = document.getElementById('receiptDateInput');
+    // Notes input element
+    const notesInput = document.getElementById('receiptNotesInput');
+
+    // Extract customer name value with default fallback
+    const customerName = (customerNameInput && customerNameInput.value.trim()) ? customerNameInput.value.trim() : 'Valued Customer';
+    // Extract customer contact value with default fallback
+    const customerContact = (customerContactInput && customerContactInput.value.trim()) ? customerContactInput.value.trim() : 'No phone / email provided';
+    // Extract item description value with default fallback
+    const itemDesc = (itemDescInput && itemDescInput.value.trim()) ? itemDescInput.value.trim() : 'Product Sales / Professional Services';
+    // Extract numeric amount
+    const amount = amountInput ? (parseFloat(amountInput.value) || 0) : 0;
+    // Extract currency
+    const currency = currencySelect ? currencySelect.value : (activeAccount.currency || 'GH₵');
+    // Extract payment method
+    const paymentMethod = paymentMethodSelect ? paymentMethodSelect.value : 'Cash';
+    // Extract receipt number
+    const receiptNum = (numberInput && numberInput.value.trim()) ? numberInput.value.trim() : 'REC-0001';
+    // Extract date
+    const rawDate = dateInput ? dateInput.value : '';
+    // Format date nicely
+    let formattedDate = rawDate;
+    // Format date string if valid date provided
+    if (rawDate) {
+      // Split date components
+      const parts = rawDate.split('-');
+      // If full year-month-day exists
+      if (parts.length === 3) {
+        // Month names abbreviation list
+        const monthNames = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+        // Parse month integer
+        const mIdx = parseInt(parts[1], 10) - 1;
+        // Build readable date
+        formattedDate = `${monthNames[mIdx] || parts[1]} ${parts[2]}, ${parts[0]}`;
+      // End parts check
+      }
+    // End rawDate check
+    }
+    // Extract notes
+    const notes = (notesInput && notesInput.value.trim()) ? notesInput.value.trim() : 'Goods & services rendered in good order. Thank you for your business!';
+
+    // Formatted monetary amount
+    const formattedAmount = `${currency} ${amount.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+
+    // Update Paper Preview Elements
+    const paperBizName = document.getElementById('receiptPaperBizName');
+    // Update company title
+    if (paperBizName) paperBizName.textContent = bizName;
+    // Paper company category
+    const paperBizCategory = document.getElementById('receiptPaperBizCategory');
+    // Update category
+    if (paperBizCategory) paperBizCategory.textContent = bizCategory;
+    // Paper customer name
+    const paperCustomerName = document.getElementById('receiptPaperCustomerName');
+    // Update customer name
+    if (paperCustomerName) paperCustomerName.textContent = customerName;
+    // Paper customer contact
+    const paperCustomerContact = document.getElementById('receiptPaperCustomerContact');
+    // Update customer contact
+    if (paperCustomerContact) paperCustomerContact.textContent = customerContact;
+    // Paper receipt number
+    const paperNumber = document.getElementById('receiptPaperNumber');
+    // Update number
+    if (paperNumber) paperNumber.textContent = receiptNum;
+    // Paper date
+    const paperDate = document.getElementById('receiptPaperDate');
+    // Update date
+    if (paperDate) paperDate.textContent = formattedDate || 'Current Date';
+    // Paper payment method
+    const paperPaymentMethod = document.getElementById('receiptPaperPaymentMethod');
+    // Update payment method
+    if (paperPaymentMethod) paperPaymentMethod.textContent = paymentMethod;
+    // Paper item description
+    const paperItemDesc = document.getElementById('receiptPaperItemDesc');
+    // Update description
+    if (paperItemDesc) paperItemDesc.textContent = itemDesc;
+    // Paper item amount
+    const paperAmount = document.getElementById('receiptPaperAmount');
+    // Update amount
+    if (paperAmount) paperAmount.textContent = formattedAmount;
+    // Paper subtotal
+    const paperSubtotal = document.getElementById('receiptPaperSubtotal');
+    // Update subtotal
+    if (paperSubtotal) paperSubtotal.textContent = formattedAmount;
+    // Paper total paid
+    const paperTotalPaid = document.getElementById('receiptPaperTotalPaid');
+    // Update total
+    if (paperTotalPaid) paperTotalPaid.textContent = formattedAmount;
+    // Paper notes
+    const paperNotes = document.getElementById('receiptPaperNotes');
+    // Update notes
+    if (paperNotes) paperNotes.textContent = notes;
+    // Paper signoff
+    const paperSignoff = document.getElementById('receiptPaperSignoff');
+    // Update signoff
+    if (paperSignoff) paperSignoff.textContent = `${bizName} Commercial Registry`;
+  // End updateReceiptLivePreview
+  };
+
+  /**
+   * Opens the Customer Receipt modal dialog and pre-fills transaction details.
+   */
+  window.openCustomerReceipt = function(tx = null) {
+    // Reference application store
+    const store = window.AppStore;
+    // Retrieve active account
+    const activeAccount = store ? store.getActiveAccount() : { name: 'FinFlow Enterprise', currency: 'GH₵' };
+    // Today's date object
+    const today = new Date();
+    // Format YYYY-MM-DD
+    const todayYMD = today.toISOString().split('T')[0];
+    // Generate unique sequential receipt number
+    const yearStr = today.getFullYear().toString();
+    // Pad month
+    const monthStr = String(today.getMonth() + 1).padStart(2, '0');
+    // Pad day
+    const dayStr = String(today.getDate()).padStart(2, '0');
+    // Random 4 digit entropy code
+    const randEntropy = Math.floor(1000 + Math.random() * 9000);
+    // Assembled receipt number
+    const generatedReceiptNum = `REC-${yearStr}${monthStr}${dayStr}-${randEntropy}`;
+
+    // Customer Name input element
+    const customerNameInput = document.getElementById('receiptCustomerName');
+    // Customer Contact input element
+    const customerContactInput = document.getElementById('receiptCustomerContact');
+    // Item description input element
+    const itemDescInput = document.getElementById('receiptItemDescription');
+    // Amount input element
+    const amountInput = document.getElementById('receiptAmountInput');
+    // Currency selector element
+    const currencySelect = document.getElementById('receiptCurrencySelect');
+    // Payment method selector element
+    const paymentMethodSelect = document.getElementById('receiptPaymentMethodSelect');
+    // Receipt number input element
+    const numberInput = document.getElementById('receiptNumberInput');
+    // Date input element
+    const dateInput = document.getElementById('receiptDateInput');
+    // Notes input element
+    const notesInput = document.getElementById('receiptNotesInput');
+
+    // Populate receipt number
+    if (numberInput) numberInput.value = generatedReceiptNum;
+    // Populate date
+    if (dateInput) dateInput.value = tx && tx.date ? tx.date : todayYMD;
+    // Populate currency
+    if (currencySelect) currencySelect.value = activeAccount.currency || 'GH₵';
+    // Populate payment method default
+    if (paymentMethodSelect) paymentMethodSelect.value = 'MTN Mobile Money (MoMo)';
+
+    // If transaction object is supplied
+    if (tx) {
+      // Set description
+      if (itemDescInput) itemDescInput.value = tx.description || '';
+      // Set amount
+      if (amountInput) amountInput.value = tx.amount ? tx.amount.toFixed(2) : '0.00';
+      // Set note
+      if (notesInput) notesInput.value = tx.note || 'Payment received in full. Thank you for your business!';
+      // Reset customer name for fresh entry
+      if (customerNameInput) customerNameInput.value = '';
+      // Reset contact
+      if (customerContactInput) customerContactInput.value = '';
+    // If opening fresh blank receipt
+    } else {
+      // Clear description
+      if (itemDescInput) itemDescInput.value = '';
+      // Clear amount
+      if (amountInput) amountInput.value = '';
+      // Default note
+      if (notesInput) notesInput.value = 'Payment received in full. Thank you for your business!';
+      // Clear customer name
+      if (customerNameInput) customerNameInput.value = '';
+      // Clear contact
+      if (customerContactInput) customerContactInput.value = '';
+    // End tx check
+    }
+
+    // Update the live preview paper
+    window.updateReceiptLivePreview();
+
+    // Retrieve modal overlay element
+    const modal = document.getElementById('customerReceiptModal');
+    // Open modal using standard modal helper
+    if (modal && typeof window.openModal === 'function') {
+      // Trigger modal open
+      window.openModal(modal);
+    // End openModal check
+    }
+  // End openCustomerReceipt
+  };
+
+  /**
+   * Executes the direct physical print command for the customer receipt.
+   */
+  window.printCustomerReceipt = function() {
+    // Add printing-receipt CSS class to isolate paper preview
+    document.body.classList.add('printing-receipt');
+    // Short delay to allow style reflow before browser print dialog
+    setTimeout(() => {
+      // Trigger browser native print
+      window.print();
+      // Remove isolation class after print dialog closes
+      setTimeout(() => {
+        // Clean up class
+        document.body.classList.remove('printing-receipt');
+      // End cleanup timeout
+      }, 500);
+    // End print timeout
+    }, 150);
+  // End printCustomerReceipt
+  };
+
+  /**
+   * Generates and prints a clean, standalone PDF document for the receipt.
+   */
+  window.downloadCustomerReceiptPdf = function() {
+    // Extract HTML content of paper preview
+    const paperElement = document.getElementById('receiptPaperWrapper');
+    // Check if element exists
+    if (!paperElement) return;
+
+    // Retrieve receipt number for filename
+    const numEl = document.getElementById('receiptPaperNumber');
+    // Filename label
+    const receiptCode = numEl ? numEl.textContent.trim() : 'REC-SALES';
+    // Document title
+    const docTitle = `Customer_Receipt_${receiptCode}`;
+
+    // Open clean print window
+    const printWin = window.open('', '_blank', 'width=780,height=900');
+    // Check if popup was permitted
+    if (!printWin) {
+      // Fallback to direct window.print()
+      window.printCustomerReceipt();
+      // Exit method
+      return;
+    // End printWin check
+    }
+
+    // Assemble high-definition printable HTML document
+    const docHtml = `
+      <!DOCTYPE html>
+      <html lang="en">
+      <head>
+        <meta charset="UTF-8">
+        <title>${escapeHTML(docTitle)}</title>
+        <style>
+          @page {
+            size: auto;
+            margin: 12mm 15mm;
+          }
+          body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+            background: #ffffff;
+            color: #0f172a;
+            margin: 0;
+            padding: 20px;
+          }
+          * {
+            box-sizing: border-box;
+          }
+          @media print {
+            body {
+              padding: 0;
+            }
+          }
+        </style>
+      </head>
+      <body>
+        ${paperElement.outerHTML}
+        <script>
+          window.onload = function() {
+            setTimeout(function() {
+              window.print();
+            }, 350);
+          };
+        <\/script>
+      </body>
+      </html>
+    `;
+
+    // Write content to print window
+    printWin.document.open();
+    // Write markup
+    printWin.document.write(docHtml);
+    // Finalize document stream
+    printWin.document.close();
+  // End downloadCustomerReceiptPdf
+  };
+
+  /**
+   * Formats and shares the digital receipt directly via WhatsApp to the customer.
+   */
+  window.shareReceiptWhatsapp = function() {
+    // Reference application store
+    const store = window.AppStore;
+    // Retrieve active business account
+    const activeAccount = store ? store.getActiveAccount() : { name: 'FinFlow Enterprise' };
+    // Business name
+    const bizName = activeAccount.name || 'Commercial Enterprise';
+    // Customer Name
+    const custName = (document.getElementById('receiptPaperCustomerName') ? document.getElementById('receiptPaperCustomerName').textContent : '').trim();
+    // Customer Contact
+    const custContact = (document.getElementById('receiptCustomerContact') ? document.getElementById('receiptCustomerContact').value : '').trim();
+    // Receipt Number
+    const recNum = (document.getElementById('receiptPaperNumber') ? document.getElementById('receiptPaperNumber').textContent : '').trim();
+    // Receipt Date
+    const recDate = (document.getElementById('receiptPaperDate') ? document.getElementById('receiptPaperDate').textContent : '').trim();
+    // Item Description
+    const itemDesc = (document.getElementById('receiptPaperItemDesc') ? document.getElementById('receiptPaperItemDesc').textContent : '').trim();
+    // Total Paid
+    const totalPaid = (document.getElementById('receiptPaperTotalPaid') ? document.getElementById('receiptPaperTotalPaid').textContent : '').trim();
+    // Payment Method
+    const payMethod = (document.getElementById('receiptPaperPaymentMethod') ? document.getElementById('receiptPaperPaymentMethod').textContent : '').trim();
+
+    // Clean phone number: remove non-digits
+    let cleanPhone = custContact.replace(/[^0-9]/g, '');
+    // If Ghanaian local number starting with 0, prepend 233
+    if (cleanPhone.startsWith('0') && cleanPhone.length === 10) {
+      // Prepend country code
+      cleanPhone = '233' + cleanPhone.substring(1);
+    // End Ghanaian check
+    }
+
+    // Construct professional WhatsApp invoice receipt text
+    const msg = 
+`🧾 *OFFICIAL SALES RECEIPT*
+━━━━━━━━━━━━━━━━━━━━
+🏢 *${bizName}*
+🔢 Receipt No: *${recNum}*
+📅 Date: ${recDate}
+👤 Billed To: *${custName}*
+━━━━━━━━━━━━━━━━━━━━
+📦 *Item / Service:*
+${itemDesc}
+
+💵 *Total Paid:* *${totalPaid}*
+💳 *Payment Method:* ${payMethod}
+✅ *Status:* PAID IN FULL
+━━━━━━━━━━━━━━━━━━━━
+🙏 _Thank you for your business!_
+_Powered by FinFlow Commercial Suite_`;
+
+    // Encode message text
+    const encodedMsg = encodeURIComponent(msg);
+    // WhatsApp URL
+    const waUrl = cleanPhone ? `https://wa.me/${cleanPhone}?text=${encodedMsg}` : `https://wa.me/?text=${encodedMsg}`;
+    // Open WhatsApp in new tab/window
+    window.open(waUrl, '_blank');
+  // End shareReceiptWhatsapp
+  };
+
+  // Attach live update listeners to all customer receipt input fields
+  const receiptInputIds = [
+    'receiptCustomerName',
+    'receiptCustomerContact',
+    'receiptItemDescription',
+    'receiptAmountInput',
+    'receiptCurrencySelect',
+    'receiptPaymentMethodSelect',
+    'receiptNumberInput',
+    'receiptDateInput',
+    'receiptNotesInput'
+  ];
+  // Loop through input IDs
+  receiptInputIds.forEach(id => {
+    // Retrieve DOM element
+    const el = document.getElementById(id);
+    // If element exists
+    if (el) {
+      // Listen for text input typing
+      el.addEventListener('input', window.updateReceiptLivePreview);
+      // Listen for dropdown and date changes
+      el.addEventListener('change', window.updateReceiptLivePreview);
+    // End el check
+    }
+  // End loop
+  });
+
+  // Attach click listener to Header Issue Receipt button
+  const issueReceiptHeaderBtnEl = document.getElementById('issueReceiptHeaderBtn');
+  // If button exists
+  if (issueReceiptHeaderBtnEl) {
+    // Listen for click event
+    issueReceiptHeaderBtnEl.addEventListener('click', () => {
+      // Open customer receipt modal
+      window.openCustomerReceipt();
+    // End click listener
+    });
+  // End issueReceiptHeaderBtnEl check
+  }
+
+  // Attach click listener to Print Receipt button
+  const printReceiptBtnEl = document.getElementById('printReceiptBtn');
+  // If button exists
+  if (printReceiptBtnEl) {
+    // Listen for click event
+    printReceiptBtnEl.addEventListener('click', () => {
+      // Execute physical print command
+      window.printCustomerReceipt();
+    // End click listener
+    });
+  // End printReceiptBtnEl check
+  }
+
+  // Attach click listener to Download / Print PDF button
+  const downloadReceiptPdfBtnEl = document.getElementById('downloadReceiptPdfBtn');
+  // If button exists
+  if (downloadReceiptPdfBtnEl) {
+    // Listen for click event
+    downloadReceiptPdfBtnEl.addEventListener('click', () => {
+      // Generate clean PDF document
+      window.downloadCustomerReceiptPdf();
+    // End click listener
+    });
+  // End downloadReceiptPdfBtnEl check
+  }
+
+  // Attach click listener to WhatsApp Customer Share button
+  const shareReceiptWhatsappBtnEl = document.getElementById('shareReceiptWhatsappBtn');
+  // If button exists
+  if (shareReceiptWhatsappBtnEl) {
+    // Listen for click event
+    shareReceiptWhatsappBtnEl.addEventListener('click', () => {
+      // Share receipt via WhatsApp
+      window.shareReceiptWhatsapp();
+    // End click listener
+    });
+  // End shareReceiptWhatsappBtnEl check
   }
 
 })(window);

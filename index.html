@@ -167,6 +167,18 @@
     <symbol id="icon-print" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
       <path d="M6 9V2h12v7M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2m-12 0v4h8v-4"></path>
     </symbol>
+    <!-- Receipt Icon for Customer Invoicing & Sales Receipts -->
+    <symbol id="icon-receipt" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+      <!-- Receipt paper jagged outline -->
+      <path d="M4 2v20l2-1 2 1 2-1 2 1 2-1 2 1 2-1 2 1V2l-2 1-2-1-2 1-2-1-2 1-2-1-2 1-2-1z"></path>
+      <!-- Receipt line 1 -->
+      <line x1="8" y1="7" x2="16" y2="7"></line>
+      <!-- Receipt line 2 -->
+      <line x1="8" y1="11" x2="16" y2="11"></line>
+      <!-- Receipt line 3 -->
+      <line x1="8" y1="15" x2="12" y2="15"></line>
+    <!-- End receipt icon symbol -->
+    </symbol>
     <!-- Close/Cross Icon -->
     <symbol id="icon-close" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
       <line x1="18" y1="6" x2="6" y2="18" />
@@ -393,6 +405,14 @@
           <button class="btn btn-secondary" id="exportPdfBtn" title="Generate & Download PDF Financial Statement Report" style="padding: 10px 14px; display: flex; align-items: center; gap: 6px; font-weight: 700;">
             <svg style="width: 16px; height: 16px; fill: none; stroke: currentColor; stroke-width: 2;"><use href="#icon-print"></use></svg>
             <span>PDF Report</span>
+          </button>
+          <!-- Commercial Customer Receipt Issuer button (visible in Business Mode) -->
+          <button class="btn btn-secondary" id="issueReceiptHeaderBtn" title="Issue Official Sales Receipt to Customer" style="display: none; padding: 10px 14px; align-items: center; gap: 6px; font-weight: 700; border: 1px solid rgba(2, 132, 199, 0.4); background: rgba(2, 132, 199, 0.12); color: #0284c7;">
+            <!-- Receipt icon -->
+            <svg style="width: 16px; height: 16px; fill: none; stroke: currentColor; stroke-width: 2;"><use href="#icon-receipt"></use></svg>
+            <!-- Receipt button text -->
+            <span>Issue Receipt</span>
+          <!-- End issue receipt button -->
           </button>
         </div>
 
@@ -2028,6 +2048,297 @@
     <!-- End modal content -->
     </div>
   <!-- End addBusinessAccountModal -->
+  </div>
+
+  <!-- ==================== OVERLAY: CUSTOMER SALES RECEIPT & INVOICE MODAL ==================== -->
+  <div class="modal-overlay" id="customerReceiptModal">
+    <!-- Modal content container with wide split layout for editor and live preview -->
+    <div class="modal-content" style="max-width: 880px; width: 95%; max-height: 92vh; display: flex; flex-direction: column; padding: 0; overflow: hidden; border-radius: var(--border-radius-lg);">
+      <!-- Modal Header -->
+      <div class="modal-header" style="padding: 16px 20px; border-bottom: 1px solid var(--color-border); display: flex; justify-content: space-between; align-items: center; background: var(--bg-secondary);">
+        <!-- Title with icon -->
+        <h3 class="modal-title" style="margin: 0; display: flex; align-items: center; gap: 8px; font-size: 1.05rem; font-weight: 800;">
+          <!-- Receipt icon -->
+          <svg style="width: 20px; height: 20px; fill: none; stroke: currentColor; stroke-width: 2.2;"><use href="#icon-receipt"></use></svg>
+          <!-- Title text -->
+          <span>Issue Customer Sales Receipt</span>
+        <!-- End title -->
+        </h3>
+        <!-- Close button -->
+        <button type="button" class="modal-close-btn" onclick="window.closeModal(document.getElementById('customerReceiptModal'))">&times;</button>
+      <!-- End modal header -->
+      </div>
+
+      <!-- Modal Body: Split view with Configuration on left and Live Paper on right -->
+      <div class="modal-body receipt-modal-body" style="padding: 20px; overflow-y: auto; max-height: calc(92vh - 135px); display: grid; grid-template-columns: minmax(290px, 340px) 1fr; gap: 24px; background: var(--bg-primary);">
+        
+        <!-- Column 1: Configuration Form -->
+        <div class="receipt-config-column" style="display: flex; flex-direction: column; gap: 14px;">
+          <!-- Section title -->
+          <div style="font-size: 0.85rem; font-weight: 800; color: var(--text-main); text-transform: uppercase; letter-spacing: 0.5px; border-bottom: 1px solid var(--color-border); padding-bottom: 6px;">
+            <!-- Heading text -->
+            Receipt Details
+          <!-- End title -->
+          </div>
+
+          <!-- Customer Name Input -->
+          <div class="form-group" style="margin-bottom: 0;">
+            <!-- Label -->
+            <label for="receiptCustomerName" style="display: block; font-size: 0.8rem; font-weight: 700; color: var(--text-main); margin-bottom: 4px;">Billed To / Customer Name *</label>
+            <!-- Text input -->
+            <input type="text" id="receiptCustomerName" placeholder="e.g. Adwoa Mensah, Acme Ltd" style="background: var(--bg-secondary); border: 1px solid var(--color-border); color: var(--text-main); border-radius: var(--border-radius-sm); padding: 9px 12px; font-family: inherit; width: 100%; font-size: 0.88rem;">
+          <!-- End Customer Name Input -->
+          </div>
+
+          <!-- Customer Contact Input (Phone or Email) -->
+          <div class="form-group" style="margin-bottom: 0;">
+            <!-- Label -->
+            <label for="receiptCustomerContact" style="display: block; font-size: 0.8rem; font-weight: 700; color: var(--text-main); margin-bottom: 4px;">Customer Phone or Email</label>
+            <!-- Text input -->
+            <input type="text" id="receiptCustomerContact" placeholder="e.g. 0244123456 or client@gmail.com" style="background: var(--bg-secondary); border: 1px solid var(--color-border); color: var(--text-main); border-radius: var(--border-radius-sm); padding: 9px 12px; font-family: inherit; width: 100%; font-size: 0.88rem;">
+          <!-- End Customer Contact Input -->
+          </div>
+
+          <!-- Item Description Input -->
+          <div class="form-group" style="margin-bottom: 0;">
+            <!-- Label -->
+            <label for="receiptItemDescription" style="display: block; font-size: 0.8rem; font-weight: 700; color: var(--text-main); margin-bottom: 4px;">Item / Service Rendered *</label>
+            <!-- Text input -->
+            <input type="text" id="receiptItemDescription" placeholder="e.g. Graphic Design & Brand Identity" style="background: var(--bg-secondary); border: 1px solid var(--color-border); color: var(--text-main); border-radius: var(--border-radius-sm); padding: 9px 12px; font-family: inherit; width: 100%; font-size: 0.88rem;">
+          <!-- End Item Description Input -->
+          </div>
+
+          <!-- Amount and Currency Row -->
+          <div style="display: grid; grid-template-columns: 2fr 1fr; gap: 10px;">
+            <!-- Amount group -->
+            <div class="form-group" style="margin-bottom: 0;">
+              <!-- Label -->
+              <label for="receiptAmountInput" style="display: block; font-size: 0.8rem; font-weight: 700; color: var(--text-main); margin-bottom: 4px;">Total Amount Paid *</label>
+              <!-- Number input -->
+              <input type="number" step="0.01" min="0.01" id="receiptAmountInput" placeholder="0.00" style="background: var(--bg-secondary); border: 1px solid var(--color-border); color: var(--text-main); border-radius: var(--border-radius-sm); padding: 9px 12px; font-family: inherit; width: 100%; font-size: 0.88rem; font-weight: 700;">
+            <!-- End amount group -->
+            </div>
+            <!-- Currency selector group -->
+            <div class="form-group" style="margin-bottom: 0;">
+              <!-- Label -->
+              <label for="receiptCurrencySelect" style="display: block; font-size: 0.8rem; font-weight: 700; color: var(--text-main); margin-bottom: 4px;">Currency</label>
+              <!-- Select dropdown -->
+              <select id="receiptCurrencySelect" style="background: var(--bg-secondary); border: 1px solid var(--color-border); color: var(--text-main); border-radius: var(--border-radius-sm); padding: 9px 8px; font-family: inherit; width: 100%; font-size: 0.88rem; font-weight: 700;">
+                <option value="GH₵">GH₵</option>
+                <option value="$">$ (USD)</option>
+                <option value="€">€ (EUR)</option>
+                <option value="£">£ (GBP)</option>
+                <option value="₦">₦ (NGN)</option>
+                <option value="KSh">KSh</option>
+                <option value="R">R (ZAR)</option>
+              </select>
+            <!-- End currency selector group -->
+            </div>
+          <!-- End amount and currency row -->
+          </div>
+
+          <!-- Payment Method Row -->
+          <div class="form-group" style="margin-bottom: 0;">
+            <!-- Label -->
+            <label for="receiptPaymentMethodSelect" style="display: block; font-size: 0.8rem; font-weight: 700; color: var(--text-main); margin-bottom: 4px;">Payment Method</label>
+            <!-- Select dropdown -->
+            <select id="receiptPaymentMethodSelect" style="background: var(--bg-secondary); border: 1px solid var(--color-border); color: var(--text-main); border-radius: var(--border-radius-sm); padding: 9px 12px; font-family: inherit; width: 100%; font-size: 0.88rem; font-weight: 600;">
+              <option value="MTN Mobile Money (MoMo)">📱 MTN Mobile Money (MoMo)</option>
+              <option value="Telecel Cash">📱 Telecel Cash</option>
+              <option value="Cash">💵 Cash</option>
+              <option value="Bank Wire / Transfer">🏦 Bank Wire / Transfer</option>
+              <option value="Debit / Credit Card">💳 Debit / Credit Card</option>
+              <option value="Cheque">📑 Cheque</option>
+            </select>
+          <!-- End Payment Method Row -->
+          </div>
+
+          <!-- Receipt Number and Date Row -->
+          <div style="display: grid; grid-template-columns: 1.2fr 1fr; gap: 10px;">
+            <!-- Receipt Number input -->
+            <div class="form-group" style="margin-bottom: 0;">
+              <!-- Label -->
+              <label for="receiptNumberInput" style="display: block; font-size: 0.8rem; font-weight: 700; color: var(--text-main); margin-bottom: 4px;">Receipt #</label>
+              <!-- Read-only or editable text input -->
+              <input type="text" id="receiptNumberInput" style="background: var(--bg-secondary); border: 1px solid var(--color-border); color: var(--text-muted); border-radius: var(--border-radius-sm); padding: 8px 10px; font-family: monospace; width: 100%; font-size: 0.78rem;">
+            <!-- End receipt number input -->
+            </div>
+            <!-- Date input -->
+            <div class="form-group" style="margin-bottom: 0;">
+              <!-- Label -->
+              <label for="receiptDateInput" style="display: block; font-size: 0.8rem; font-weight: 700; color: var(--text-main); margin-bottom: 4px;">Date Issued</label>
+              <!-- Date picker input -->
+              <input type="date" id="receiptDateInput" style="background: var(--bg-secondary); border: 1px solid var(--color-border); color: var(--text-main); border-radius: var(--border-radius-sm); padding: 8px 8px; font-family: inherit; width: 100%; font-size: 0.78rem;">
+            <!-- End date input -->
+            </div>
+          <!-- End Receipt Number and Date Row -->
+          </div>
+
+          <!-- Notes / Terms textarea -->
+          <div class="form-group" style="margin-bottom: 0;">
+            <!-- Label -->
+            <label for="receiptNotesInput" style="display: block; font-size: 0.8rem; font-weight: 700; color: var(--text-main); margin-bottom: 4px;">Customer Note / Warranty Terms</label>
+            <!-- Textarea -->
+            <textarea id="receiptNotesInput" rows="2" placeholder="e.g. Goods received in good order. Thank you for your business!" style="background: var(--bg-secondary); border: 1px solid var(--color-border); color: var(--text-main); border-radius: var(--border-radius-sm); padding: 8px 12px; font-family: inherit; width: 100%; font-size: 0.82rem; resize: none;"></textarea>
+          <!-- End notes textarea -->
+          </div>
+
+        <!-- End Configuration Column -->
+        </div>
+
+        <!-- Column 2: Live Printable Receipt Paper Preview -->
+        <div class="receipt-preview-column" style="display: flex; flex-direction: column; gap: 10px;">
+          <!-- Preview label header -->
+          <div style="display: flex; justify-content: space-between; align-items: center;">
+            <!-- Label -->
+            <span style="font-size: 0.8rem; font-weight: 700; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.5px;">Live Printable Document Preview</span>
+            <!-- Live indicator pill -->
+            <span style="font-size: 0.68rem; font-weight: 800; background: rgba(16, 185, 129, 0.15); color: #10b981; padding: 2px 8px; border-radius: 10px;">● Live Synchronized</span>
+          <!-- End preview label header -->
+          </div>
+
+          <!-- Paper preview wrapper with realistic stationery styling -->
+          <div id="receiptPaperWrapper" style="background: #ffffff; color: #0f172a; padding: 28px 24px; border-radius: 8px; box-shadow: 0 10px 25px -5px rgba(0,0,0,0.1), 0 8px 10px -6px rgba(0,0,0,0.1); border: 1px solid #e2e8f0; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; position: relative;">
+            
+            <!-- Receipt Header Box -->
+            <div style="border-bottom: 2px solid #0f172a; padding-bottom: 14px; margin-bottom: 16px; display: flex; justify-content: space-between; align-items: flex-start; gap: 12px;">
+              <!-- Business identity -->
+              <div>
+                <!-- Business Name -->
+                <h2 id="receiptPaperBizName" style="font-size: 1.25rem; font-weight: 900; margin: 0 0 4px 0; color: #0f172a; text-transform: uppercase; letter-spacing: 0.5px;">FinFlow Commercial</h2>
+                <!-- Business Category / Industry -->
+                <div id="receiptPaperBizCategory" style="font-size: 0.76rem; font-weight: 600; color: #64748b; text-transform: uppercase;">Professional Services & Trade</div>
+              <!-- End business identity -->
+              </div>
+              <!-- Official Document Title and Stamp -->
+              <div style="text-align: right;">
+                <!-- Tag -->
+                <div style="font-size: 0.95rem; font-weight: 900; color: #0284c7; letter-spacing: 1px; text-transform: uppercase;">SALES RECEIPT</div>
+                <!-- Status Badge -->
+                <div style="display: inline-block; background: #ecfdf5; border: 1px solid #10b981; color: #059669; font-size: 0.72rem; font-weight: 800; padding: 2px 8px; border-radius: 4px; margin-top: 4px;">
+                  ✔ PAID IN FULL
+                </div>
+              <!-- End document title -->
+              </div>
+            <!-- End header box -->
+            </div>
+
+            <!-- Receipt Meta Information Table -->
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 14px; margin-bottom: 18px; font-size: 0.8rem; background: #f8fafc; border-radius: 6px; padding: 12px 14px;">
+              <!-- Customer Billed Details -->
+              <div>
+                <div style="font-size: 0.68rem; font-weight: 800; color: #94a3b8; text-transform: uppercase; margin-bottom: 2px;">CUSTOMER / BILLED TO</div>
+                <div id="receiptPaperCustomerName" style="font-weight: 800; color: #0f172a; font-size: 0.92rem;">Walk-in Customer</div>
+                <div id="receiptPaperCustomerContact" style="color: #64748b; font-size: 0.75rem; margin-top: 2px;">No contact specified</div>
+              </div>
+              <!-- Receipt Reference Numbers -->
+              <div style="text-align: right;">
+                <div style="font-size: 0.68rem; font-weight: 800; color: #94a3b8; text-transform: uppercase; margin-bottom: 2px;">RECEIPT NUMBER & DATE</div>
+                <div id="receiptPaperNumber" style="font-weight: 800; font-family: monospace; color: #0f172a;">REC-2026-0001</div>
+                <div id="receiptPaperDate" style="color: #64748b; font-size: 0.75rem; margin-top: 2px;">Sep 03, 2026</div>
+                <div id="receiptPaperPaymentMethod" style="color: #0284c7; font-size: 0.74rem; font-weight: 700; margin-top: 2px;">MTN Mobile Money</div>
+              </div>
+            <!-- End meta information table -->
+            </div>
+
+            <!-- Itemized Products / Services Table -->
+            <table style="width: 100%; border-collapse: collapse; margin-bottom: 18px; font-size: 0.82rem;">
+              <thead>
+                <tr style="border-bottom: 1px solid #cbd5e1; color: #475569; font-size: 0.72rem; text-transform: uppercase;">
+                  <th style="text-align: left; padding: 8px 4px; font-weight: 800;">Description</th>
+                  <th style="text-align: right; padding: 8px 4px; font-weight: 800; width: 120px;">Amount</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr style="border-bottom: 1px solid #f1f5f9;">
+                  <!-- Item description -->
+                  <td id="receiptPaperItemDesc" style="padding: 10px 4px; font-weight: 700; color: #1e293b;">Product Sale / Professional Service</td>
+                  <!-- Item amount -->
+                  <td id="receiptPaperAmount" style="padding: 10px 4px; text-align: right; font-weight: 800; color: #0f172a;">GH₵ 0.00</td>
+                </tr>
+              </tbody>
+            </table>
+
+            <!-- Financial Totals Summary Box -->
+            <div style="display: flex; justify-content: flex-end; margin-bottom: 18px;">
+              <div style="width: 220px; font-size: 0.82rem;">
+                <!-- Subtotal row -->
+                <div style="display: flex; justify-content: space-between; padding: 4px 0; color: #64748b;">
+                  <span>Subtotal:</span>
+                  <span id="receiptPaperSubtotal" style="font-weight: 700; color: #334155;">GH₵ 0.00</span>
+                </div>
+                <!-- Tax / VAT row -->
+                <div style="display: flex; justify-content: space-between; padding: 4px 0; color: #64748b;">
+                  <span>Tax / VAT (0%):</span>
+                  <span>0.00</span>
+                </div>
+                <!-- Grand Total Paid row -->
+                <div style="display: flex; justify-content: space-between; padding: 8px 0; border-top: 2px solid #0f172a; border-bottom: 2px solid #0f172a; margin-top: 4px; font-size: 1rem; font-weight: 900; color: #0f172a;">
+                  <span>Total Paid:</span>
+                  <span id="receiptPaperTotalPaid" style="color: #059669;">GH₵ 0.00</span>
+                </div>
+              </div>
+            <!-- End financial totals summary box -->
+            </div>
+
+            <!-- Notes and Terms section -->
+            <div style="border-top: 1px dashed #cbd5e1; padding-top: 12px; margin-top: 12px; font-size: 0.74rem; color: #64748b; line-height: 1.4;">
+              <div style="font-weight: 700; color: #334155; margin-bottom: 2px;">TERMS & REMARKS:</div>
+              <div id="receiptPaperNotes">Goods and services received in good condition. Thank you for your business!</div>
+            </div>
+
+            <!-- Watermark / Footer signoff -->
+            <div style="margin-top: 16px; display: flex; justify-content: space-between; align-items: center; font-size: 0.68rem; color: #94a3b8; border-top: 1px solid #f1f5f9; padding-top: 8px;">
+              <div>Certified Digital Commercial Receipt • FinFlow BIZ</div>
+              <div>Authorized Signoff: <strong id="receiptPaperSignoff">Commercial Ledger</strong></div>
+            </div>
+
+          <!-- End Paper preview wrapper -->
+          </div>
+
+        <!-- End Preview Column -->
+        </div>
+
+      <!-- End modal body -->
+      </div>
+
+      <!-- Modal Footer with Print and PDF Action Buttons -->
+      <div class="modal-footer" style="padding: 14px 20px; border-top: 1px solid var(--color-border); display: flex; justify-content: space-between; align-items: center; background: var(--bg-secondary); flex-wrap: wrap; gap: 10px;">
+        <!-- Close button -->
+        <button type="button" class="btn btn-secondary" onclick="window.closeModal(document.getElementById('customerReceiptModal'))">Cancel</button>
+        
+        <!-- Action buttons group -->
+        <div style="display: flex; gap: 10px; align-items: center; flex-wrap: wrap;">
+          <!-- WhatsApp Share Button -->
+          <button type="button" class="btn" id="shareReceiptWhatsappBtn" title="Send digital receipt directly to customer via WhatsApp" style="background: #25d366; color: #ffffff; border: none; font-weight: 700; display: flex; align-items: center; gap: 6px; padding: 10px 14px; border-radius: var(--border-radius-sm);">
+            <!-- WhatsApp icon -->
+            <span>💬</span>
+            <span>WhatsApp Customer</span>
+          <!-- End whatsapp button -->
+          </button>
+
+          <!-- Print / Save as PDF Button -->
+          <button type="button" class="btn btn-secondary" id="downloadReceiptPdfBtn" title="Generate clean PDF file to save or email" style="font-weight: 700; display: flex; align-items: center; gap: 6px; padding: 10px 14px;">
+            <!-- Document icon -->
+            <svg style="width: 16px; height: 16px; fill: none; stroke: currentColor; stroke-width: 2;"><use href="#icon-download"></use></svg>
+            <span>Print as PDF</span>
+          <!-- End download PDF button -->
+          </button>
+
+          <!-- Direct Print Command Button -->
+          <button type="button" class="btn btn-primary" id="printReceiptBtn" title="Direct print to any physical or network printer" style="font-weight: 800; display: flex; align-items: center; gap: 6px; padding: 10px 18px; background: linear-gradient(135deg, var(--color-primary), #0284c7); border: none;">
+            <!-- Print icon -->
+            <svg style="width: 16px; height: 16px; fill: none; stroke: currentColor; stroke-width: 2.2;"><use href="#icon-print"></use></svg>
+            <span>🖨️ Print Receipt</span>
+          <!-- End print button -->
+          </button>
+        <!-- End action buttons group -->
+        </div>
+      <!-- End modal footer -->
+      </div>
+    <!-- End modal content -->
+    </div>
+  <!-- End customerReceiptModal -->
   </div>
 
   <!-- ==================== OVERLAY: SHARE DASHBOARD MODAL ==================== -->
