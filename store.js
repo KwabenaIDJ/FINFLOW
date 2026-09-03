@@ -146,8 +146,8 @@
       'Contracts & Projects',
       // Capital investments, loans, and business grants
       'Capital Investments / Grants',
-      // Miscellaneous business inflows
-      'Other Business Revenue'
+      // Custom business revenue category option
+      'Other'
     // End income categories
     ],
     // Commercial expenditures and operational outflows
@@ -173,7 +173,9 @@
       // Legal, accounting, bookkeeping, and consulting fees
       'Professional Fees (Legal/Audit)',
       // Miscellaneous office and operational expenses
-      'General Operating Expenses'
+      'General Operating Expenses',
+      // Custom business expenditure category option
+      'Other'
     // End expense categories
     ]
   // End BUSINESS_CATEGORIES

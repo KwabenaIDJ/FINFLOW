@@ -693,7 +693,7 @@
     // If inside a business account
     if (isBusiness && bizCats) {
       // Inflow maps to commercial income categories, Outflow maps to commercial OPEX categories
-      categories = type === 'income' ? bizCats.income : bizCats.expense;
+      categories = type === 'income' ? [...bizCats.income] : [...bizCats.expense];
     // Standard personal workspace categories
     } else {
       // Standard personal personal budget and salary categories
@@ -702,6 +702,13 @@
         : ['Rent', 'Food', 'Utilities', 'Shopping', 'Entertainment', 'Travel', 'Other'];
     // End workspace categories branching
     }
+
+    // Guarantee that 'Other' is always present at the end of the category selection list
+    if (!categories.includes('Other')) {
+      // Push 'Other' to categories list
+      categories.push('Other');
+    // End 'Other' inclusion check
+    }
       
     // Loop through resolved category options and construct HTML option elements
     categories.forEach(cat => {
@@ -709,8 +716,8 @@
       const opt = document.createElement('option');
       // Set value attribute
       opt.value = cat;
-      // Set human-readable text
-      opt.textContent = cat;
+      // Set human-readable text, clearly highlighting the specify option
+      opt.textContent = cat === 'Other' ? '✨ Other (Specify below)...' : cat;
       // Append option node to category select element
       categorySelect.appendChild(opt);
     // End category loop
@@ -4824,17 +4831,29 @@ Ask me specific financial questions like:
 
     // Show/hide other inputs on category change
     if (elements.addTxCategory) {
+      // Listen for category dropdown value changes
       elements.addTxCategory.addEventListener('change', () => {
-        if (elements.addTxCategory.value === 'Other') {
+        // Check if selected value matches Other or starts with Other
+        if (elements.addTxCategory.value === 'Other' || elements.addTxCategory.value.startsWith('Other')) {
+          // Display custom category text input group
           elements.addTxCategoryOtherGroup.style.display = 'block';
+          // Focus the input field for immediate typing
           elements.addTxCategoryOther.focus();
+          // Mark input field as required
           elements.addTxCategoryOther.setAttribute('required', 'true');
+        // If standard category selected
         } else {
+          // Hide custom category text input group
           elements.addTxCategoryOtherGroup.style.display = 'none';
+          // Remove required attribute
           elements.addTxCategoryOther.removeAttribute('required');
+          // Clear custom input field value
           elements.addTxCategoryOther.value = '';
+        // End other check
         }
+      // End change listener
       });
+    // End addTxCategory check
     }
 
     // Show/hide other inputs on goal destination change
@@ -4875,9 +4894,11 @@ Ask me specific financial questions like:
       const type = document.getElementById('addTxType').value;
       let category = document.getElementById('addTxCategory').value;
       
-      // If specifying other option
-      if (category === 'Other' && elements.addTxCategoryOther) {
+      // If specifying other option (either Other or string starting with Other)
+      if ((category === 'Other' || category.startsWith('Other')) && elements.addTxCategoryOther) {
+        // Read custom specified category text trimmed, fallback to Other if left empty
         category = elements.addTxCategoryOther.value.trim() || 'Other';
+      // End custom category extraction
       }
       
       const amountRaw = parseFloat(document.getElementById('addTxAmount').value);
