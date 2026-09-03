@@ -181,7 +181,14 @@
         <div class="logo-icon">
           <svg><use href="#icon-target"></use></svg>
         </div>
-        <div class="logo-text">FinFlow</div>
+        <!-- Logo text with dynamic business suite badge -->
+        <div class="logo-text" style="display: flex; align-items: center; gap: 6px;">
+          <!-- Brand name -->
+          <span>FinFlow</span>
+          <!-- Dynamic BIZ badge shown in business workspace -->
+          <span id="sidebarBizBadge" style="display: none; background: linear-gradient(135deg, #0284c7, #6366f1); color: #fff; font-size: 0.62rem; font-weight: 800; padding: 2px 7px; border-radius: 4px; letter-spacing: 0.5px;">BIZ</span>
+        <!-- End logo text -->
+        </div>
       </div>
       <button id="sidebarCloseBtn" class="btn btn-secondary btn-icon" title="Close menu" onclick="document.getElementById('appSidebar').classList.remove('active'); document.getElementById('sidebarBackdrop').classList.remove('active'); document.body.classList.remove('no-scroll');" style="display: none; padding: 6px; min-width: 32px; height: 32px; align-items: center; justify-content: center; border: none; background: transparent; color: var(--text-muted); cursor: pointer;">
         <svg style="width: 18px; height: 18px; fill: none; stroke: currentColor; stroke-width: 2.5;"><use href="#icon-close"></use></svg>
@@ -212,35 +219,35 @@
     <nav id="appNavigation">
       <a class="nav-item active" data-target="dashboard" onclick="window.switchTab('dashboard'); closeMobileSidebar();">
         <svg><use href="#icon-dashboard"></use></svg>
-        <span>Overview</span>
+        <span id="navLabelOverview">Overview</span>
       </a>
       <a class="nav-item" data-target="budgets" onclick="window.switchTab('budgets'); closeMobileSidebar();">
         <svg><use href="#icon-wallet"></use></svg>
-        <span>Budgets</span>
+        <span id="navLabelBudgets">Budgets</span>
       </a>
       <a class="nav-item" data-target="goals" onclick="window.switchTab('goals'); closeMobileSidebar();">
         <svg><use href="#icon-target"></use></svg>
-        <span>Savings Goals</span>
+        <span id="navLabelGoals">Savings Goals</span>
       </a>
       <!-- Debts and Loans navigation link -->
       <a class="nav-item" data-target="debts" onclick="window.switchTab('debts'); closeMobileSidebar();">
         <!-- Credit card / debts icon -->
         <svg><use href="#icon-debt"></use></svg>
         <!-- Nav label -->
-        <span>Debts & Loans</span>
+        <span id="navLabelDebts">Debts & Loans</span>
       <!-- End debts nav item -->
       </a>
       <a class="nav-item" data-target="todos" onclick="window.switchTab('todos'); closeMobileSidebar();">
         <svg><use href="#icon-todo"></use></svg>
-        <span>Tasks Checklist</span>
+        <span id="navLabelTodos">Tasks Checklist</span>
       </a>
       <a class="nav-item" data-target="guide" onclick="window.switchTab('guide'); closeMobileSidebar();">
         <svg><use href="#icon-book"></use></svg>
-        <span>Financial Guide</span>
+        <span id="navLabelGuide">Financial Guide</span>
       </a>
       <a class="nav-item" data-target="settings" onclick="window.switchTab('settings'); closeMobileSidebar();">
         <svg><use href="#icon-settings"></use></svg>
-        <span>Settings</span>
+        <span id="navLabelSettings">Settings</span>
       </a>
       <a class="nav-item" id="logoutNavBtn" onclick="window.handleLogout(event); closeMobileSidebar();" style="cursor: pointer; color: var(--color-danger);">
         <svg style="stroke: var(--color-danger); fill: none;"><use href="#icon-logout"></use></svg>
@@ -425,10 +432,12 @@
           <div style="display: flex; align-items: center; gap: 10px;">
             <div style="width: 34px; height: 34px; border-radius: 50%; background: linear-gradient(135deg, var(--color-primary), #a855f7); display: flex; align-items: center; justify-content: center; color: #fff; font-size: 1rem; font-weight: 800; box-shadow: 0 0 12px rgba(168, 85, 247, 0.4);">⚡</div>
             <div>
+              <!-- AI Diagnostics dynamic heading -->
               <h4 style="font-size: 0.98rem; font-weight: 800; color: var(--text-main); margin: 0; display: flex; align-items: center; gap: 6px;">
-                Proactive AI Financial Diagnostics <span style="background: linear-gradient(135deg, #a855f7, #ec4899); color: #fff; font-size: 0.64rem; font-weight: 800; padding: 2px 6px; border-radius: 10px; text-transform: uppercase;">Smart Scanner</span>
+                <span id="aiBannerTitle">Proactive AI Financial Diagnostics</span> <span style="background: linear-gradient(135deg, #a855f7, #ec4899); color: #fff; font-size: 0.64rem; font-weight: 800; padding: 2px 6px; border-radius: 10px; text-transform: uppercase;">Smart Scanner</span>
               </h4>
-              <span style="font-size: 0.74rem; color: var(--text-muted);">Automated spending leak detection & 90-day predictive cash flow runway</span>
+              <!-- AI Diagnostics dynamic subtitle -->
+              <span id="aiBannerSub" style="font-size: 0.74rem; color: var(--text-muted);">Automated spending leak detection & 90-day predictive cash flow runway</span>
             </div>
           </div>
           <!-- Button to trigger premium upgrade modal (visible ONLY to non-premium members) -->
@@ -598,12 +607,15 @@
     <div class="view-panel" id="budgets-panel">
       <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; flex-wrap: wrap; gap: 12px;">
         <div class="header-title" style="margin-bottom: 0;">
-          <h2>Category Budgets</h2>
-          <p>Set custom expenditure limits per category. Progress bars update instantly with your transactions.</p>
+          <!-- Dynamic budgets section heading -->
+          <h2 id="budgetsTitle">Category Budgets</h2>
+          <!-- Dynamic budgets section subtitle -->
+          <p id="budgetsSub">Set custom expenditure limits per category. Progress bars update instantly with your transactions.</p>
         </div>
         <button class="btn btn-primary" id="addBudgetBtn">
           <svg style="width: 16px; height: 16px; fill: none; stroke: currentColor; stroke-width: 2.5;"><use href="#icon-plus"></use></svg>
-          Create Budget
+          <!-- Dynamic budget button label -->
+          <span id="addBudgetBtnLabel">Create Budget</span>
         </button>
       </div>
       <div class="budget-grid" id="budgetGrid">
@@ -615,12 +627,15 @@
     <div class="view-panel" id="goals-panel">
       <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
         <div class="header-title">
-          <h2>Savings Goals</h2>
-          <p>Define targets and fund them directly from your cash balances.</p>
+          <!-- Dynamic goals section heading -->
+          <h2 id="goalsTitle">Savings Goals</h2>
+          <!-- Dynamic goals section subtitle -->
+          <p id="goalsSub">Define targets and fund them directly from your cash balances.</p>
         </div>
         <button class="btn btn-primary" id="addGoalBtn">
           <svg style="width: 16px; height: 16px; fill: none; stroke: currentColor; stroke-width: 2.5;"><use href="#icon-plus"></use></svg>
-          Create New Goal
+          <!-- Dynamic goal button label -->
+          <span id="addGoalBtnLabel">Create New Goal</span>
         </button>
       </div>
       <div class="goals-grid" id="goalsGrid">
@@ -634,18 +649,18 @@
       <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; flex-wrap: wrap; gap: 12px;">
         <!-- Header title group -->
         <div class="header-title">
-          <!-- Main section heading -->
-          <h2>Debts & Loans Tracker</h2>
-          <!-- Subtitle explanation -->
-          <p>Track money you owe (borrowed) and money owed to you (lent), with partial repayment logging and status tracking.</p>
+          <!-- Main section heading with dynamic ID -->
+          <h2 id="debtsTitle">Debts & Loans Tracker</h2>
+          <!-- Subtitle explanation with dynamic ID -->
+          <p id="debtsSub">Track money you owe (borrowed) and money owed to you (lent), with partial repayment logging and status tracking.</p>
         <!-- End header title group -->
         </div>
         <!-- Add debt button -->
         <button class="btn btn-primary" id="openAddDebtModalBtn" style="display: flex; align-items: center; gap: 8px; font-weight: 700;">
           <!-- Plus icon -->
           <svg style="width: 16px; height: 16px; fill: none; stroke: currentColor; stroke-width: 2.5;"><use href="#icon-plus"></use></svg>
-          <!-- Button label -->
-          <span>+ Add Debt or Loan</span>
+          <!-- Button label with dynamic ID -->
+          <span id="debtsAddBtnLabel">+ Add Debt or Loan</span>
         <!-- End add debt button -->
         </button>
       <!-- End header section -->
@@ -657,10 +672,10 @@
         <div class="card kpi-card" onclick="window.setDebtFilter('owe')" title="Click to view all liabilities you owe" style="border-left: 4px solid #ef4444; cursor: pointer; transition: transform 0.15s ease;">
           <!-- Card header -->
           <div class="card-header">
-            <!-- Title -->
-            <span class="card-title">Total I Owe (Liabilities)</span>
-            <!-- Type badge -->
-            <span class="badge" style="background: rgba(239, 68, 68, 0.15); color: #ef4444; font-size: 0.72rem;">Borrowed</span>
+            <!-- Title with dynamic ID -->
+            <span class="card-title" id="debtsCardTitleOwe">Total I Owe (Liabilities)</span>
+            <!-- Type badge with dynamic ID -->
+            <span class="badge" id="debtsBadgeOwe" style="background: rgba(239, 68, 68, 0.15); color: #ef4444; font-size: 0.72rem;">Borrowed</span>
           <!-- End card header -->
           </div>
           <!-- Converted KPI value -->
@@ -674,10 +689,10 @@
         <div class="card kpi-card" onclick="window.setDebtFilter('lent')" title="Click to view all loans owed to you" style="border-left: 4px solid #10b981; cursor: pointer; transition: transform 0.15s ease;">
           <!-- Card header -->
           <div class="card-header">
-            <!-- Title -->
-            <span class="card-title">Owed to Me (Receivables)</span>
-            <!-- Type badge -->
-            <span class="badge" style="background: rgba(16, 185, 129, 0.15); color: #10b981; font-size: 0.72rem;">Lent Out</span>
+            <!-- Title with dynamic ID -->
+            <span class="card-title" id="debtsCardTitleLent">Owed to Me (Receivables)</span>
+            <!-- Type badge with dynamic ID -->
+            <span class="badge" id="debtsBadgeLent" style="background: rgba(16, 185, 129, 0.15); color: #10b981; font-size: 0.72rem;">Lent Out</span>
           <!-- End card header -->
           </div>
           <!-- Converted KPI value -->
@@ -691,10 +706,10 @@
         <div class="card kpi-card" onclick="window.setDebtFilter('all')" title="Click to view all debts and loans" style="border-left: 4px solid #6366f1; cursor: pointer; transition: transform 0.15s ease;">
           <!-- Card header -->
           <div class="card-header">
-            <!-- Title -->
-            <span class="card-title">Net Debt Position</span>
-            <!-- Type badge -->
-            <span class="badge" style="background: rgba(99, 102, 241, 0.15); color: #818cf8; font-size: 0.72rem;">Difference</span>
+            <!-- Title with dynamic ID -->
+            <span class="card-title" id="debtsCardTitleNet">Net Debt Position</span>
+            <!-- Type badge with dynamic ID -->
+            <span class="badge" id="debtsBadgeNet" style="background: rgba(99, 102, 241, 0.15); color: #818cf8; font-size: 0.72rem;">Difference</span>
           <!-- End card header -->
           </div>
           <!-- Converted KPI value -->
@@ -740,8 +755,10 @@
     <!-- ==================== PANEL: TODOS ==================== -->
     <div class="view-panel" id="todos-panel">
       <div class="header-title" style="margin-bottom: 20px;">
-        <h2>Financial Tasks Checklist</h2>
-        <p>Track your financial chores, billing tasks, budget reviews, and goal planning.</p>
+        <!-- Dynamic tasks checklist title -->
+        <h2 id="todosTitle">Financial Tasks Checklist</h2>
+        <!-- Dynamic tasks checklist subtitle -->
+        <p id="todosSub">Track your financial chores, billing tasks, budget reviews, and goal planning.</p>
       </div>
 
       <!-- Add Todo Box -->
@@ -778,8 +795,10 @@
     <!-- ==================== PANEL: FINANCIAL GUIDE ==================== -->
     <div class="view-panel" id="guide-panel">
       <div class="header-title" style="margin-bottom: 20px;">
-        <h2>Financial Literacy Guide & Library</h2>
-        <p>Master financial literacy, complete budgeting lessons, and read key summaries of personal finance bestsellers.</p>
+        <!-- Dynamic guide section title -->
+        <h2 id="guideTitle">Financial Literacy Guide & Library</h2>
+        <!-- Dynamic guide section subtitle -->
+        <p id="guideSub">Master financial literacy, complete budgeting lessons, and read key summaries of personal finance bestsellers.</p>
       </div>
 
       <!-- Learning Progress Tracker -->
@@ -1206,8 +1225,10 @@
     <!-- ==================== PANEL: SETTINGS ==================== -->
     <div class="view-panel" id="settings-panel">
       <div class="header-title" style="margin-bottom: 10px;">
-        <h2>Profile & Settings</h2>
-        <p>Manage your account name, preferred currency, and monthly budget aggregates.</p>
+        <!-- Dynamic settings title -->
+        <h2 id="settingsTitle">Profile & Settings</h2>
+        <!-- Dynamic settings subtitle -->
+        <p id="settingsSub">Manage your account name, preferred currency, and monthly budget aggregates.</p>
       </div>
 
       <div class="card settings-container">
@@ -1884,6 +1905,8 @@
             <select id="newBusinessCategory" style="background: var(--bg-secondary); border: 1px solid var(--color-border); color: var(--text-main); border-radius: var(--border-radius-sm); padding: 10px; font-family: inherit; width: 100%; font-size: 0.9rem;">
               <!-- Option Retail & E-Commerce -->
               <option value="Retail & E-Commerce">🛍️ Retail & E-Commerce (Shop / Online Store)</option>
+              <!-- Option Graphic Design & Media -->
+              <option value="Graphic Design, Media & Printing">🎨 Graphic Design, Media & Printing</option>
               <!-- Option Food & Hospitality -->
               <option value="Food & Hospitality">🍽️ Food & Hospitality (Restaurant, Cafe, Bakery)</option>
               <!-- Option Freelance & Consulting -->
@@ -1892,31 +1915,97 @@
               <option value="Tech & Digital Services">💻 Tech & Digital Services</option>
               <!-- Option Trades & Construction -->
               <option value="Trades & Construction">🛠️ Trades, Crafts & Construction</option>
+              <!-- Option Transport & Logistics -->
+              <option value="Transport & Logistics">🚚 Transport, Courier & Logistics</option>
+              <!-- Option Health, Wellness & Beauty -->
+              <option value="Health, Wellness & Beauty">💄 Health, Wellness & Beauty</option>
+              <!-- Option Education & Training -->
+              <option value="Education & Tutoring">📚 Education, Coaching & Training</option>
+              <!-- Option Agriculture & Farming -->
+              <option value="Agriculture & Farming">🌱 Agriculture, Poultry & Farming</option>
               <!-- Option General Commerce -->
               <option value="General Commerce">📦 General Trade & Commercial Enterprise</option>
+              <!-- Option Other for custom category input -->
+              <option value="other">✨ Other (Specify Industry Below)...</option>
             <!-- End select -->
             </select>
           <!-- End category group -->
+          </div>
+          <!-- Custom Industry Specification Group (hidden by default) -->
+          <div class="form-group" id="newBusinessCategoryOtherGroup" style="display: none; margin-bottom: 16px;">
+            <!-- Custom category label -->
+            <label for="newBusinessCategoryOther" style="display: block; font-size: 0.82rem; font-weight: 700; color: var(--text-main); margin-bottom: 6px;">Specify Your Business Industry</label>
+            <!-- Custom category text input -->
+            <input type="text" id="newBusinessCategoryOther" placeholder="e.g. Photography Studio, Event Planning, Interior Decor" style="background: var(--bg-secondary); border: 1px solid var(--color-border); color: var(--text-main); border-radius: var(--border-radius-sm); padding: 10px; font-family: inherit; width: 100%; font-size: 0.9rem;">
+          <!-- End custom industry group -->
           </div>
           <!-- Operating Currency selector group -->
           <div class="form-group" style="margin-bottom: 16px;">
             <!-- Currency label -->
             <label for="newBusinessCurrency" style="display: block; font-size: 0.82rem; font-weight: 700; color: var(--text-main); margin-bottom: 6px;">Operating Currency</label>
-            <!-- Currency dropdown select -->
+            <!-- Currency dropdown select with rich international and African currency choices -->
             <select id="newBusinessCurrency" style="background: var(--bg-secondary); border: 1px solid var(--color-border); color: var(--text-main); border-radius: var(--border-radius-sm); padding: 10px; font-family: inherit; width: 100%; font-size: 0.9rem; font-weight: 700;">
-              <!-- Currencies -->
+              <!-- Ghana Cedi -->
               <option value="GH₵">Ghana Cedi (GH₵)</option>
+              <!-- US Dollar -->
               <option value="$">US Dollar ($)</option>
+              <!-- Euro -->
               <option value="€">Euro (€)</option>
+              <!-- British Pound -->
               <option value="£">British Pound (£)</option>
+              <!-- Nigerian Naira -->
               <option value="₦">Nigerian Naira (₦)</option>
-              <option value="C$">Canadian Dollar (C$)</option>
-              <option value="A$">Australian Dollar (A$)</option>
+              <!-- Kenyan Shilling -->
               <option value="KSh">Kenyan Shilling (KSh)</option>
+              <!-- South African Rand -->
               <option value="R">South African Rand (R)</option>
+              <!-- Canadian Dollar -->
+              <option value="C$">Canadian Dollar (C$)</option>
+              <!-- Australian Dollar -->
+              <option value="A$">Australian Dollar (A$)</option>
+              <!-- Japanese Yen / Chinese Yuan -->
+              <option value="¥">Japanese Yen / Chinese Yuan (¥)</option>
+              <!-- Indian Rupee -->
+              <option value="₹">Indian Rupee (₹)</option>
+              <!-- Swiss Franc -->
+              <option value="Fr">Swiss Franc (Fr)</option>
+              <!-- Scandinavian Krone -->
+              <option value="kr">SEK / NOK / DKK (kr)</option>
+              <!-- Polish Zloty -->
+              <option value="zł">Polish Zloty (zł)</option>
+              <!-- Brazilian Real -->
+              <option value="R$">Brazilian Real (R$)</option>
+              <!-- Russian Ruble -->
+              <option value="₽">Russian Ruble (₽)</option>
+              <!-- UAE Dirham -->
+              <option value="د.إ">UAE Dirham (د.إ)</option>
+              <!-- Saudi Riyal -->
+              <option value="ر.س">Saudi Riyal (ر.س)</option>
+              <!-- Israeli Shekel -->
+              <option value="₪">Israeli Shekel (₪)</option>
+              <!-- Philippine Peso -->
+              <option value="₱">Philippine Peso (₱)</option>
+              <!-- Indonesian Rupiah -->
+              <option value="Rp">Indonesian Rupiah (Rp)</option>
+              <!-- Malaysian Ringgit -->
+              <option value="RM">Malaysian Ringgit (RM)</option>
+              <!-- Thai Baht -->
+              <option value="฿">Thai Baht (฿)</option>
+              <!-- Vietnamese Dong -->
+              <option value="₫">Vietnamese Dong (₫)</option>
+              <!-- Custom Currency Option -->
+              <option value="custom">Custom Symbol...</option>
             <!-- End select -->
             </select>
           <!-- End currency group -->
+          </div>
+          <!-- Custom Currency Specification Group (hidden by default) -->
+          <div class="form-group" id="newBusinessCustomCurrencyGroup" style="display: none; margin-bottom: 16px;">
+            <!-- Custom currency label -->
+            <label for="newBusinessCustomCurrency" style="display: block; font-size: 0.82rem; font-weight: 700; color: var(--text-main); margin-bottom: 6px;">Custom Currency Symbol / Code</label>
+            <!-- Custom currency input -->
+            <input type="text" id="newBusinessCustomCurrency" maxlength="8" placeholder="e.g. ₦, KSh, GH₵, or USD" style="background: var(--bg-secondary); border: 1px solid var(--color-border); color: var(--text-main); border-radius: var(--border-radius-sm); padding: 10px; font-family: inherit; width: 100%; font-size: 0.9rem;">
+          <!-- End custom currency group -->
           </div>
           <!-- Trial and Premium Information Notice -->
           <div id="businessAccountTrialNotice" style="background: rgba(2, 132, 199, 0.08); border: 1px solid rgba(2, 132, 199, 0.25); border-radius: 8px; padding: 10px 12px; font-size: 0.78rem; color: var(--text-muted); line-height: 1.4;">

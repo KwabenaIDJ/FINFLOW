@@ -3205,6 +3205,149 @@
     // End subtitle check
     }
 
+    // 4. Transform Sidebar Tabs & Visual Identity between Personal and Business Modes
+    const navOverview = document.getElementById('navLabelOverview');
+    // Budgets tab label
+    const navBudgets = document.getElementById('navLabelBudgets');
+    // Savings goals tab label
+    const navGoals = document.getElementById('navLabelGoals');
+    // Debts tab label
+    const navDebts = document.getElementById('navLabelDebts');
+    // Tasks checklist tab label
+    const navTodos = document.getElementById('navLabelTodos');
+    // Financial guide tab label
+    const navGuide = document.getElementById('navLabelGuide');
+    // Settings tab label
+    const navSettings = document.getElementById('navLabelSettings');
+    // Sidebar BIZ suite badge element
+    const sidebarBizBadge = document.getElementById('sidebarBizBadge');
+
+    // Panel dynamic headings elements
+    const aiTitle = document.getElementById('aiBannerTitle');
+    const aiSub = document.getElementById('aiBannerSub');
+    const budgetsTitle = document.getElementById('budgetsTitle');
+    const budgetsSub = document.getElementById('budgetsSub');
+    const addBudgetBtnLabel = document.getElementById('addBudgetBtnLabel');
+    const goalsTitle = document.getElementById('goalsTitle');
+    const goalsSub = document.getElementById('goalsSub');
+    const addGoalBtnLabel = document.getElementById('addGoalBtnLabel');
+    const debtsTitle = document.getElementById('debtsTitle');
+    const debtsSub = document.getElementById('debtsSub');
+    const debtsAddBtnLabel = document.getElementById('debtsAddBtnLabel');
+    const debtsCardTitleOwe = document.getElementById('debtsCardTitleOwe');
+    const debtsCardTitleLent = document.getElementById('debtsCardTitleLent');
+    const debtsCardTitleNet = document.getElementById('debtsCardTitleNet');
+    const debtsBadgeOwe = document.getElementById('debtsBadgeOwe');
+    const debtsBadgeLent = document.getElementById('debtsBadgeLent');
+    const debtsBadgeNet = document.getElementById('debtsBadgeNet');
+    const debtFilterAll = document.getElementById('debtFilter-all');
+    const debtFilterOwe = document.getElementById('debtFilter-owe');
+    const debtFilterLent = document.getElementById('debtFilter-lent');
+    const todosTitle = document.getElementById('todosTitle');
+    const todosSub = document.getElementById('todosSub');
+    const newTodoInput = document.getElementById('newTodoText');
+    const guideTitle = document.getElementById('guideTitle');
+    const guideSub = document.getElementById('guideSub');
+    const settingsTitle = document.getElementById('settingsTitle');
+    const settingsSub = document.getElementById('settingsSub');
+
+    // Apply distinctive commercial terminology in Business Mode
+    if (isBusiness) {
+      // Reveal BIZ suite badge next to logo
+      if (sidebarBizBadge) sidebarBizBadge.style.display = 'inline-block';
+      // Executive overview label
+      if (navOverview) navOverview.textContent = 'Business Overview';
+      // Operating budgets label
+      if (navBudgets) navBudgets.textContent = 'Operating Budgets (OPEX)';
+      // Capital reserves label
+      if (navGoals) navGoals.textContent = 'Capital Reserves & Funds';
+      // Invoices & payables label
+      if (navDebts) navDebts.textContent = 'Invoices & Payables';
+      // Operations checklist label
+      if (navTodos) navTodos.textContent = 'Operations Checklist';
+      // Commercial playbook label
+      if (navGuide) navGuide.textContent = 'Commercial Playbook';
+      // Company settings label
+      if (navSettings) navSettings.textContent = 'Company Settings';
+
+      // Commercial panel titles
+      if (aiTitle) aiTitle.textContent = 'Proactive AI Business Intelligence & Runway Scanner';
+      if (aiSub) aiSub.textContent = 'Automated commercial burn rate, working capital runway & predictive OPEX forecasting';
+      if (budgetsTitle) budgetsTitle.textContent = 'Operating Expense Budgets (OPEX)';
+      if (budgetsSub) budgetsSub.textContent = 'Control overhead, payroll, inventory, and marketing limits for healthy profit margins.';
+      if (addBudgetBtnLabel) addBudgetBtnLabel.textContent = 'Create OPEX Budget';
+      if (goalsTitle) goalsTitle.textContent = 'Capital Reserves & Expansion Funds';
+      if (goalsSub) goalsSub.textContent = 'Allocate commercial reserves for 90-day cash runway, equipment purchase, and tax obligations.';
+      if (addGoalBtnLabel) addGoalBtnLabel.textContent = 'Create Reserve Fund';
+      if (debtsTitle) debtsTitle.textContent = 'Commercial Invoices & Accounts Payable';
+      if (debtsSub) debtsSub.textContent = 'Track unpaid client invoices (Receivables) and vendor bills or commercial loans (Payables).';
+      if (debtsAddBtnLabel) debtsAddBtnLabel.textContent = '+ Record Invoice / Bill';
+      if (debtsCardTitleOwe) debtsCardTitleOwe.textContent = 'Accounts Payable (Supplier Bills / Loans)';
+      if (debtsCardTitleLent) debtsCardTitleLent.textContent = 'Accounts Receivable (Client Invoices)';
+      if (debtsCardTitleNet) debtsCardTitleNet.textContent = 'Net Invoiced Cash Position';
+      if (debtsBadgeOwe) debtsBadgeOwe.textContent = 'Payables (AP)';
+      if (debtsBadgeLent) debtsBadgeLent.textContent = 'Receivables (AR)';
+      if (debtsBadgeNet) debtsBadgeNet.textContent = 'Net Margin';
+      if (debtFilterAll) debtFilterAll.textContent = 'All Records';
+      if (debtFilterOwe) debtFilterOwe.textContent = '🔴 Supplier Bills (AP)';
+      if (debtFilterLent) debtFilterLent.textContent = '🟢 Client Invoices (AR)';
+      if (todosTitle) todosTitle.textContent = 'Commercial Tasks & Compliance Checklist';
+      if (todosSub) todosSub.textContent = 'Track monthly tax filings (VAT/GRA), supplier payments, and ledger reconciliations.';
+      if (newTodoInput) newTodoInput.placeholder = 'e.g. File monthly tax return, pay supplier invoice, audit inventory...';
+      if (guideTitle) guideTitle.textContent = 'Commercial Growth & Cash Flow Playbook';
+      if (guideSub) guideSub.textContent = 'Strategic guides for pricing, profit margins, working capital, and small business growth.';
+      if (settingsTitle) settingsTitle.textContent = 'Company Profile & Workspace Settings';
+      if (settingsSub) settingsSub.textContent = 'Manage your enterprise details, base commercial currency, and operational controls.';
+    // Revert to clean personal finance terminology in Personal Mode
+    } else {
+      // Hide BIZ suite badge
+      if (sidebarBizBadge) sidebarBizBadge.style.display = 'none';
+      // Personal overview label
+      if (navOverview) navOverview.textContent = 'Overview';
+      // Budgets label
+      if (navBudgets) navBudgets.textContent = 'Budgets';
+      // Savings goals label
+      if (navGoals) navGoals.textContent = 'Savings Goals';
+      // Debts label
+      if (navDebts) navDebts.textContent = 'Debts & Loans';
+      // Tasks checklist label
+      if (navTodos) navTodos.textContent = 'Tasks Checklist';
+      // Financial guide label
+      if (navGuide) navGuide.textContent = 'Financial Guide';
+      // Settings label
+      if (navSettings) navSettings.textContent = 'Settings';
+
+      // Personal panel titles
+      if (aiTitle) aiTitle.textContent = 'Proactive AI Financial Diagnostics';
+      if (aiSub) aiSub.textContent = 'Automated spending leak detection & 90-day predictive cash flow runway';
+      if (budgetsTitle) budgetsTitle.textContent = 'Category Budgets';
+      if (budgetsSub) budgetsSub.textContent = 'Set custom expenditure limits per category. Progress bars update instantly with your transactions.';
+      if (addBudgetBtnLabel) addBudgetBtnLabel.textContent = 'Create Budget';
+      if (goalsTitle) goalsTitle.textContent = 'Savings Goals';
+      if (goalsSub) goalsSub.textContent = 'Define targets and fund them directly from your cash balances.';
+      if (addGoalBtnLabel) addGoalBtnLabel.textContent = 'Create New Goal';
+      if (debtsTitle) debtsTitle.textContent = 'Debts & Loans Tracker';
+      if (debtsSub) debtsSub.textContent = 'Track money you owe (borrowed) and money owed to you (lent), with partial repayment logging and status tracking.';
+      if (debtsAddBtnLabel) debtsAddBtnLabel.textContent = '+ Add Debt or Loan';
+      if (debtsCardTitleOwe) debtsCardTitleOwe.textContent = 'Total I Owe (Liabilities)';
+      if (debtsCardTitleLent) debtsCardTitleLent.textContent = 'Owed to Me (Receivables)';
+      if (debtsCardTitleNet) debtsCardTitleNet.textContent = 'Net Debt Position';
+      if (debtsBadgeOwe) debtsBadgeOwe.textContent = 'Borrowed';
+      if (debtsBadgeLent) debtsBadgeLent.textContent = 'Lent Out';
+      if (debtsBadgeNet) debtsBadgeNet.textContent = 'Difference';
+      if (debtFilterAll) debtFilterAll.textContent = 'All';
+      if (debtFilterOwe) debtFilterOwe.textContent = '🔴 I Owe';
+      if (debtFilterLent) debtFilterLent.textContent = '🟢 Owed to Me';
+      if (todosTitle) todosTitle.textContent = 'Financial Tasks Checklist';
+      if (todosSub) todosSub.textContent = 'Track your financial chores, billing tasks, budget reviews, and goal planning.';
+      if (newTodoInput) newTodoInput.placeholder = 'e.g. Pay monthly rent, review grocery budget, fund emergency goal...';
+      if (guideTitle) guideTitle.textContent = 'Financial Literacy Guide & Library';
+      if (guideSub) guideSub.textContent = 'Master financial literacy, complete budgeting lessons, and read key summaries of personal finance bestsellers.';
+      if (settingsTitle) settingsTitle.textContent = 'Profile & Settings';
+      if (settingsSub) settingsSub.textContent = 'Manage your account name, preferred currency, and monthly budget aggregates.';
+    // End isBusiness check
+    }
+
     // 4. Synchronize Popover Dropdown Account List
     const accountsListContainer = document.getElementById('workspaceAccountsList');
     // Check if list container exists
@@ -6552,6 +6695,28 @@ Ask me specific financial questions like:
     // End currSelect check
     }
 
+    // Reset custom currency group and input
+    const currCustomGroup = document.getElementById('newBusinessCustomCurrencyGroup');
+    // If group exists
+    if (currCustomGroup) currCustomGroup.style.display = 'none';
+    // Reset custom currency text input
+    const currCustomInput = document.getElementById('newBusinessCustomCurrency');
+    // Clear value
+    if (currCustomInput) currCustomInput.value = '';
+
+    // Reset category dropdown
+    const catSelect = document.getElementById('newBusinessCategory');
+    // Set default category
+    if (catSelect) catSelect.value = 'Retail & E-Commerce';
+    // Reset custom category group and input
+    const catOtherGroup = document.getElementById('newBusinessCategoryOtherGroup');
+    // Hide custom category group
+    if (catOtherGroup) catOtherGroup.style.display = 'none';
+    // Reset custom category text input
+    const catOtherInput = document.getElementById('newBusinessCategoryOther');
+    // Clear value
+    if (catOtherInput) catOtherInput.value = '';
+
     // Reset name input field
     const nameInput = document.getElementById('newBusinessName');
     // Clear value
@@ -6567,6 +6732,60 @@ Ask me specific financial questions like:
     }
   // End openAddBusinessModal
   };
+
+  // Attach dynamic visibility listener for Other business industry input
+  const bizCatSelect = document.getElementById('newBusinessCategory');
+  // Custom industry input group container
+  const bizCatOtherGroup = document.getElementById('newBusinessCategoryOtherGroup');
+  // Custom industry text field
+  const bizCatOtherInput = document.getElementById('newBusinessCategoryOther');
+  // If dropdown and group exist
+  if (bizCatSelect && bizCatOtherGroup) {
+    // Listen for category selection change
+    bizCatSelect.addEventListener('change', () => {
+      // If user selected other category option
+      if (bizCatSelect.value === 'other') {
+        // Display custom input group
+        bizCatOtherGroup.style.display = 'block';
+        // Focus input for immediate typing
+        if (bizCatOtherInput) bizCatOtherInput.focus();
+      // If standard category selected
+      } else {
+        // Hide custom input group
+        bizCatOtherGroup.style.display = 'none';
+      // End other check
+      }
+    // End change listener
+    });
+  // End bizCatSelect check
+  }
+
+  // Attach dynamic visibility listener for Custom operating currency input
+  const bizCurrSelect = document.getElementById('newBusinessCurrency');
+  // Custom currency input group container
+  const bizCurrCustomGroup = document.getElementById('newBusinessCustomCurrencyGroup');
+  // Custom currency text field
+  const bizCurrCustomInput = document.getElementById('newBusinessCustomCurrency');
+  // If dropdown and group exist
+  if (bizCurrSelect && bizCurrCustomGroup) {
+    // Listen for currency selection change
+    bizCurrSelect.addEventListener('change', () => {
+      // If user selected custom currency option
+      if (bizCurrSelect.value === 'custom') {
+        // Display custom input group
+        bizCurrCustomGroup.style.display = 'block';
+        // Focus input for typing
+        if (bizCurrCustomInput) bizCurrCustomInput.focus();
+      // If standard currency selected
+      } else {
+        // Hide custom input group
+        bizCurrCustomGroup.style.display = 'none';
+      // End custom check
+      }
+    // End change listener
+    });
+  // End bizCurrSelect check
+  }
 
   // Close workspace dropdown popover when clicking anywhere outside
   document.addEventListener('click', (e) => {
@@ -6600,9 +6819,25 @@ Ask me specific financial questions like:
       // Extract trimmed business name
       const name = (document.getElementById('newBusinessName') ? document.getElementById('newBusinessName').value : '').trim();
       // Extract selected business category
-      const category = document.getElementById('newBusinessCategory') ? document.getElementById('newBusinessCategory').value : 'General Commerce';
+      let category = document.getElementById('newBusinessCategory') ? document.getElementById('newBusinessCategory').value : 'General Commerce';
+      // If user specified custom industry
+      if (category === 'other') {
+        // Read custom input value
+        const customCatVal = (document.getElementById('newBusinessCategoryOther') ? document.getElementById('newBusinessCategoryOther').value : '').trim();
+        // Fallback if empty
+        category = customCatVal || 'Custom Industry';
+      // End custom category check
+      }
       // Extract selected operating currency
-      const currency = document.getElementById('newBusinessCurrency') ? document.getElementById('newBusinessCurrency').value : 'GH₵';
+      let currency = document.getElementById('newBusinessCurrency') ? document.getElementById('newBusinessCurrency').value : 'GH₵';
+      // If user specified custom currency
+      if (currency === 'custom') {
+        // Read custom input value
+        const customCurrVal = (document.getElementById('newBusinessCustomCurrency') ? document.getElementById('newBusinessCustomCurrency').value : '').trim();
+        // Fallback if empty
+        currency = customCurrVal || 'GH₵';
+      // End custom currency check
+      }
 
       // Call store method to create new business account
       const res = window.AppStore.createBusinessAccount({ name, category, currency });
