@@ -295,6 +295,8 @@
           }
           // Validate subscription duration
           this.checkPremiumExpiry();
+          // Clean up any business workspaces that accidentally inherited personal ledger data
+          this.cleanAccidentalInheritedData();
         // End safety check
         }
       // If no authenticated user session
@@ -836,6 +838,8 @@
         if (!session || !session.user) return;
 
         const userId = session.user.id;
+        // Retrieve current active account ID
+        const activeAccountId = (this.getActiveAccount && typeof this.getActiveAccount === 'function' && this.getActiveAccount().id) || 'personal';
 
         // 1. Sync Profile & Settings
         const settings = this.data.settings || {};
@@ -848,6 +852,10 @@
           ai_queries_count: settings.aiQueriesCount || 0,
           profile_pic: (settings.profilePic !== undefined && settings.profilePic !== null) ? settings.profilePic : '',
           free_pdf_exports_used: settings.freePdfExportsUsed || 0,
+          // Sync workspace accounts metadata to Supabase
+          accounts: (this.getAccounts && typeof this.getAccounts === 'function') ? this.getAccounts() : [],
+          // Sync business trial switches used count to Supabase
+          business_switches_used: Number(settings.businessSwitchesUsed) || 0,
           updated_at: new Date().toISOString()
         };
 
@@ -867,6 +875,10 @@
               currency: profilePayload.currency,
               // Update profile picture
               profile_pic: profilePayload.profile_pic,
+              // Update accounts
+              accounts: profilePayload.accounts,
+              // Update trial switches count
+              business_switches_used: profilePayload.business_switches_used,
               // Update timestamp
               updated_at: profilePayload.updated_at
             // Filter by current user ID
@@ -877,18 +889,21 @@
         }
 
         // 2. Sync Transactions
-        if (this.data.transactions && this.data.transactions.length > 0) { // Verify transactions exist
-          const txRows = this.data.transactions.map(tx => ({ // Map local transactions to Supabase rows
-            id: String(tx.id), // String ID
-            user_id: userId, // User auth ID
-            date: tx.date, // Transaction YYYY-MM-DD date string
-            description: tx.description || tx.note || '', // Note or description
-            category: tx.category, // Category string
-            type: tx.type, // 'income' or 'expense'
-            amount: Number(tx.amount), // Numeric amount
-            note: tx.note || '' // Optional extra note
-          })); // End map
-          await client.from('transactions').upsert(txRows, { onConflict: 'id' }); // Upsert to Supabase Cloud
+        if (this.data.transactions && this.data.transactions.length > 0) {
+          // Map local transactions to Supabase rows tagged with active workspace ID
+          const txRows = this.data.transactions.map(tx => ({
+            id: String(tx.id),
+            user_id: userId,
+            // Tag with active account workspace ID
+            account_id: activeAccountId,
+            date: tx.date,
+            description: tx.description || tx.note || '',
+            category: tx.category,
+            type: tx.type,
+            amount: Number(tx.amount),
+            note: tx.note || ''
+          }));
+          await client.from('transactions').upsert(txRows, { onConflict: 'id' });
         }
 
         // 3. Sync Budgets
@@ -1010,50 +1025,166 @@
           }
         }
 
-        // Fetch Transactions (Cloud is authoritative)
-        const { data: cloudTxs } = await client.from('transactions').select('*').eq('user_id', userId).order('date', { ascending: false }); // Fetch user transactions
-        if (cloudTxs) { // If cloud transactions exist
-          this.data.transactions = cloudTxs.map(t => ({ // Map cloud rows to store format
-            id: t.id, // String ID
-            date: t.date, // Transaction date string
-            description: t.description || t.note || '', // Description string
-            category: t.category, // Category string
-            type: t.type, // 'income' or 'expense'
-            amount: Number(t.amount), // Numeric amount
-            note: t.note || '' // Optional note
-          })); // End map
-        }
+        // Retrieve current active workspace identifier
+        const activeAccountId = (this.getActiveAccount && typeof this.getActiveAccount === 'function' && this.getActiveAccount().id) || 'personal';
 
-        // Fetch Budgets
-        const { data: cloudBudgets } = await client.from('budgets').select('*').eq('user_id', userId);
-        if (cloudBudgets) {
-          const budgetObj = {};
-          cloudBudgets.forEach(b => {
-            budgetObj[b.category] = Number(b.limit_amount);
+        // 1. Fetch Transactions filtered strictly for this active workspace
+        let txQuery = client.from('transactions').select('*').eq('user_id', userId);
+        // If active workspace is personal, fetch records matching 'personal' or null
+        if (activeAccountId === 'personal') {
+          // Fetch personal or unassigned transactions
+          txQuery = txQuery.or('account_id.eq.personal,account_id.is.null');
+        // If active workspace is a business workspace, fetch records matching its specific ID
+        } else {
+          // Filter strictly by this business workspace ID
+          txQuery = txQuery.eq('account_id', activeAccountId);
+        // End activeAccountId condition
+        }
+        // Execute transactions query ordered by date descending
+        const { data: cloudTxs, error: txErr } = await txQuery.order('date', { ascending: false });
+
+        // If cloud transactions returned successfully
+        if (cloudTxs && !txErr) {
+          // Extra guard to filter out any transactions not belonging to this active workspace
+          const validTxs = cloudTxs.filter(t => {
+            // Check personal workspace criteria
+            if (activeAccountId === 'personal') {
+              // Return true if null or personal
+              return !t.account_id || t.account_id === 'personal';
+            // Check business workspace criteria
+            } else {
+              // Return true strictly if matching active business account ID
+              return t.account_id === activeAccountId;
+            // End condition
+            }
+          // End filter
           });
-          this.data.budgets = budgetObj;
-        }
 
-        // Fetch Goals (Cloud is authoritative)
-        const { data: cloudGoals } = await client.from('savings_goals').select('*').eq('user_id', userId);
-        if (cloudGoals) {
-          this.data.goals = cloudGoals.map(g => ({
-            id: g.id,
-            title: g.title,
-            targetAmount: Number(g.target_amount),
-            currentAmount: Number(g.current_amount),
-            targetDate: g.target_date
+          // Map cloud rows to store format
+          this.data.transactions = validTxs.map(t => ({
+            // String transaction ID
+            id: t.id,
+            // Date string
+            date: t.date,
+            // Description or note
+            description: t.description || t.note || '',
+            // Category
+            category: t.category,
+            // Type
+            type: t.type,
+            // Numeric amount
+            amount: Number(t.amount),
+            // Note
+            note: t.note || ''
+          // End map
           }));
+        // If in business workspace and no transactions exist in cloud yet, guarantee clean empty array
+        } else if (activeAccountId !== 'personal' && (!this.data.transactions || txErr)) {
+          // Set clean empty transactions array
+          this.data.transactions = [];
+        // End transactions sync
         }
 
-        // Fetch Debts & Loans (if debts table exists in cloud)
+        // 2. Fetch Budgets
+        let bQuery = client.from('budgets').select('*').eq('user_id', userId);
+        // Branch by active workspace
+        if (activeAccountId === 'personal') {
+          // Personal budgets match personal or null
+          bQuery = bQuery.or('account_id.eq.personal,account_id.is.null');
+        // Business budgets match strictly this account ID
+        } else {
+          // Match business ID
+          bQuery = bQuery.eq('account_id', activeAccountId);
+        // End budget branch
+        }
+        // Execute budgets query
+        const { data: cloudBudgets } = await bQuery;
+        // Check if budgets returned
+        if (cloudBudgets) {
+          // Initialize accumulator
+          const budgetObj = {};
+          // Loop through budget rows
+          cloudBudgets.forEach(b => {
+            // Check workspace match
+            const matches = activeAccountId === 'personal' ? (!b.account_id || b.account_id === 'personal') : (b.account_id === activeAccountId);
+            // If matches
+            if (matches) {
+              // Store limit amount
+              budgetObj[b.category] = Number(b.limit_amount);
+            // End match check
+            }
+          // End loop
+          });
+          // Assign to active dataset
+          this.data.budgets = budgetObj;
+        // End cloudBudgets check
+        }
+
+        // 3. Fetch Goals (Cloud is authoritative for active workspace)
+        let gQuery = client.from('savings_goals').select('*').eq('user_id', userId);
+        // Branch by active workspace
+        if (activeAccountId === 'personal') {
+          // Match personal or null
+          gQuery = gQuery.or('account_id.eq.personal,account_id.is.null');
+        // Business goals match strictly this account ID
+        } else {
+          // Match business ID
+          gQuery = gQuery.eq('account_id', activeAccountId);
+        // End goals branch
+        }
+        // Execute goals query
+        const { data: cloudGoals } = await gQuery;
+        // Check if goals returned
+        if (cloudGoals) {
+          // Filter matching workspace goals
+          const validGoals = cloudGoals.filter(g => {
+            // Check workspace match
+            return activeAccountId === 'personal' ? (!g.account_id || g.account_id === 'personal') : (g.account_id === activeAccountId);
+          // End filter
+          });
+          // Map to local goals format
+          this.data.goals = validGoals.map(g => ({
+            // Unique ID
+            id: g.id,
+            // Goal title
+            title: g.title,
+            // Target amount
+            targetAmount: Number(g.target_amount),
+            // Current saved amount
+            currentAmount: Number(g.current_amount),
+            // Target completion date
+            targetDate: g.target_date
+          // End map
+          }));
+        // End cloudGoals check
+        }
+
+        // 4. Fetch Debts & Loans (if debts table exists in cloud)
         try {
           // Query cloud debts table for this user
-          const { data: cloudDebts } = await client.from('debts').select('*').eq('user_id', userId);
+          let dQuery = client.from('debts').select('*').eq('user_id', userId);
+          // Branch by workspace
+          if (activeAccountId === 'personal') {
+            // Match personal or null
+            dQuery = dQuery.or('account_id.eq.personal,account_id.is.null');
+          // Match business ID
+          } else {
+            // Match business
+            dQuery = dQuery.eq('account_id', activeAccountId);
+          // End debts branch
+          }
+          // Execute debts query
+          const { data: cloudDebts } = await dQuery;
           // Check if cloud debts returned
           if (cloudDebts && cloudDebts.length > 0) {
+            // Filter matching workspace debts
+            const validDebts = cloudDebts.filter(d => {
+              // Match criteria
+              return activeAccountId === 'personal' ? (!d.account_id || d.account_id === 'personal') : (d.account_id === activeAccountId);
+            // End filter
+            });
             // Map cloud rows to store format
-            this.data.debts = cloudDebts.map(d => ({
+            this.data.debts = validDebts.map(d => ({
               // String debt ID
               id: d.id,
               // Debt type
@@ -1926,6 +2057,13 @@
       // End session check
       }
 
+      // If target account is a business workspace, ensure inherited personal transactions are cleaned
+      if (targetAccount.type === 'business') {
+        // Run automated cleanup against accidental inheritance
+        this.cleanAccidentalInheritedData();
+      // End cleanup check
+      }
+
       // Re-initialize undo/redo history for new workspace
       this.undoStack = [];
       // Clear redo stack
@@ -2152,6 +2290,142 @@
       // Return false
       return false;
     // End deleteBusinessAccount
+    },
+
+    /**
+     * Cleans up any business accounts that accidentally inherited personal ledger transactions.
+     * Guarantees that newly created business workspaces start cleanly from zero without contamination.
+     */
+    cleanAccidentalInheritedData() {
+      // Retrieve authenticated user session key
+      const currentUser = localStorage.getItem(SESSION_KEY);
+      // Retrieve registered users database
+      const registry = JSON.parse(localStorage.getItem(USERS_REGISTRY_KEY) || '{}');
+      // Guard if user session or datasets map do not exist
+      if (!currentUser || !registry[currentUser] || !registry[currentUser].accountDatasets) return;
+
+      // Extract personal account dataset
+      const personalData = registry[currentUser].accountDatasets['personal'];
+      // Guard if personal dataset does not exist
+      if (!personalData) return;
+
+      // Collect personal transaction IDs into a lookup Set
+      const personalTxIds = new Set((personalData.transactions || []).map(t => String(t.id)));
+      // Retrieve registered accounts list
+      const accounts = registry[currentUser].accounts || [];
+      // Modification tracker flag
+      let cleanedAny = false;
+
+      // Loop through all registered workspaces
+      accounts.forEach(acc => {
+        // Only inspect business accounts
+        if (acc.type === 'business' && registry[currentUser].accountDatasets[acc.id]) {
+          // Reference business dataset
+          const bizData = registry[currentUser].accountDatasets[acc.id];
+          // Check if business dataset has transactions
+          if (bizData.transactions && bizData.transactions.length > 0) {
+            // Count original transactions length
+            const originalLength = bizData.transactions.length;
+            // Filter out transactions that originated from personal account
+            bizData.transactions = bizData.transactions.filter(t => !personalTxIds.has(String(t.id)));
+            // Check if any personal transactions were stripped
+            if (bizData.transactions.length !== originalLength) {
+              // Mark modification flag
+              cleanedAny = true;
+            // End length check
+            }
+          // End transactions check
+          }
+        // End business check
+        }
+      // End accounts loop
+      });
+
+      // If modifications occurred, persist to storage
+      if (cleanedAny) {
+        // Write updated registry to localStorage
+        localStorage.setItem(USERS_REGISTRY_KEY, JSON.stringify(registry));
+        // Retrieve active account ID
+        const activeId = registry[currentUser].activeAccountId;
+        // If active workspace was cleaned, reload active data in memory
+        if (activeId && activeId !== 'personal' && registry[currentUser].accountDatasets[activeId]) {
+          // Assign cleaned dataset to active memory
+          this.data = registry[currentUser].accountDatasets[activeId];
+        // End activeId check
+        }
+      // End cleanedAny check
+      }
+    // End cleanAccidentalInheritedData
+    },
+
+    /**
+     * Resets the active workspace dataset completely to zero.
+     * Clears all transactions, budgets, goals, and debts for the active workspace.
+     */
+    resetActiveWorkspaceData() {
+      // Retrieve active workspace descriptor
+      const activeAccount = this.getActiveAccount();
+      // Record undo history snapshot
+      this.pushState();
+
+      // Create clean, isolated seed dataset
+      const cleanDataset = getSeedData();
+      // Set account name
+      cleanDataset.settings.userName = activeAccount.name;
+      // Set account currency
+      cleanDataset.settings.currency = activeAccount.currency || this.getSettings().currency || 'GH₵';
+      // Inherit premium status
+      cleanDataset.settings.isPremium = this.getSettings().isPremium;
+      // Inherit premium expiration timestamp
+      cleanDataset.settings.premiumUntil = this.getSettings().premiumUntil;
+      // Inherit user-level trial switch counter
+      cleanDataset.settings.businessSwitchesUsed = this.getSettings().businessSwitchesUsed;
+
+      // If resetting a business workspace, seed standard zero budgets
+      if (activeAccount.type === 'business') {
+        // Default business budget categories
+        cleanDataset.budgets = {
+          // Inventory / COGS limit
+          'Inventory / Stock (COGS)': 0,
+          // Wages limit
+          'Payroll & Staff Wages': 0,
+          // Rent limit
+          'Workspace / Shop Rent': 0,
+          // Marketing limit
+          'Marketing, Ads & Promotions': 0,
+          // Utilities limit
+          'Utilities & Internet': 0
+        // End budgets
+        };
+      // End business check
+      }
+
+      // Assign cleaned dataset to active memory
+      this.data = cleanDataset;
+
+      // Save locally to persist dataset in registry and active storage
+      this.saveLocally(true);
+
+      // If cloud client is connected, also clear cloud transactions for this specific account_id
+      const client = getSupabaseClient();
+      // Check client
+      if (client) {
+        // Execute asynchronous cloud cleanup
+        client.auth.getSession().then(({ data: { session } }) => {
+          // If session exists
+          if (session && session.user) {
+            // Delete cloud transactions matching this specific user and account_id
+            client.from('transactions').delete().eq('user_id', session.user.id).eq('account_id', activeAccount.id).then(() => {});
+          // End session check
+          }
+        // End getSession
+        });
+      // End client check
+      }
+
+      // Return success confirmation
+      return true;
+    // End resetActiveWorkspaceData
     },
 
     // --- Summaries & Calculations ---

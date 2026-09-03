@@ -3427,6 +3427,81 @@
       }
     // End trialBadge check
     }
+
+    // 6. Dynamic Reset Workspace button for Business workspaces
+    let resetBtn = document.getElementById('workspaceResetZeroBtn');
+    // If active workspace is a Business Account
+    if (isBusiness) {
+      // Create button element if not yet instantiated
+      if (!resetBtn) {
+        // Create new button element
+        resetBtn = document.createElement('button');
+        // Assign element ID
+        resetBtn.id = 'workspaceResetZeroBtn';
+        // Block layout display
+        resetBtn.style.display = 'block';
+        // Full width fitting container
+        resetBtn.style.width = '100%';
+        // Comfortable touch padding
+        resetBtn.style.padding = '8px 12px';
+        // Margin top spacing
+        resetBtn.style.marginTop = '8px';
+        // Subtle red tinted background
+        resetBtn.style.background = 'rgba(239, 68, 68, 0.08)';
+        // Red font color
+        resetBtn.style.color = '#ef4444';
+        // Dashed border accent
+        resetBtn.style.border = '1px dashed rgba(239, 68, 68, 0.3)';
+        // Rounded corners
+        resetBtn.style.borderRadius = '6px';
+        // Small typography
+        resetBtn.style.fontSize = '0.78rem';
+        // Pointer cursor
+        resetBtn.style.cursor = 'pointer';
+        // Semi-bold weight
+        resetBtn.style.fontWeight = '600';
+        // Center text alignment
+        resetBtn.style.textAlign = 'center';
+        // Attach click action listener
+        resetBtn.addEventListener('click', (e) => {
+          // Stop propagation
+          e.stopPropagation();
+          // Confirm reset intent
+          const confirmed = confirm(`Reset "${activeAccount.name}" to GH₵0.00? This will clear all transactions in this business workspace.`);
+          // If user confirmed
+          if (confirmed) {
+            // Reset active workspace data in store
+            store.resetActiveWorkspaceData();
+            // Close dropdown menu popover
+            const menu = document.getElementById('workspaceDropdownMenu');
+            // Hide menu
+            if (menu) menu.style.display = 'none';
+            // Synchronize interface
+            syncUI();
+          // End confirmation check
+          }
+        // End click handler
+        });
+        // Locate add business button container
+        const addBtn = document.getElementById('openAddBusinessModalBtn');
+        // If container exists
+        if (addBtn && addBtn.parentNode) {
+          // Insert reset button right after add button
+          addBtn.parentNode.insertBefore(resetBtn, addBtn.nextSibling);
+        // End insertion check
+        }
+      // End create check
+      }
+      // Ensure button is visible
+      resetBtn.style.display = 'block';
+      // Set label text
+      resetBtn.textContent = `🧹 Reset "${activeAccount.name}" to 0`;
+    // If personal workspace and reset button exists
+    } else if (resetBtn) {
+      // Hide button
+      resetBtn.style.display = 'none';
+    // End reset button visibility check
+    }
   // End renderWorkspaceSwitcher
   }
 
