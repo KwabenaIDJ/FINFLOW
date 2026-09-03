@@ -3115,6 +3115,521 @@
   // End openRepayDebtModal
   }
 
+  // ==========================================================================
+  // CLIENT & CUSTOMER CRM CONTROLLER (Directory, 1-Tap Check-ups, Messaging)
+  // ==========================================================================
+
+  // Active customer filter state ('all', 'vip', 'due', 'recent')
+  let currentCustomerFilter = 'all';
+  // Active search query
+  let customerSearchQuery = '';
+
+  /**
+   * Sets the active customer filter and updates UI.
+   */
+  window.setCustomerFilter = function(filter) {
+    // Update active filter state
+    currentCustomerFilter = filter || 'all';
+    // Update active button styles
+    const buttons = document.querySelectorAll('.btn-customer-filter');
+    // Loop through buttons
+    buttons.forEach(btn => {
+      // Toggle active class
+      if (btn.id === `custFilter-${currentCustomerFilter}`) {
+        // Add active class
+        btn.classList.add('active');
+      // If inactive
+      } else {
+        // Remove active class
+        btn.classList.remove('active');
+      // End class toggle
+      }
+    // End forEach
+    });
+    // Re-render customers
+    renderCustomers();
+  // End setCustomerFilter
+  };
+
+  /**
+   * Handles search input typing for customer directory.
+   */
+  window.handleCustomerSearch = function(event) {
+    // Read search input value lowercase
+    customerSearchQuery = (event.target.value || '').trim().toLowerCase();
+    // Re-render customers
+    renderCustomers();
+  // End handleCustomerSearch
+  };
+
+  /**
+   * Opens the Add/Edit Customer modal for adding a new customer.
+   */
+  window.openAddCustomerModal = function() {
+    // Reference form
+    const form = document.getElementById('customerForm');
+    // Reset form
+    if (form) form.reset();
+    // Clear edit ID
+    const editId = document.getElementById('custEditId');
+    if (editId) editId.value = '';
+    // Set modal title
+    const title = document.getElementById('customerModalTitle');
+    if (title) title.textContent = 'Add New Customer';
+    // Set submit button text
+    const submitBtn = document.getElementById('custSubmitBtn');
+    if (submitBtn) submitBtn.textContent = 'Save Customer';
+    // Open modal
+    openModal(document.getElementById('customerModal'));
+  // End openAddCustomerModal
+  };
+
+  /**
+   * Opens the Add/Edit Customer modal for editing an existing customer.
+   */
+  window.openEditCustomerModal = function(id) {
+    // Reference store
+    const store = window.AppStore;
+    if (!store) return;
+    // Find customer
+    const cust = store.getCustomer(id);
+    if (!cust) return;
+
+    // Populate form fields
+    const editId = document.getElementById('custEditId');
+    if (editId) editId.value = cust.id;
+    const nameInput = document.getElementById('custName');
+    if (nameInput) nameInput.value = cust.name || '';
+    const phoneInput = document.getElementById('custPhone');
+    if (phoneInput) phoneInput.value = cust.phone || '';
+    const tagSelect = document.getElementById('custTag');
+    if (tagSelect) tagSelect.value = cust.tag || 'Regular Customer';
+    const compInput = document.getElementById('custCompany');
+    if (compInput) compInput.value = cust.company || '';
+    const emailInput = document.getElementById('custEmail');
+    if (emailInput) emailInput.value = cust.email || '';
+    const notesInput = document.getElementById('custNotes');
+    if (notesInput) notesInput.value = cust.notes || '';
+
+    // Set modal title
+    const title = document.getElementById('customerModalTitle');
+    if (title) title.textContent = 'Edit Customer Profile';
+    // Set submit button text
+    const submitBtn = document.getElementById('custSubmitBtn');
+    if (submitBtn) submitBtn.textContent = 'Update Customer';
+    // Open modal
+    openModal(document.getElementById('customerModal'));
+  // End openEditCustomerModal
+  };
+
+  /**
+   * Prompts user and deletes a customer from the directory.
+   */
+  window.deleteCustomerConfirm = function(id) {
+    // Reference store
+    const store = window.AppStore;
+    if (!store) return;
+    // Find customer
+    const cust = store.getCustomer(id);
+    if (!cust) return;
+
+    // Confirmation dialog
+    if (confirm(`Are you sure you want to remove "${cust.name}" from your customer directory?`)) {
+      // Delete customer
+      store.deleteCustomer(id);
+      // Re-render customers
+      renderCustomers();
+      // Refresh receipt modal dropdown
+      populateReceiptCustomerDropdown();
+    // End confirm
+    }
+  // End deleteCustomerConfirm
+  };
+
+  /**
+   * Launches 1-tap WhatsApp Check-up conversation with professional personalized message.
+   * Also automatically records the check-up timestamp in the CRM!
+   */
+  window.checkupCustomerWhatsApp = function(id) {
+    // Reference store
+    const store = window.AppStore;
+    if (!store) return;
+    // Find customer
+    const cust = store.getCustomer(id);
+    if (!cust) return;
+
+    // Sanitize phone number (remove spaces, hyphens, parentheses)
+    let rawPhone = (cust.phone || '').replace(/[\s\-\(\)\+]/g, '');
+    // If starting with leading 0 (e.g. Ghana local 0244...), format to international 233
+    if (rawPhone.startsWith('0') && rawPhone.length === 10) {
+      // Replace leading 0 with 233
+      rawPhone = '233' + rawPhone.substring(1);
+    // End phone sanitize
+    }
+
+    // Retrieve active business name
+    const activeAccount = (store.getActiveAccount && store.getActiveAccount()) || {};
+    const businessName = activeAccount.name || 'our business';
+
+    // Construct warm, polite commercial follow-up message
+    const message = `Hello ${cust.name}! 😊\n\nChecking in from *${businessName}*. Hope you are having a wonderful and productive week!\n\nJust wanted to follow up and see how everything is going, and check if you need any assistance, products, or upcoming project support.\n\nPlease feel free to reach out anytime. We're always here to assist you!\n\nBest regards,\n*${businessName}*`;
+
+    // Automatically record check-up timestamp in database
+    store.recordCustomerCheckup(id);
+
+    // Re-render customer cards to immediately reflect new "Checked Up: Today" status
+    renderCustomers();
+
+    // Open WhatsApp Web or mobile app via deep link
+    const waUrl = `https://wa.me/${rawPhone}?text=${encodeURIComponent(message)}`;
+    window.open(waUrl, '_blank');
+  // End checkupCustomerWhatsApp
+  };
+
+  /**
+   * Dials client phone number directly and updates check-up status.
+   */
+  window.callCustomer = function(id) {
+    // Reference store
+    const store = window.AppStore;
+    if (!store) return;
+    // Find customer
+    const cust = store.getCustomer(id);
+    if (!cust || !cust.phone) return;
+
+    // Record checkup
+    store.recordCustomerCheckup(id);
+    // Re-render
+    renderCustomers();
+    // Initiate phone call via tel protocol
+    window.location.href = `tel:${cust.phone.replace(/[\s\-]/g, '')}`;
+  // End callCustomer
+  };
+
+  /**
+   * Pre-fills receipt modal for a specific customer and opens it.
+   */
+  window.issueCustomerReceipt = function(id) {
+    // Reference store
+    const store = window.AppStore;
+    if (!store) return;
+    // Find customer
+    const cust = store.getCustomer(id);
+    if (!cust) return;
+
+    // Open receipt modal
+    window.openCustomerReceipt({
+      // Prefilled customer name
+      name: cust.name,
+      // Prefilled contact info
+      contact: cust.phone || cust.email || '',
+      // Prefill description
+      description: cust.notes ? `Services for ${cust.name}` : ''
+    // End prefilled data
+    });
+  // End issueCustomerReceipt
+  };
+
+  /**
+   * Populates the quick-select customer dropdown in the Receipt Modal.
+   */
+  function populateReceiptCustomerDropdown() {
+    // Select dropdown element
+    const select = document.getElementById('receiptCustomerSelect');
+    if (!select) return;
+
+    // Reference store
+    const store = window.AppStore;
+    const customers = (store && typeof store.getCustomers === 'function') ? store.getCustomers() : [];
+
+    // Reset options
+    select.innerHTML = '<option value="">-- Choose from Customer Directory --</option>';
+
+    // Loop through customers
+    customers.forEach(c => {
+      // Create option
+      const opt = document.createElement('option');
+      // Set value to customer ID
+      opt.value = c.id;
+      // Option text with name and phone
+      opt.textContent = `${c.name} ${c.company ? `(${c.company})` : ''} - ${c.phone || 'No phone'}`;
+      // Append option
+      select.appendChild(opt);
+    // End forEach
+    });
+  // End populateReceiptCustomerDropdown
+  }
+
+  /**
+   * Handles selection of an existing customer inside the Receipt Modal.
+   */
+  window.selectReceiptCustomer = function(customerId) {
+    // If empty
+    if (!customerId) return;
+    // Reference store
+    const store = window.AppStore;
+    if (!store) return;
+    // Find customer
+    const cust = store.getCustomer(customerId);
+    if (!cust) return;
+
+    // Set customer name field
+    const nameInput = document.getElementById('receiptCustomerName');
+    if (nameInput) nameInput.value = cust.name;
+
+    // Set customer contact field
+    const contactInput = document.getElementById('receiptCustomerContact');
+    if (contactInput) contactInput.value = cust.phone || cust.email || '';
+
+    // Trigger live preview update
+    if (typeof updateReceiptLivePreview === 'function') {
+      updateReceiptLivePreview();
+    }
+  // End selectReceiptCustomer
+  };
+
+  /**
+   * Renders the complete Customer & Client CRM Directory interface.
+   * Calculates KPI statistics, filters cards, and handles 1-tap WhatsApp follow-ups.
+   */
+  function renderCustomers() {
+    // Reference AppStore
+    const store = window.AppStore;
+    if (!store) return;
+
+    // Retrieve customers list
+    const customers = store.getCustomers();
+    // Retrieve summary metrics
+    const summary = store.getCustomerSummary();
+
+    // Update KPI Card 1: Total Customers
+    const totalEl = document.getElementById('crmTotalClients');
+    if (totalEl) totalEl.textContent = summary.total;
+
+    // Update KPI Card 2: VIP Clients
+    const vipEl = document.getElementById('crmVipClients');
+    if (vipEl) vipEl.textContent = summary.vipCount;
+
+    // Update KPI Card 3: Check-ups Due
+    const dueEl = document.getElementById('crmCheckupsDue');
+    if (dueEl) dueEl.textContent = summary.checkupsDue;
+
+    // Update KPI Card 4: Contacted Recently
+    const recentEl = document.getElementById('crmContactedRecent');
+    if (recentEl) recentEl.textContent = summary.recentlyContacted;
+
+    // Current time for computing check-up intervals
+    const now = new Date();
+    const sevenDaysMs = 7 * 24 * 60 * 60 * 1000;
+    const fourteenDaysMs = 14 * 24 * 60 * 60 * 1000;
+
+    // Filter customers by active category filter
+    let filtered = customers.filter(c => {
+      // If filtering VIP
+      if (currentCustomerFilter === 'vip') return c.tag === 'VIP Client';
+      // If filtering check-ups due (> 14 days or never contacted)
+      if (currentCustomerFilter === 'due') {
+        if (!c.lastContacted) return true;
+        return (now - new Date(c.lastContacted)) > fourteenDaysMs;
+      }
+      // If filtering recently contacted (<= 7 days)
+      if (currentCustomerFilter === 'recent') {
+        if (!c.lastContacted) return false;
+        return (now - new Date(c.lastContacted)) <= sevenDaysMs;
+      }
+      // All
+      return true;
+    });
+
+    // Apply text search query
+    if (customerSearchQuery) {
+      filtered = filtered.filter(c => {
+        const nameMatch = (c.name || '').toLowerCase().includes(customerSearchQuery);
+        const compMatch = (c.company || '').toLowerCase().includes(customerSearchQuery);
+        const phoneMatch = (c.phone || '').toLowerCase().includes(customerSearchQuery);
+        const notesMatch = (c.notes || '').toLowerCase().includes(customerSearchQuery);
+        return nameMatch || compMatch || phoneMatch || notesMatch;
+      });
+    }
+
+    // Update count indicator
+    const countStats = document.getElementById('customerCountStats');
+    if (countStats) {
+      countStats.textContent = `Showing ${filtered.length} of ${customers.length} client${customers.length === 1 ? '' : 's'}`;
+    }
+
+    // Reference customers grid container
+    const grid = document.getElementById('customersGrid');
+    if (!grid) return;
+
+    // If no customers match filters
+    if (filtered.length === 0) {
+      grid.innerHTML = `
+        <div class="card" style="grid-column: 1 / -1; text-align: center; padding: 48px 24px;">
+          <div style="font-size: 3rem; margin-bottom: 12px;">👥</div>
+          <h3 style="font-size: 1.15rem; font-weight: 700; color: var(--text-main); margin-bottom: 6px;">
+            ${customers.length === 0 ? 'No Customers Added Yet' : 'No Matching Customers Found'}
+          </h3>
+          <p style="color: var(--text-muted); font-size: 0.88rem; max-width: 440px; margin: 0 auto 20px auto;">
+            ${customers.length === 0 
+              ? 'Start building your commercial address book. Add clients, save their WhatsApp contacts, and follow up regularly to boost repeat orders!'
+              : 'Try adjusting your search query or switching the filter button above.'}
+          </p>
+          <button type="button" class="btn btn-primary" onclick="window.openAddCustomerModal()" style="font-weight: 700; padding: 10px 20px;">
+            + Add Your First Customer
+          </button>
+        </div>
+      `;
+      return;
+    }
+
+    // Color palette for customer initials avatars
+    const avatarColors = ['#3b82f6', '#10b981', '#f59e0b', '#8b5cf6', '#ec4899', '#06b6d4', '#6366f1'];
+
+    // Render customer cards
+    grid.innerHTML = filtered.map((c, index) => {
+      // Extract initials
+      const initials = (c.name || 'C')
+        .split(' ')
+        .filter(n => n)
+        .map(n => n[0])
+        .slice(0, 2)
+        .join('')
+        .toUpperCase();
+
+      // Pick avatar color deterministically
+      const color = avatarColors[Math.abs(c.name.split('').reduce((acc, ch) => acc + ch.charCodeAt(0), 0)) % avatarColors.length];
+
+      // Calculate follow-up status
+      let statusBadgeHtml = '';
+      let isOverdue = false;
+      if (!c.lastContacted) {
+        statusBadgeHtml = `
+          <span style="background: rgba(239, 68, 68, 0.12); color: #ef4444; border: 1px solid rgba(239, 68, 68, 0.3); font-size: 0.72rem; font-weight: 700; padding: 3px 8px; border-radius: 12px; display: inline-flex; align-items: center; gap: 4px;">
+            <span style="width: 6px; height: 6px; border-radius: 50%; background: #ef4444;"></span> Never Contacted
+          </span>
+        `;
+        isOverdue = true;
+      } else {
+        const diffMs = now - new Date(c.lastContacted);
+        const daysAgo = Math.floor(diffMs / (24 * 60 * 60 * 1000));
+        if (diffMs > fourteenDaysMs) {
+          statusBadgeHtml = `
+            <span style="background: rgba(239, 68, 68, 0.12); color: #ef4444; border: 1px solid rgba(239, 68, 68, 0.3); font-size: 0.72rem; font-weight: 700; padding: 3px 8px; border-radius: 12px; display: inline-flex; align-items: center; gap: 4px;">
+              <span style="width: 6px; height: 6px; border-radius: 50%; background: #ef4444;"></span> Check-up Overdue (${daysAgo}d ago)
+            </span>
+          `;
+          isOverdue = true;
+        } else if (diffMs > sevenDaysMs) {
+          statusBadgeHtml = `
+            <span style="background: rgba(245, 158, 11, 0.12); color: #f59e0b; border: 1px solid rgba(245, 158, 11, 0.3); font-size: 0.72rem; font-weight: 700; padding: 3px 8px; border-radius: 12px; display: inline-flex; align-items: center; gap: 4px;">
+              <span style="width: 6px; height: 6px; border-radius: 50%; background: #f59e0b;"></span> Due for Check-up (${daysAgo}d ago)
+            </span>
+          `;
+        } else {
+          statusBadgeHtml = `
+            <span style="background: rgba(16, 185, 129, 0.12); color: #10b981; border: 1px solid rgba(16, 185, 129, 0.3); font-size: 0.72rem; font-weight: 700; padding: 3px 8px; border-radius: 12px; display: inline-flex; align-items: center; gap: 4px;">
+              <span style="width: 6px; height: 6px; border-radius: 50%; background: #10b981;"></span> ${daysAgo === 0 ? 'Checked Up Today' : `Checked Up ${daysAgo}d ago`}
+            </span>
+          `;
+        }
+      }
+
+      // Tag badge formatting
+      let tagBadgeColor = 'var(--color-border)';
+      let tagTextColor = 'var(--text-muted)';
+      if (c.tag === 'VIP Client') {
+        tagBadgeColor = 'rgba(245, 158, 11, 0.3)';
+        tagTextColor = '#f59e0b';
+      } else if (c.tag === 'Wholesale Partner') {
+        tagBadgeColor = 'rgba(14, 165, 233, 0.3)';
+        tagTextColor = '#0284c7';
+      } else if (c.tag === 'New Lead') {
+        tagBadgeColor = 'rgba(139, 92, 246, 0.3)';
+        tagTextColor = '#8b5cf6';
+      }
+
+      return `
+        <div class="customer-card ${isOverdue ? 'customer-card-overdue' : ''}" style="${c.tag === 'VIP Client' ? 'border-top: 3px solid #f59e0b;' : ''}">
+          <!-- Card Top Row: Avatar, Name, and Tag -->
+          <div>
+            <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 12px;">
+              <div style="display: flex; align-items: center; gap: 12px;">
+                <!-- Initials avatar -->
+                <div class="customer-avatar" style="background: ${color}20; color: ${color}; border: 2px solid ${color}40;">
+                  ${initials}
+                </div>
+                <!-- Name and Company -->
+                <div>
+                  <h4 style="margin: 0; font-size: 0.98rem; font-weight: 800; color: var(--text-main);">${escapeHtml(c.name)}</h4>
+                  ${c.company ? `<div style="font-size: 0.8rem; color: var(--text-muted); margin-top: 2px;">🏢 ${escapeHtml(c.company)}</div>` : ''}
+                </div>
+              </div>
+              <!-- Options dropdown or edit button -->
+              <div style="display: flex; gap: 6px;">
+                <button type="button" class="btn btn-secondary btn-sm" onclick="window.openEditCustomerModal('${c.id}')" title="Edit Customer" style="padding: 4px 8px; font-size: 0.75rem; border-radius: 6px;">
+                  ✏️
+                </button>
+                <button type="button" class="btn btn-secondary btn-sm" onclick="window.deleteCustomerConfirm('${c.id}')" title="Delete Customer" style="padding: 4px 8px; font-size: 0.75rem; border-radius: 6px; color: var(--color-danger);">
+                  🗑️
+                </button>
+              </div>
+            </div>
+
+            <!-- Tags & Status Badges Row -->
+            <div style="display: flex; flex-wrap: wrap; gap: 8px; align-items: center; margin-bottom: 14px;">
+              <span style="border: 1px solid ${tagBadgeColor}; color: ${tagTextColor}; font-size: 0.72rem; font-weight: 700; padding: 2px 8px; border-radius: 6px;">
+                ${escapeHtml(c.tag || 'Regular Customer')}
+              </span>
+              ${statusBadgeHtml}
+            </div>
+
+            <!-- Contact Details List -->
+            <div style="font-size: 0.82rem; display: flex; flex-direction: column; gap: 6px; margin-bottom: 14px; background: var(--bg-secondary); padding: 10px 12px; border-radius: var(--border-radius-sm);">
+              <!-- Phone -->
+              <div style="display: flex; align-items: center; justify-content: space-between;">
+                <span style="color: var(--text-muted);">📞 Phone:</span>
+                <a href="tel:${escapeHtml(c.phone)}" style="font-weight: 700; color: var(--text-main); text-decoration: none;">${escapeHtml(c.phone || 'None')}</a>
+              </div>
+              <!-- Email -->
+              ${c.email ? `
+                <div style="display: flex; align-items: center; justify-content: space-between;">
+                  <span style="color: var(--text-muted);">✉️ Email:</span>
+                  <a href="mailto:${escapeHtml(c.email)}" style="font-weight: 600; color: var(--color-primary); text-decoration: none; overflow: hidden; text-overflow: ellipsis; max-width: 180px;">${escapeHtml(c.email)}</a>
+                </div>
+              ` : ''}
+              <!-- Notes -->
+              ${c.notes ? `
+                <div style="margin-top: 4px; border-top: 1px dashed var(--color-border); padding-top: 6px; color: var(--text-muted); font-size: 0.78rem; font-style: italic;">
+                  📝 "${escapeHtml(c.notes)}"
+                </div>
+              ` : ''}
+            </div>
+          </div>
+
+          <!-- Bottom Action Buttons: 1-Tap WhatsApp, Call, Issue Receipt -->
+          <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-top: 8px;">
+            <!-- 1-Tap WhatsApp Check-up Button -->
+            <button type="button" class="btn btn-sm" onclick="window.checkupCustomerWhatsApp('${c.id}')" style="grid-column: 1 / -1; background: linear-gradient(135deg, #25D366, #128C7E); color: #ffffff; font-weight: 800; font-size: 0.82rem; padding: 9px; border-radius: var(--border-radius-sm); border: none; display: flex; align-items: center; justify-content: center; gap: 6px; box-shadow: 0 2px 6px rgba(37, 211, 102, 0.25);">
+              <span>💬 Check Up on WhatsApp</span>
+            </button>
+
+            <!-- Issue Sales Receipt Button -->
+            <button type="button" class="btn btn-secondary btn-sm" onclick="window.issueCustomerReceipt('${c.id}')" style="font-size: 0.78rem; font-weight: 700; padding: 7px; border-radius: var(--border-radius-sm); display: flex; align-items: center; justify-content: center; gap: 4px;">
+              <span>🧾 Issue Receipt</span>
+            </button>
+
+            <!-- Phone Call Button -->
+            <button type="button" class="btn btn-secondary btn-sm" onclick="window.callCustomer('${c.id}')" style="font-size: 0.78rem; font-weight: 700; padding: 7px; border-radius: var(--border-radius-sm); display: flex; align-items: center; justify-content: center; gap: 4px;">
+              <span>📞 Direct Call</span>
+            </button>
+          </div>
+        </div>
+      `;
+    }).join('');
+  // End renderCustomers
+  }
+
   /**
    * Renders and synchronizes all multi-account workspace switcher UI controls (Header, Sidebar, Dropdown Popover).
    */
@@ -3326,6 +3841,9 @@
       if (guideSub) guideSub.textContent = 'Strategic guides for pricing, profit margins, working capital, and small business growth.';
       if (settingsTitle) settingsTitle.textContent = 'Company Profile & Workspace Settings';
       if (settingsSub) settingsSub.textContent = 'Manage your enterprise details, base commercial currency, and operational controls.';
+      // Reveal Customers & CRM navigation tab in Business Mode
+      const navItemCustomers = document.getElementById('navItemCustomers');
+      if (navItemCustomers) navItemCustomers.style.display = 'flex';
     // Revert to clean personal finance terminology in Personal Mode
     } else {
       // Hide BIZ suite badge
@@ -3344,6 +3862,14 @@
       if (navGuide) navGuide.textContent = 'Financial Guide';
       // Settings label
       if (navSettings) navSettings.textContent = 'Settings';
+      // Hide Customers & CRM navigation tab in Personal Mode
+      const navItemCustomers = document.getElementById('navItemCustomers');
+      if (navItemCustomers) navItemCustomers.style.display = 'none';
+      // If currently viewing customers tab, redirect back to dashboard
+      const activeNav = document.querySelector('.nav-item.active');
+      if (activeNav && activeNav.getAttribute('data-target') === 'customers') {
+        switchTab('dashboard');
+      }
 
       // Personal panel titles
       if (aiTitle) aiTitle.textContent = 'Proactive AI Financial Diagnostics';
@@ -3716,6 +4242,10 @@
     renderTodos();
     // Render debts and money lent tracker cards and summary metrics
     renderDebts();
+    // Render customer CRM directory cards and follow-up metrics
+    renderCustomers();
+    // Populate customer quick-select dropdown in sales receipt modal
+    populateReceiptCustomerDropdown();
     renderDiagnostics();
     renderDailyAdvice();
     renderFinancialGuide();
@@ -4624,6 +5154,13 @@ Ask me specific financial questions like:
     // End debts check
     }
 
+    // Refresh CRM directory view whenever user navigates to the customers tab
+    if (targetTab === 'customers') {
+      // Re-render customers panel metrics, filters, and cards
+      renderCustomers();
+    // End customers check
+    }
+
     // Automatically check for latest profile & ledger updates from cloud when navigating
     if (window.AppStore && typeof window.AppStore.syncFromCloud === 'function' && window.AppStore.isLoggedIn()) {
       window.AppStore.syncFromCloud().then(() => {
@@ -5514,6 +6051,86 @@ Ask me specific financial questions like:
       // End submit listener
       });
     // End repayDebtForm check
+    }
+
+    // Customer & CRM Form Submission
+    const custForm = document.getElementById('customerForm');
+    // Guard if customer form exists
+    if (custForm) {
+      // Attach submit event listener
+      custForm.addEventListener('submit', (e) => {
+        // Prevent default browser form submission
+        e.preventDefault();
+        // Extract edit ID if editing existing customer
+        const editId = (document.getElementById('custEditId') ? document.getElementById('custEditId').value : '').trim();
+        // Extract customer name
+        const name = (document.getElementById('custName') ? document.getElementById('custName').value : '').trim();
+        // Extract phone number
+        const phone = (document.getElementById('custPhone') ? document.getElementById('custPhone').value : '').trim();
+        // Extract tag
+        const tag = document.getElementById('custTag') ? document.getElementById('custTag').value : 'Regular Customer';
+        // Extract company
+        const company = (document.getElementById('custCompany') ? document.getElementById('custCompany').value : '').trim();
+        // Extract email
+        const email = (document.getElementById('custEmail') ? document.getElementById('custEmail').value : '').trim();
+        // Extract notes
+        const notes = (document.getElementById('custNotes') ? document.getElementById('custNotes').value : '').trim();
+
+        // Validation check for name
+        if (!name) {
+          // Alert user
+          alert('Please enter a customer or client name.');
+          // Exit
+          return;
+        // End name check
+        }
+        // Validation check for phone
+        if (!phone) {
+          // Alert user
+          alert('Please enter a phone or WhatsApp contact number.');
+          // Exit
+          return;
+        // End phone check
+        }
+
+        // Reference AppStore instance
+        const store = window.AppStore;
+        // Safety guard
+        if (!store) return;
+
+        // If editing existing customer
+        if (editId) {
+          // Update customer in store
+          store.updateCustomer(editId, { name, phone, tag, company, email, notes });
+        // If adding brand new customer
+        } else {
+          // Add new customer to store
+          store.addCustomer({ name, phone, tag, company, email, notes });
+        // End add/edit branch
+        }
+
+        // Close customer modal
+        const modal = document.getElementById('customerModal');
+        // Check if modal element exists
+        if (modal && typeof window.closeModal === 'function') {
+          // Close modal
+          window.closeModal(modal);
+        // End modal check
+        }
+
+        // Reset form
+        custForm.reset();
+        // Clear edit ID
+        const editInput = document.getElementById('custEditId');
+        if (editInput) editInput.value = '';
+
+        // Re-render customers view
+        renderCustomers();
+        // Refresh receipt modal quick-select customer dropdown
+        populateReceiptCustomerDropdown();
+      // End submit listener
+      });
+    // End customerForm check
     }
 
     // Debt Filter Buttons Binding

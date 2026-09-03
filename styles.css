@@ -2317,3 +2317,89 @@ header {
 /* End print media rules */
 }
 
+/* ==================== CUSTOMER & CRM DIRECTORY STYLES ==================== */
+
+/* CRM Category Filter Button Default State */
+.btn-customer-filter {
+  /* Default inactive background */
+  background: var(--bg-secondary);
+  /* Text muted color */
+  color: var(--text-muted);
+  /* Subtle outer border */
+  border: 1px solid var(--color-border);
+  /* Smooth transitions for hover and active clicks */
+  transition: all 0.2s ease;
+  /* Cursor pointer */
+  cursor: pointer;
+/* End filter button default state */
+}
+
+/* CRM Category Filter Button Active State */
+.btn-customer-filter.active {
+  /* Active primary background */
+  background: var(--color-primary);
+  /* High-contrast white text */
+  color: #ffffff;
+  /* Matching active border */
+  border-color: var(--color-primary);
+  /* Subtle accent glow shadow */
+  box-shadow: 0 2px 8px rgba(37, 99, 235, 0.3);
+/* End filter button active state */
+}
+
+/* Customer Card Container */
+.customer-card {
+  /* Surface background */
+  background: var(--bg-surface);
+  /* Outer boundary border */
+  border: 1px solid var(--color-border);
+  /* Rounded corners */
+  border-radius: var(--border-radius-md);
+  /* Inner comfortable padding */
+  padding: 20px;
+  /* Flexbox vertical column layout */
+  display: flex;
+  /* Column direction */
+  flex-direction: column;
+  /* Space between card header/body and action footer */
+  justify-content: space-between;
+  /* Hover elevation transition */
+  transition: transform 0.18s ease, box-shadow 0.18s ease, border-color 0.18s ease;
+  /* Relative positioning */
+  position: relative;
+/* End customer card */
+}
+
+/* Customer Card Hover Elevation */
+.customer-card:hover {
+  /* Lift up slightly on desktop hover */
+  transform: translateY(-2px);
+  /* Subtle shadow drop */
+  box-shadow: var(--shadow-md);
+  /* Subtle border glow */
+  border-color: rgba(37, 99, 235, 0.4);
+/* End hover */
+}
+
+/* Customer Initials Avatar Badge */
+.customer-avatar {
+  /* Fixed width */
+  width: 44px;
+  /* Fixed height */
+  height: 44px;
+  /* Circular avatar */
+  border-radius: 50%;
+  /* Flex center content */
+  display: flex;
+  /* Vertical center */
+  align-items: center;
+  /* Horizontal center */
+  justify-content: center;
+  /* Bold typography */
+  font-weight: 800;
+  /* Initials font size */
+  font-size: 1.05rem;
+  /* Prevent shrinking */
+  flex-shrink: 0;
+/* End customer avatar */
+}

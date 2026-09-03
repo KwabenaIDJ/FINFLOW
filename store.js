@@ -202,6 +202,7 @@
       portfolio: [],    // Clean investments portfolio
       todos: [],        // Clean tasks checklist
       debts: [],        // Debts and money lent tracking array
+      customers: [],    // Client and customer directory array for CRM and follow-ups
       settings: {
         userName: 'User',        // Initial user profile display name
         currency: 'GH₵',          // Initial currency symbol
@@ -294,6 +295,12 @@
             // Initialize empty debts array
             this.data.debts = [];
           // End debts check
+          }
+          // Ensure customers array exists in loaded workspace data
+          if (!this.data.customers) {
+            // Initialize empty customers directory array
+            this.data.customers = [];
+          // End customers check
           }
           // Validate subscription duration
           this.checkPremiumExpiry();
@@ -966,6 +973,41 @@
           } catch(dErr) {}
         // End debts sync check
         }
+
+        // 6. Sync Customers & CRM Directory
+        if (this.data.customers && this.data.customers.length > 0) {
+          // Wrap in try-catch in case network or schema conflicts occur
+          try {
+            // Map local customer models to Supabase table columns
+            const customerRows = this.data.customers.map(c => ({
+              // Unique customer identifier
+              id: String(c.id),
+              // User identifier
+              user_id: userId,
+              // Tag with active account workspace
+              account_id: activeAccountId,
+              // Full customer name
+              name: c.name,
+              // Contact phone number
+              phone: c.phone || '',
+              // Contact email
+              email: c.email || '',
+              // Associated company or organization
+              company: c.company || '',
+              // Customer relationship tag
+              tag: c.tag || 'Regular',
+              // Relationship notes and preferences
+              notes: c.notes || '',
+              // ISO timestamp of last customer check-up
+              last_contacted: c.lastContacted || null
+            // End map
+            }));
+            // Upsert records to Supabase customers table
+            await client.from('customers').upsert(customerRows, { onConflict: 'id' });
+          // Catch any sync exceptions safely
+          } catch(cErr) {}
+        // End customers sync check
+        }
       } catch (cloudErr) {
         console.warn('Supabase cloud sync background error:', cloudErr);
       }
@@ -1211,6 +1253,57 @@
           }
         // Catch any missing table or network errors safely
         } catch(e) {}
+
+        // 5. Fetch Customers & CRM Contacts
+        try {
+          // Query customers table filtered by user ID
+          let cQuery = client.from('customers').select('*').eq('user_id', userId);
+          // Branch by workspace type
+          if (activeAccountId === 'personal') {
+            // Match personal or null
+            cQuery = cQuery.or('account_id.eq.personal,account_id.is.null');
+          // Match business ID
+          } else {
+            // Match business workspace
+            cQuery = cQuery.eq('account_id', activeAccountId);
+          // End customers branch
+          }
+          // Execute customers query
+          const { data: cloudCustomers } = await cQuery;
+          // If customer records were retrieved
+          if (cloudCustomers && cloudCustomers.length > 0) {
+            // Filter records matching current workspace context
+            const validCustomers = cloudCustomers.filter(c => {
+              // Match criteria
+              return activeAccountId === 'personal' ? (!c.account_id || c.account_id === 'personal') : (c.account_id === activeAccountId);
+            // End filter
+            });
+            // Map cloud records into local store models
+            this.data.customers = validCustomers.map(c => ({
+              // Unique customer ID
+              id: c.id,
+              // Full customer name
+              name: c.name,
+              // Phone number
+              phone: c.phone || '',
+              // Email address
+              email: c.email || '',
+              // Company or enterprise
+              company: c.company || '',
+              // Relationship tag
+              tag: c.tag || 'Regular',
+              // Notes
+              notes: c.notes || '',
+              // Last contacted ISO timestamp
+              lastContacted: c.last_contacted || null,
+              // Created timestamp
+              createdAt: c.created_at || new Date().toISOString()
+            // End map
+            }));
+          // End cloudCustomers check
+          }
+        // Catch any table schema or network errors safely
+        } catch(cErr) {}
 
         // Save active state to browser localStorage without triggering a circular cloud push
         this.saveLocally(true);
@@ -1838,6 +1931,213 @@
       // End return object
       };
     // End getDebtSummary
+    },
+
+    // ==========================================================================
+    // CLIENT & CUSTOMER CRM API (Follow-ups, Check-ups, Directory)
+    // ==========================================================================
+
+    /**
+     * Retrieves all customer contacts for the active workspace.
+     */
+    getCustomers() {
+      // Ensure customers array exists
+      if (!this.data.customers) this.data.customers = [];
+      // Return shallow clone
+      return [...this.data.customers];
+    // End getCustomers
+    },
+
+    /**
+     * Retrieves a single customer by unique ID.
+     */
+    getCustomer(id) {
+      // Ensure customers array exists
+      const customers = this.data.customers || [];
+      // Find matching record
+      return customers.find(c => c.id === id) || null;
+    // End getCustomer
+    },
+
+    /**
+     * Adds a new customer to the active workspace directory.
+     */
+    addCustomer({ name, phone = '', email = '', company = '', tag = 'Regular', notes = '' }) {
+      // Ensure customers array exists
+      if (!this.data.customers) this.data.customers = [];
+      // Push state snapshot for undo
+      this.pushState();
+      // Construct new customer record
+      const newCustomer = {
+        // Unique customer ID
+        id: 'cust_' + Date.now() + '_' + Math.random().toString(36).substring(2, 7),
+        // Customer name
+        name: (name || '').trim(),
+        // Phone number
+        phone: (phone || '').trim(),
+        // Email address
+        email: (email || '').trim(),
+        // Company or organization
+        company: (company || '').trim(),
+        // Category tag (e.g. 'VIP Client', 'Regular', 'New Lead', 'Wholesale')
+        tag: tag || 'Regular',
+        // Relationship notes
+        notes: (notes || '').trim(),
+        // Last check-up date (null initially)
+        lastContacted: null,
+        // Creation date
+        createdAt: new Date().toISOString()
+      // End newCustomer object
+      };
+      // Prepend to customer list
+      this.data.customers.unshift(newCustomer);
+      // Persist to local storage and sync to cloud
+      this.save();
+      // Return newly created customer
+      return newCustomer;
+    // End addCustomer
+    },
+
+    /**
+     * Updates an existing customer's contact and profile details.
+     */
+    updateCustomer(id, data) {
+      // Ensure customers array exists
+      if (!this.data.customers) return null;
+      // Push state for undo
+      this.pushState();
+      // Find index
+      const idx = this.data.customers.findIndex(c => c.id === id);
+      // If customer found
+      if (idx !== -1) {
+        // Merge updated fields
+        this.data.customers[idx] = {
+          // Existing customer fields
+          ...this.data.customers[idx],
+          // Name
+          name: data.name !== undefined ? data.name.trim() : this.data.customers[idx].name,
+          // Phone
+          phone: data.phone !== undefined ? data.phone.trim() : this.data.customers[idx].phone,
+          // Email
+          email: data.email !== undefined ? data.email.trim() : this.data.customers[idx].email,
+          // Company
+          company: data.company !== undefined ? data.company.trim() : this.data.customers[idx].company,
+          // Tag
+          tag: data.tag !== undefined ? data.tag : this.data.customers[idx].tag,
+          // Notes
+          notes: data.notes !== undefined ? data.notes.trim() : this.data.customers[idx].notes
+        // End merged object
+        };
+        // Persist updates
+        this.save();
+        // Return updated customer record
+        return this.data.customers[idx];
+      // End index check
+      }
+      // Return null if not found
+      return null;
+    // End updateCustomer
+    },
+
+    /**
+     * Deletes a customer permanently from the active workspace directory.
+     */
+    deleteCustomer(id) {
+      // Ensure customers array exists
+      if (!this.data.customers) return false;
+      // Push state for undo
+      this.pushState();
+      // Filter out customer by ID
+      this.data.customers = this.data.customers.filter(c => c.id !== id);
+      // Persist changes
+      this.save();
+      // Return success
+      return true;
+    // End deleteCustomer
+    },
+
+    /**
+     * Records a check-up / contact event with a customer, updating their lastContacted timestamp.
+     */
+    recordCustomerCheckup(id) {
+      // Ensure customers array exists
+      if (!this.data.customers) return null;
+      // Find customer
+      const cust = this.data.customers.find(c => c.id === id);
+      // If customer exists
+      if (cust) {
+        // Update lastContacted to current ISO timestamp
+        cust.lastContacted = new Date().toISOString();
+        // Persist update
+        this.save();
+        // Return updated record
+        return cust;
+      // End cust check
+      }
+      // Return null if not found
+      return null;
+    // End recordCustomerCheckup
+    },
+
+    /**
+     * Calculates customer CRM summary metrics (Total, VIP, Due for Check-up, Contacted recently).
+     */
+    getCustomerSummary() {
+      // Ensure customers array exists
+      const customers = this.data.customers || [];
+      // Current date for comparison
+      const now = new Date();
+      // 7 days in milliseconds
+      const sevenDaysMs = 7 * 24 * 60 * 60 * 1000;
+      // 14 days in milliseconds
+      const fourteenDaysMs = 14 * 24 * 60 * 60 * 1000;
+
+      // Counters
+      let total = customers.length;
+      let vipCount = 0;
+      let checkupsDue = 0;
+      let recentlyContacted = 0;
+
+      // Loop through customers
+      customers.forEach(c => {
+        // Count VIPs
+        if (c.tag === 'VIP Client') vipCount++;
+        // If customer was never contacted or contacted > 14 days ago
+        if (!c.lastContacted) {
+          // Flag check-up due
+          checkupsDue++;
+        // If contacted previously
+        } else {
+          // Calculate time difference
+          const diff = now - new Date(c.lastContacted);
+          // Overdue if > 14 days
+          if (diff > fourteenDaysMs) {
+            // Increment due counter
+            checkupsDue++;
+          // Recently contacted if <= 7 days
+          } else if (diff <= sevenDaysMs) {
+            // Increment recently contacted counter
+            recentlyContacted++;
+          // End diff condition
+          }
+        // End lastContacted condition
+        }
+      // End loop
+      });
+
+      // Return summary object
+      return {
+        // Total customers count
+        total,
+        // VIP clients count
+        vipCount,
+        // Number of customers due for checkup
+        checkupsDue,
+        // Number of customers contacted within last week
+        recentlyContacted
+      // End summary
+      };
+    // End getCustomerSummary
     },
 
     // --- Multi-Account Workspaces API (Personal vs Business) ---

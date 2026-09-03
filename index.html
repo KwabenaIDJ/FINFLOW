@@ -179,6 +179,42 @@
       <line x1="8" y1="15" x2="12" y2="15"></line>
     <!-- End receipt icon symbol -->
     </symbol>
+    <!-- Users and Customers CRM Icon -->
+    <symbol id="icon-users" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+      <!-- Person 1 body -->
+      <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path>
+      <!-- Person 1 head -->
+      <circle cx="9" cy="7" r="4"></circle>
+      <!-- Person 2 body -->
+      <path d="M23 21v-2a4 4 0 0 0-3-3.87"></path>
+      <!-- Person 2 head -->
+      <path d="M16 3.13a4 4 0 0 1 0 7.75"></path>
+    <!-- End icon-users symbol -->
+    </symbol>
+    <!-- Award / VIP Star Ribbon Icon -->
+    <symbol id="icon-award" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+      <!-- Medal circle -->
+      <circle cx="12" cy="8" r="7"></circle>
+      <!-- Ribbon trail -->
+      <polyline points="8.21 13.89 7 23 12 20 17 23 15.79 13.88"></polyline>
+    <!-- End icon-award symbol -->
+    </symbol>
+    <!-- Bell Notification Icon for Check-up Due Alerts -->
+    <symbol id="icon-bell" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+      <!-- Bell body -->
+      <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"></path>
+      <!-- Clapper -->
+      <path d="M13.73 21a2 2 0 0 1-3.46 0"></path>
+    <!-- End icon-bell symbol -->
+    </symbol>
+    <!-- Search Icon -->
+    <symbol id="icon-search" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+      <!-- Magnifying circle -->
+      <circle cx="11" cy="11" r="8"></circle>
+      <!-- Handle -->
+      <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
+    <!-- End icon-search symbol -->
+    </symbol>
     <!-- Close/Cross Icon -->
     <symbol id="icon-close" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
       <line x1="18" y1="6" x2="6" y2="18" />
@@ -248,6 +284,14 @@
         <!-- Nav label -->
         <span id="navLabelDebts">Debts & Loans</span>
       <!-- End debts nav item -->
+      </a>
+      <!-- Customers & CRM Directory navigation link (Commercial Workspace) -->
+      <a class="nav-item" id="navItemCustomers" data-target="customers" onclick="window.switchTab('customers'); closeMobileSidebar();" style="display: none;">
+        <!-- Users CRM SVG icon -->
+        <svg><use href="#icon-users"></use></svg>
+        <!-- Nav label with dynamic identifier -->
+        <span id="navLabelCustomers">Clients & Customers</span>
+      <!-- End customers nav item -->
       </a>
       <a class="nav-item" data-target="todos" onclick="window.switchTab('todos'); closeMobileSidebar();">
         <svg><use href="#icon-todo"></use></svg>
@@ -770,6 +814,146 @@
       <!-- End debts grid container -->
       </div>
     <!-- End debts panel -->
+    </div>
+
+    <!-- ==================== PANEL: CLIENTS & CUSTOMER CRM ==================== -->
+    <div class="view-panel" id="customers-panel">
+      <!-- CRM Header Section -->
+      <div class="panel-header" style="display: flex; justify-content: space-between; align-items: flex-start; flex-wrap: wrap; gap: 16px; margin-bottom: 24px;">
+        <!-- Header title and subtitle -->
+        <div class="header-title">
+          <!-- Main panel heading -->
+          <h2 style="display: flex; align-items: center; gap: 10px;">
+            <!-- CRM Users SVG icon -->
+            <svg style="width: 28px; height: 28px; fill: none; stroke: var(--color-primary); stroke-width: 2;"><use href="#icon-users"></use></svg>
+            <!-- Title text -->
+            <span>Client & Customer Directory</span>
+            <!-- CRM Pill Badge -->
+            <span class="badge" style="background: rgba(14, 165, 233, 0.15); color: #0284c7; border: 1px solid rgba(14, 165, 233, 0.3); font-size: 0.72rem; padding: 3px 8px; border-radius: 6px; font-weight: 800; letter-spacing: 0.5px;">CRM</span>
+          <!-- End heading -->
+          </h2>
+          <!-- Subtitle explanation -->
+          <p style="color: var(--text-muted); margin-top: 4px;">Maintain client relationships, track follow-ups, and reach out on WhatsApp with one tap.</p>
+        <!-- End header title -->
+        </div>
+        <!-- Add New Customer action button -->
+        <button type="button" class="btn btn-primary" id="openAddCustomerModalBtn" onclick="window.openAddCustomerModal()" style="display: flex; align-items: center; gap: 8px; font-weight: 700; padding: 10px 18px; border-radius: var(--border-radius-sm);">
+          <!-- Plus icon -->
+          <svg style="width: 16px; height: 16px; fill: none; stroke: currentColor; stroke-width: 2.5;"><use href="#icon-plus"></use></svg>
+          <!-- Button label -->
+          <span>+ Add Customer</span>
+        <!-- End add button -->
+        </button>
+      <!-- End panel header -->
+      </div>
+
+      <!-- CRM Metrics KPI Cards Grid -->
+      <div class="kpi-grid" style="grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); margin-bottom: 24px;">
+        <!-- Total Clients Card -->
+        <div class="card kpi-card" onclick="window.setCustomerFilter('all')" title="Click to view all clients" style="border-left: 4px solid var(--color-primary); cursor: pointer; transition: transform 0.15s ease;">
+          <!-- Card Header -->
+          <div class="card-header">
+            <!-- Title -->
+            <span class="card-title">Total Customers</span>
+            <!-- Icon -->
+            <div class="kpi-icon" style="background: rgba(37, 99, 235, 0.1); color: var(--color-primary); padding: 8px; border-radius: 50%;">
+              <svg style="width: 20px; height: 20px; fill: none; stroke: currentColor; stroke-width: 2;"><use href="#icon-users"></use></svg>
+            </div>
+          </div>
+          <!-- KPI Value -->
+          <div class="kpi-value" id="crmTotalClients">0</div>
+          <!-- Subtext -->
+          <div class="kpi-subtext" style="color: var(--text-muted); font-size: 0.8rem; margin-top: 6px;">Saved in business address book</div>
+        </div>
+
+        <!-- VIP Clients Card -->
+        <div class="card kpi-card" onclick="window.setCustomerFilter('vip')" title="Click to view VIP clients" style="border-left: 4px solid #f59e0b; cursor: pointer; transition: transform 0.15s ease;">
+          <!-- Card Header -->
+          <div class="card-header">
+            <!-- Title -->
+            <span class="card-title">VIP & Top Clients</span>
+            <!-- Icon -->
+            <div class="kpi-icon" style="background: rgba(245, 158, 11, 0.1); color: #f59e0b; padding: 8px; border-radius: 50%;">
+              <svg style="width: 20px; height: 20px; fill: none; stroke: currentColor; stroke-width: 2;"><use href="#icon-award"></use></svg>
+            </div>
+          </div>
+          <!-- KPI Value -->
+          <div class="kpi-value" id="crmVipClients">0</div>
+          <!-- Subtext -->
+          <div class="kpi-subtext" style="color: #f59e0b; font-size: 0.8rem; font-weight: 600; margin-top: 6px;">High-value client relationships</div>
+        </div>
+
+        <!-- Due for Check-up Card -->
+        <div class="card kpi-card" onclick="window.setCustomerFilter('due')" title="Click to view clients needing follow-up" style="border-left: 4px solid #ef4444; cursor: pointer; transition: transform 0.15s ease;">
+          <!-- Card Header -->
+          <div class="card-header">
+            <!-- Title -->
+            <span class="card-title">Check-ups Due</span>
+            <!-- Icon -->
+            <div class="kpi-icon" style="background: rgba(239, 68, 68, 0.1); color: #ef4444; padding: 8px; border-radius: 50%;">
+              <svg style="width: 20px; height: 20px; fill: none; stroke: currentColor; stroke-width: 2;"><use href="#icon-bell"></use></svg>
+            </div>
+          </div>
+          <!-- KPI Value -->
+          <div class="kpi-value" id="crmCheckupsDue" style="color: #ef4444;">0</div>
+          <!-- Subtext -->
+          <div class="kpi-subtext" style="color: #ef4444; font-size: 0.8rem; font-weight: 600; margin-top: 6px;">14+ days without contact</div>
+        </div>
+
+        <!-- Recently Contacted Card -->
+        <div class="card kpi-card" onclick="window.setCustomerFilter('recent')" title="Click to view recently contacted clients" style="border-left: 4px solid #10b981; cursor: pointer; transition: transform 0.15s ease;">
+          <!-- Card Header -->
+          <div class="card-header">
+            <!-- Title -->
+            <span class="card-title">Contacted Recently</span>
+            <!-- Icon -->
+            <div class="kpi-icon" style="background: rgba(16, 185, 129, 0.1); color: #10b981; padding: 8px; border-radius: 50%;">
+              <svg style="width: 20px; height: 20px; fill: none; stroke: currentColor; stroke-width: 2;"><use href="#icon-check-circle"></use></svg>
+            </div>
+          </div>
+          <!-- KPI Value -->
+          <div class="kpi-value" id="crmContactedRecent" style="color: #10b981;">0</div>
+          <!-- Subtext -->
+          <div class="kpi-subtext" style="color: #10b981; font-size: 0.8rem; font-weight: 600; margin-top: 6px;">Within the last 7 days</div>
+        </div>
+      <!-- End KPI cards grid -->
+      </div>
+
+      <!-- Search & Filter Controls Card -->
+      <div class="card" style="padding: 16px 20px; margin-bottom: 20px; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 14px;">
+        <!-- Search Input with magnifying glass icon -->
+        <div style="position: relative; flex: 1; min-width: 240px;">
+          <!-- Search SVG icon -->
+          <svg style="position: absolute; left: 12px; top: 50%; transform: translateY(-50%); width: 16px; height: 16px; fill: none; stroke: var(--text-muted); stroke-width: 2;"><use href="#icon-search"></use></svg>
+          <!-- Text search input -->
+          <input type="text" id="crmSearchInput" oninput="window.handleCustomerSearch(event)" placeholder="Search clients by name, company, phone, notes..." style="width: 100%; padding: 9px 12px 9px 36px; border-radius: var(--border-radius-sm); border: 1px solid var(--color-border); background: var(--bg-primary); color: var(--text-main); font-family: inherit; font-size: 0.88rem; outline: none;">
+        <!-- End search container -->
+        </div>
+
+        <!-- Filter Pills Group -->
+        <div style="display: flex; gap: 8px; flex-wrap: wrap;" id="customerFilterGroup">
+          <!-- Filter All button -->
+          <button type="button" class="btn btn-sm btn-customer-filter active" id="custFilter-all" onclick="window.setCustomerFilter('all')" style="padding: 6px 14px; font-size: 0.8rem; font-weight: 700; border-radius: 20px;">All</button>
+          <!-- Filter VIP button -->
+          <button type="button" class="btn btn-sm btn-customer-filter" id="custFilter-vip" onclick="window.setCustomerFilter('vip')" style="padding: 6px 14px; font-size: 0.8rem; font-weight: 600; border-radius: 20px;">⭐ VIP Clients</button>
+          <!-- Filter Due button -->
+          <button type="button" class="btn btn-sm btn-customer-filter" id="custFilter-due" onclick="window.setCustomerFilter('due')" style="padding: 6px 14px; font-size: 0.8rem; font-weight: 600; border-radius: 20px;">🔔 Due Check-up</button>
+          <!-- Filter Recent button -->
+          <button type="button" class="btn btn-sm btn-customer-filter" id="custFilter-recent" onclick="window.setCustomerFilter('recent')" style="padding: 6px 14px; font-size: 0.8rem; font-weight: 600; border-radius: 20px;">✅ Recently Contacted</button>
+        <!-- End Filter Pills Group -->
+        </div>
+
+        <!-- Summary Count Indicator -->
+        <div style="font-size: 0.82rem; color: var(--text-muted); font-weight: 600;" id="customerCountStats">Showing 0 clients</div>
+      <!-- End search and filter controls card -->
+      </div>
+
+      <!-- Customers Cards Grid -->
+      <div id="customersGrid" style="display: grid; grid-template-columns: repeat(auto-fill, minmax(320px, 1fr)); gap: 18px;">
+        <!-- Dynamically populated in app.js -->
+      <!-- End customers grid -->
+      </div>
+    <!-- End customers panel -->
     </div>
 
     <!-- ==================== PANEL: TODOS ==================== -->
@@ -2054,6 +2238,108 @@
   <!-- End addBusinessAccountModal -->
   </div>
 
+  <!-- ==================== OVERLAY: ADD / EDIT CUSTOMER MODAL ==================== -->
+  <div class="modal-overlay" id="customerModal">
+    <!-- Modal container -->
+    <div class="modal-content" style="max-width: 520px;">
+      <!-- Modal Header -->
+      <div class="modal-header">
+        <!-- Title -->
+        <h3 class="modal-title" id="customerModalTitle">Add New Customer</h3>
+        <!-- Close button -->
+        <button type="button" class="modal-close-btn" onclick="window.closeModal(document.getElementById('customerModal'))" aria-label="Close dialog"><svg><use href="#icon-close"></use></svg></button>
+      <!-- End modal header -->
+      </div>
+      <!-- Customer form -->
+      <form id="customerForm">
+        <!-- Hidden input for edit customer ID -->
+        <input type="hidden" id="custEditId" value="">
+
+        <!-- Full Name Group -->
+        <div class="form-group">
+          <!-- Label -->
+          <label for="custName">Customer / Client Name *</label>
+          <!-- Input -->
+          <input type="text" id="custName" required placeholder="e.g. Adwoa Mensah, Isaac Graphic Client" style="background: var(--bg-secondary); border: 1px solid var(--color-border); color: var(--text-main); border-radius: var(--border-radius-sm); padding: 10px; font-family: inherit; width: 100%;">
+        <!-- End Name Group -->
+        </div>
+
+        <!-- Phone & Tag Row -->
+        <div class="form-row" style="display: flex; gap: 12px; flex-wrap: wrap;">
+          <!-- Phone Group -->
+          <div class="form-group" style="flex: 1; min-width: 200px;">
+            <!-- Label -->
+            <label for="custPhone">Phone / WhatsApp Number *</label>
+            <!-- Phone input -->
+            <input type="tel" id="custPhone" required placeholder="e.g. 0244123456 or +233..." style="background: var(--bg-secondary); border: 1px solid var(--color-border); color: var(--text-main); border-radius: var(--border-radius-sm); padding: 10px; font-family: inherit; width: 100%;">
+          <!-- End Phone Group -->
+          </div>
+          <!-- Tag / Classification Group -->
+          <div class="form-group" style="flex: 1; min-width: 200px;">
+            <!-- Label -->
+            <label for="custTag">Relationship Tag</label>
+            <!-- Tag select -->
+            <select id="custTag" style="background: var(--bg-secondary); border: 1px solid var(--color-border); color: var(--text-main); border-radius: var(--border-radius-sm); padding: 10px; font-family: inherit; width: 100%;">
+              <!-- VIP -->
+              <option value="VIP Client">⭐ VIP Client</option>
+              <!-- Regular -->
+              <option value="Regular Customer" selected>🤝 Regular Customer</option>
+              <!-- Lead -->
+              <option value="New Lead">🌱 New Lead / Inquirer</option>
+              <!-- Wholesale -->
+              <option value="Wholesale Partner">📦 Wholesale / B2B Partner</option>
+            <!-- End select -->
+            </select>
+          <!-- End Tag Group -->
+          </div>
+        <!-- End Phone & Tag Row -->
+        </div>
+
+        <!-- Company & Email Row -->
+        <div class="form-row" style="display: flex; gap: 12px; flex-wrap: wrap;">
+          <!-- Company Group -->
+          <div class="form-group" style="flex: 1; min-width: 200px;">
+            <!-- Label -->
+            <label for="custCompany">Company / Brand (Optional)</label>
+            <!-- Company input -->
+            <input type="text" id="custCompany" placeholder="e.g. Mensah Enterprises Ltd" style="background: var(--bg-secondary); border: 1px solid var(--color-border); color: var(--text-main); border-radius: var(--border-radius-sm); padding: 10px; font-family: inherit; width: 100%;">
+          <!-- End Company Group -->
+          </div>
+          <!-- Email Group -->
+          <div class="form-group" style="flex: 1; min-width: 200px;">
+            <!-- Label -->
+            <label for="custEmail">Email Address (Optional)</label>
+            <!-- Email input -->
+            <input type="email" id="custEmail" placeholder="client@example.com" style="background: var(--bg-secondary); border: 1px solid var(--color-border); color: var(--text-main); border-radius: var(--border-radius-sm); padding: 10px; font-family: inherit; width: 100%;">
+          <!-- End Email Group -->
+          </div>
+        <!-- End Company & Email Row -->
+        </div>
+
+        <!-- Notes / Reminders Group -->
+        <div class="form-group">
+          <!-- Label -->
+          <label for="custNotes">Client Preferences / Check-up Notes</label>
+          <!-- Textarea -->
+          <textarea id="custNotes" rows="2" placeholder="e.g. Prefers flyer prints on 300gsm matte paper, pay via MTN MoMo, follow up every Friday..." style="background: var(--bg-secondary); border: 1px solid var(--color-border); color: var(--text-main); border-radius: var(--border-radius-sm); padding: 10px; font-family: inherit; width: 100%; resize: vertical;"></textarea>
+        <!-- End Notes Group -->
+        </div>
+
+        <!-- Modal Footer Actions -->
+        <div class="modal-footer" style="display: flex; justify-content: flex-end; gap: 10px; border-top: 1px solid var(--color-border); padding-top: 14px;">
+          <!-- Cancel button -->
+          <button type="button" class="btn btn-secondary btn-cancel-modal" onclick="window.closeModal(document.getElementById('customerModal'))">Cancel</button>
+          <!-- Submit button -->
+          <button type="submit" class="btn btn-primary" id="custSubmitBtn">Save Customer</button>
+        <!-- End modal footer -->
+        </div>
+      <!-- End customer form -->
+      </form>
+    <!-- End modal container -->
+    </div>
+  <!-- End customerModal -->
+  </div>
+
   <!-- ==================== OVERLAY: CUSTOMER SALES RECEIPT & INVOICE MODAL ==================== -->
   <div class="modal-overlay" id="customerReceiptModal">
     <!-- Modal content container with wide split layout for editor and live preview -->
@@ -2083,6 +2369,19 @@
             <!-- Heading text -->
             Receipt Details
           <!-- End title -->
+          </div>
+
+          <!-- Quick Select Existing Customer Dropdown -->
+          <div class="form-group" id="receiptCustomerSelectGroup" style="margin-bottom: 0;">
+            <!-- Label -->
+            <label for="receiptCustomerSelect" style="display: block; font-size: 0.8rem; font-weight: 700; color: var(--color-primary); margin-bottom: 4px;">⚡ Quick Select Saved Client</label>
+            <!-- Select dropdown -->
+            <select id="receiptCustomerSelect" onchange="window.selectReceiptCustomer(this.value)" style="background: var(--bg-secondary); border: 1px solid var(--color-border); color: var(--text-main); border-radius: var(--border-radius-sm); padding: 9px 12px; font-family: inherit; width: 100%; font-size: 0.88rem;">
+              <!-- Default option -->
+              <option value="">-- Choose from Customer Directory --</option>
+            <!-- End select -->
+            </select>
+          <!-- End customer select group -->
           </div>
 
           <!-- Customer Name Input -->
