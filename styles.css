@@ -2171,4 +2171,34 @@ header {
   background-color: #ffffff;
 }
 
+/* Debts & Loans Filter Tabs Styling */
+.btn-debt-filter {
+  /* Smooth pill transition */
+  transition: all 0.2s ease;
+  /* Cursor pointer */
+  cursor: pointer;
+  /* Rounded pill shape */
+  border-radius: 20px !important;
+}
+
+.btn-debt-filter:hover {
+  /* Subtle hover background */
+  background: var(--bg-secondary) !important;
+  /* Accent border */
+  border-color: var(--color-primary) !important;
+}
+
+.btn-debt-filter.active {
+  /* Highlighted primary background */
+  background: var(--color-primary) !important;
+  /* Crisp white text */
+  color: #ffffff !important;
+  /* Primary border */
+  border-color: var(--color-primary) !important;
+  /* Bold weight */
+  font-weight: 700 !important;
+  /* Soft glow shadow */
+  box-shadow: 0 4px 12px rgba(2, 132, 199, 0.3) !important;
+}
+
 

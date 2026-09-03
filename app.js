@@ -156,10 +156,30 @@
     });
   }
 
+  /**
+   * Helper: safely escapes untrusted string input to prevent XSS injection in HTML templates.
+   */
+  function escapeHTML(str) {
+    // Return empty string for nullish values
+    if (!str && str !== 0) return '';
+    // Replace reserved HTML characters with entities
+    return String(str)
+      .replace(/&/g, '&amp;')
+      .replace(/</g, '&lt;')
+      .replace(/>/g, '&gt;')
+      .replace(/"/g, '&quot;')
+      .replace(/'/g, '&#39;');
+  // End escapeHTML
+  }
+
   // Expose FX converters globally for chart tooltips & calculations
   window.EXCHANGE_RATES = DEFAULT_GHS_RATES;
+  // Expose currency conversion function
   window.convertCurrencyAmount = convertCurrencyAmount;
+  // Expose money formatting function
   window.formatMoney = formatMoney;
+  // Expose HTML escaping utility function
+  window.escapeHTML = escapeHTML;
 
   /**
    * Resizes an image file to a 128x128px square JPEG and converts to Base64.
