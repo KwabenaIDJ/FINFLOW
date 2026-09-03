@@ -4824,9 +4824,13 @@ Ask me specific financial questions like:
         // Prevent any default behavior
         if (e && typeof e.preventDefault === 'function') e.preventDefault();
         // Extract target filter attribute value
-        const filterVal = e.currentTarget.getAttribute('data-filter') || 'all';
-        // Delegate to global setDebtFilter function
-        window.setDebtFilter(filterVal);
+        const filterVal = e.currentTarget.getAttribute('data-filter');
+        // Guard: Only switch filter if data-filter attribute is present
+        if (filterVal) {
+          // Delegate to global setDebtFilter function
+          window.setDebtFilter(filterVal);
+        // End filterVal check
+        }
       // End click listener
       });
     // End forEach

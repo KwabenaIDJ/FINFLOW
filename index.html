@@ -659,14 +659,14 @@
       <div class="card" style="padding: 16px 20px; margin-bottom: 20px; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 12px;">
         <!-- Filter Pills Group -->
         <div style="display: flex; gap: 8px; flex-wrap: wrap;" id="debtsFilterGroup">
-          <!-- Filter All button with direct onclick handler -->
-          <button type="button" class="btn btn-sm btn-debt-filter active" id="debtFilter-all" onclick="window.setDebtFilter('all')" style="padding: 6px 14px; font-size: 0.8rem; font-weight: 700; border-radius: 20px; transition: all 0.2s ease;">All</button>
-          <!-- Filter I Owe button with direct onclick handler -->
-          <button type="button" class="btn btn-sm btn-debt-filter" id="debtFilter-owe" onclick="window.setDebtFilter('owe')" style="padding: 6px 14px; font-size: 0.8rem; font-weight: 500; border-radius: 20px; transition: all 0.2s ease;">🔴 I Owe</button>
-          <!-- Filter Owed to Me button with direct onclick handler -->
-          <button type="button" class="btn btn-sm btn-debt-filter" id="debtFilter-lent" onclick="window.setDebtFilter('lent')" style="padding: 6px 14px; font-size: 0.8rem; font-weight: 500; border-radius: 20px; transition: all 0.2s ease;">🟢 Owed to Me</button>
-          <!-- Filter Settled button with direct onclick handler -->
-          <button type="button" class="btn btn-sm btn-debt-filter" id="debtFilter-settled" onclick="window.setDebtFilter('settled')" style="padding: 6px 14px; font-size: 0.8rem; font-weight: 500; border-radius: 20px; transition: all 0.2s ease;">🎉 Settled</button>
+          <!-- Filter All button with direct onclick handler and data-filter -->
+          <button type="button" class="btn btn-sm btn-debt-filter active" id="debtFilter-all" data-filter="all" onclick="window.setDebtFilter('all')" style="padding: 6px 14px; font-size: 0.8rem; font-weight: 700; border-radius: 20px; transition: all 0.2s ease;">All</button>
+          <!-- Filter I Owe button with direct onclick handler and data-filter -->
+          <button type="button" class="btn btn-sm btn-debt-filter" id="debtFilter-owe" data-filter="owe" onclick="window.setDebtFilter('owe')" style="padding: 6px 14px; font-size: 0.8rem; font-weight: 500; border-radius: 20px; transition: all 0.2s ease;">🔴 I Owe</button>
+          <!-- Filter Owed to Me button with direct onclick handler and data-filter -->
+          <button type="button" class="btn btn-sm btn-debt-filter" id="debtFilter-lent" data-filter="lent" onclick="window.setDebtFilter('lent')" style="padding: 6px 14px; font-size: 0.8rem; font-weight: 500; border-radius: 20px; transition: all 0.2s ease;">🟢 Owed to Me</button>
+          <!-- Filter Settled button with direct onclick handler and data-filter -->
+          <button type="button" class="btn btn-sm btn-debt-filter" id="debtFilter-settled" data-filter="settled" onclick="window.setDebtFilter('settled')" style="padding: 6px 14px; font-size: 0.8rem; font-weight: 500; border-radius: 20px; transition: all 0.2s ease;">🎉 Settled</button>
         <!-- End Filter Pills Group -->
         </div>
         <!-- Status count indicator text -->
