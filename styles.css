@@ -2200,5 +2200,26 @@ header {
   /* Soft glow shadow */
   box-shadow: 0 4px 12px rgba(2, 132, 199, 0.3) !important;
 }
+/* --- Multi-Account Workspace Switcher Styles --- */
+#headerWorkspaceBtn:hover {
+  /* Subtle primary hover border */
+  border-color: var(--color-primary) !important;
+  /* Hover elevation lift */
+  transform: translateY(-1px);
+  /* Hover shadow glow */
+  box-shadow: 0 4px 12px rgba(2, 132, 199, 0.2) !important;
+}
 
+#sidebarWorkspaceBtn:hover {
+  /* Highlight border on hover */
+  border-color: var(--color-primary) !important;
+  /* Lift effect */
+  transform: translateY(-1px);
+}
 
+#workspaceDropdownMenu {
+  /* Backdrop blur for modern glassmorphism effect */
+  backdrop-filter: blur(12px);
+  /* Webkit backdrop blur support */
+  -webkit-backdrop-filter: blur(12px);
+}

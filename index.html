@@ -188,6 +188,27 @@
       </button>
     </div>
 
+    <!-- Workspace Selector Pill in Sidebar -->
+    <div style="padding: 10px 14px; border-bottom: 1px solid var(--color-border); margin-bottom: 8px;" id="sidebarWorkspaceContainer">
+      <!-- Section subtext label -->
+      <div style="font-size: 0.65rem; text-transform: uppercase; font-weight: 700; color: var(--text-muted); margin-bottom: 6px; letter-spacing: 0.5px;">Financial Workspace</div>
+      <!-- Workspace Switcher Button -->
+      <button type="button" id="sidebarWorkspaceBtn" onclick="window.toggleWorkspaceDropdown(event)" style="width: 100%; display: flex; align-items: center; justify-content: space-between; background: var(--bg-card); border: 1px solid var(--color-border); border-radius: var(--border-radius-sm); padding: 8px 10px; cursor: pointer; color: var(--text-main); font-family: inherit; font-size: 0.85rem; transition: all var(--transition-fast);">
+        <!-- Active workspace icon and title container -->
+        <div style="display: flex; align-items: center; gap: 8px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">
+          <!-- Workspace icon symbol -->
+          <span id="sidebarWorkspaceIcon" style="font-size: 1.1rem; flex-shrink: 0;">👤</span>
+          <!-- Workspace name text -->
+          <span id="sidebarWorkspaceName" style="font-weight: 700; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">Personal Profile</span>
+        <!-- End container -->
+        </div>
+        <!-- Dropdown arrow SVG icon -->
+        <svg style="width: 12px; height: 12px; fill: none; stroke: currentColor; stroke-width: 2.5; flex-shrink: 0;"><use href="#icon-arrow-down"></use></svg>
+      <!-- End switcher button -->
+      </button>
+    <!-- End sidebar workspace container -->
+    </div>
+
     <nav id="appNavigation">
       <a class="nav-item active" data-target="dashboard" onclick="window.switchTab('dashboard'); closeMobileSidebar();">
         <svg><use href="#icon-dashboard"></use></svg>
@@ -270,12 +291,32 @@
         <button id="menuToggleBtn" class="btn btn-secondary btn-icon" title="Open menu" onclick="document.getElementById('appSidebar').classList.add('active'); document.getElementById('sidebarBackdrop').classList.add('active'); document.body.classList.add('no-scroll');" style="display: none; padding: 10px 12px; align-items: center; justify-content: center; min-width: 42px;">
           <svg style="width: 18px; height: 18px; fill: none; stroke: currentColor; stroke-width: 2.5;"><use href="#icon-menu"></use></svg>
         </button>
-        <div style="display: flex; align-items: center; gap: 14px; flex-grow: 1;">
+        <div style="display: flex; align-items: center; gap: 14px; flex-grow: 1; flex-wrap: wrap;">
+          <!-- User avatar bubble -->
           <div class="profile-avatar" style="width: 46px; height: 46px; font-size: 1.1rem; flex-shrink: 0; border: 2px solid var(--color-primary); box-shadow: 0 4px 12px var(--color-primary-glow);">U</div>
+          <!-- Title and workspace switcher row -->
           <div class="header-title">
-            <h1 id="headerGreeting">Greetings!</h1>
-            <p>Keep track of your transactions, goals, budgets, and investments.</p>
+            <!-- Greeting title and workspace pill wrapper -->
+            <div style="display: flex; align-items: center; gap: 10px; flex-wrap: wrap;">
+              <!-- Header greeting headline -->
+              <h1 id="headerGreeting" style="margin: 0;">Greetings!</h1>
+              <!-- Header Workspace Switcher Trigger Pill -->
+              <button type="button" id="headerWorkspaceBtn" onclick="window.toggleWorkspaceDropdown(event)" style="display: inline-flex; align-items: center; gap: 6px; background: var(--bg-card); border: 1px solid var(--color-border); padding: 5px 12px; border-radius: 20px; font-size: 0.78rem; font-weight: 700; color: var(--text-main); cursor: pointer; transition: all 0.2s ease; box-shadow: 0 2px 6px rgba(0,0,0,0.1);">
+                <!-- Active workspace icon -->
+                <span id="headerWorkspaceIcon">👤</span>
+                <!-- Active workspace name text -->
+                <span id="headerWorkspaceName">Personal Profile</span>
+                <!-- Dropdown arrow SVG -->
+                <svg style="width: 10px; height: 10px; fill: none; stroke: currentColor; stroke-width: 2.5;"><use href="#icon-arrow-down"></use></svg>
+              <!-- End header workspace button -->
+              </button>
+            <!-- End wrapper -->
+            </div>
+            <!-- Subtitle text -->
+            <p id="headerSubtitle" style="margin-top: 4px;">Keep track of your transactions, goals, budgets, and investments.</p>
+          <!-- End header-title -->
           </div>
+        <!-- End header avatar and title flex container -->
         </div>
       </div>
       <div class="header-actions">
@@ -411,31 +452,39 @@
       
       <!-- KPI GRID -->
       <section class="kpi-grid" aria-label="Financial Summary Totals">
+        <!-- KPI Card 1: Net Worth / Net Operating Profit -->
         <div class="card kpi-card cash">
           <div class="kpi-header">
-            <span class="kpi-title">Net Worth</span>
+            <!-- Dynamic title for Personal (Net Worth) vs Business (Net Operating Profit) -->
+            <span class="kpi-title" id="kpiTitleNetWorth">Net Worth</span>
             <div class="kpi-icon">
               <svg><use href="#icon-wallet"></use></svg>
             </div>
           </div>
           <div class="kpi-value" id="netWorthValue">$0.00</div>
-          <div class="kpi-footer">Total Wealth</div>
+          <!-- Dynamic footer for Personal (Total Wealth) vs Business (Profit Margin %) -->
+          <div class="kpi-footer" id="kpiFooterNetWorth">Total Wealth</div>
         </div>
 
+        <!-- KPI Card 2: Cash Balance / Working Capital -->
         <div class="card kpi-card savings">
           <div class="kpi-header">
-            <span class="kpi-title">Cash Balance</span>
+            <!-- Dynamic title for Personal (Cash Balance) vs Business (Working Capital) -->
+            <span class="kpi-title" id="kpiTitleCash">Cash Balance</span>
             <div class="kpi-icon">
               <svg><use href="#icon-target"></use></svg>
             </div>
           </div>
           <div class="kpi-value" id="cashBalanceValue">$0.00</div>
-          <div class="kpi-footer">Liquid savings</div>
+          <!-- Dynamic footer for Personal (Liquid savings) vs Business (Cash on hand) -->
+          <div class="kpi-footer" id="kpiFooterCash">Liquid savings</div>
         </div>
 
+        <!-- KPI Card 3: Monthly Income / Gross Revenue -->
         <div class="card kpi-card income">
           <div class="kpi-header">
-            <span class="kpi-title">Monthly Income</span>
+            <!-- Dynamic title for Personal (Monthly Income) vs Business (Gross Revenue) -->
+            <span class="kpi-title" id="kpiTitleIncome">Monthly Income</span>
             <div class="kpi-icon">
               <svg><use href="#icon-arrow-down-left"></use></svg>
             </div>
@@ -444,9 +493,11 @@
           <div class="kpi-footer" id="incomeTrend">Calculating...</div>
         </div>
 
+        <!-- KPI Card 4: Monthly Expenses / Operating Expenses (COGS) -->
         <div class="card kpi-card expense">
           <div class="kpi-header">
-            <span class="kpi-title">Monthly Expenses</span>
+            <!-- Dynamic title for Personal (Monthly Expenses) vs Business (Operating Expenses) -->
+            <span class="kpi-title" id="kpiTitleExpense">Monthly Expenses</span>
             <div class="kpi-icon">
               <svg><use href="#icon-arrow-up-right"></use></svg>
             </div>
@@ -1757,6 +1808,137 @@
     <!-- End modal content -->
     </div>
   <!-- End statementModal -->
+  </div>
+
+  <!-- ==================== POPOVER: GLOBAL WORKSPACE DROPDOWN ==================== -->
+  <div id="workspaceDropdownMenu" style="display: none; position: fixed; z-index: 10000; background: var(--bg-card); border: 1px solid var(--color-border); border-radius: var(--border-radius-md); box-shadow: 0 12px 32px rgba(0,0,0,0.45); min-width: 270px; max-width: 320px; overflow: hidden; animation: fadeIn 0.15s ease;">
+    <!-- Popover header -->
+    <div style="padding: 12px 14px; border-bottom: 1px solid var(--color-border); background: var(--bg-secondary); display: flex; justify-content: space-between; align-items: center;">
+      <!-- Title text -->
+      <span style="font-size: 0.72rem; text-transform: uppercase; font-weight: 700; color: var(--text-muted); letter-spacing: 0.5px;">Switch Workspace</span>
+      <!-- Premium indicator pill -->
+      <span class="badge" id="workspaceTrialStatusBadge" style="font-size: 0.68rem; padding: 2px 6px; background: rgba(2, 132, 199, 0.15); color: var(--color-primary); font-weight: 700;">Trial: 2 left</span>
+    <!-- End header -->
+    </div>
+    <!-- List of user workspaces container -->
+    <div id="workspaceAccountsList" style="max-height: 220px; overflow-y: auto; padding: 6px 0;">
+      <!-- Dynamically rendered in app.js -->
+    <!-- End list container -->
+    </div>
+    <!-- Popover footer with Add Business Account action -->
+    <div style="padding: 10px 12px; border-top: 1px solid var(--color-border); background: var(--bg-secondary);">
+      <!-- Button to open add business workspace dialog -->
+      <button type="button" class="btn btn-primary btn-sm" onclick="window.openAddBusinessModal()" style="width: 100%; display: flex; align-items: center; justify-content: center; gap: 6px; font-size: 0.82rem; padding: 8px 12px; font-weight: 700; border-radius: var(--border-radius-sm);">
+        <!-- Plus icon -->
+        <svg style="width: 14px; height: 14px; fill: none; stroke: currentColor; stroke-width: 2.5;"><use href="#icon-plus"></use></svg>
+        <!-- Button label -->
+        <span>+ Add Business Account</span>
+      <!-- End button -->
+      </button>
+    <!-- End popover footer -->
+    </div>
+  <!-- End workspaceDropdownMenu -->
+  </div>
+
+  <!-- ==================== OVERLAY: CREATE BUSINESS ACCOUNT MODAL ==================== -->
+  <div class="modal-overlay" id="addBusinessAccountModal" style="display: none;">
+    <!-- Modal content container -->
+    <div class="modal-content" style="max-width: 460px;">
+      <!-- Modal header -->
+      <div class="modal-header" style="border-bottom: 1px solid var(--color-border); padding-bottom: 14px;">
+        <!-- Header title and icon wrapper -->
+        <div style="display: flex; align-items: center; gap: 10px;">
+          <!-- Briefcase icon bubble -->
+          <div style="width: 36px; height: 36px; border-radius: 8px; background: rgba(2, 132, 199, 0.15); display: flex; align-items: center; justify-content: center; font-size: 1.2rem;">💼</div>
+          <!-- Title text block -->
+          <div>
+            <!-- Main modal heading -->
+            <h2 class="modal-title" style="margin: 0; font-size: 1.2rem;">Create Business Workspace</h2>
+            <!-- Subtitle explanation -->
+            <div style="font-size: 0.78rem; color: var(--text-muted); margin-top: 2px;">Separate commercial cash flow, inventory & sales from personal money</div>
+          <!-- End text block -->
+          </div>
+        <!-- End wrapper -->
+        </div>
+        <!-- Modal close button -->
+        <button type="button" class="modal-close" onclick="window.closeModal(document.getElementById('addBusinessAccountModal'))" aria-label="Close dialog">&times;</button>
+      <!-- End modal header -->
+      </div>
+      <!-- Add business account form -->
+      <form id="addBusinessAccountForm">
+        <!-- Form body container -->
+        <div style="padding: 18px 0;">
+          <!-- Business Name input group -->
+          <div class="form-group" style="margin-bottom: 16px;">
+            <!-- Input label -->
+            <label for="newBusinessName" style="display: block; font-size: 0.82rem; font-weight: 700; color: var(--text-main); margin-bottom: 6px;">Business or Enterprise Name *</label>
+            <!-- Input text field -->
+            <input type="text" id="newBusinessName" required placeholder="e.g. Kwame Tech Solutions, Sarah's Bakery" style="background: var(--bg-secondary); border: 1px solid var(--color-border); color: var(--text-main); border-radius: var(--border-radius-sm); padding: 10px; font-family: inherit; width: 100%; font-size: 0.9rem;">
+          <!-- End business name group -->
+          </div>
+          <!-- Industry / Category selector group -->
+          <div class="form-group" style="margin-bottom: 16px;">
+            <!-- Category label -->
+            <label for="newBusinessCategory" style="display: block; font-size: 0.82rem; font-weight: 700; color: var(--text-main); margin-bottom: 6px;">Industry / Activity</label>
+            <!-- Category dropdown select -->
+            <select id="newBusinessCategory" style="background: var(--bg-secondary); border: 1px solid var(--color-border); color: var(--text-main); border-radius: var(--border-radius-sm); padding: 10px; font-family: inherit; width: 100%; font-size: 0.9rem;">
+              <!-- Option Retail & E-Commerce -->
+              <option value="Retail & E-Commerce">🛍️ Retail & E-Commerce (Shop / Online Store)</option>
+              <!-- Option Food & Hospitality -->
+              <option value="Food & Hospitality">🍽️ Food & Hospitality (Restaurant, Cafe, Bakery)</option>
+              <!-- Option Freelance & Consulting -->
+              <option value="Freelance & Consulting">💼 Freelance & Professional Consulting</option>
+              <!-- Option Tech & Digital Services -->
+              <option value="Tech & Digital Services">💻 Tech & Digital Services</option>
+              <!-- Option Trades & Construction -->
+              <option value="Trades & Construction">🛠️ Trades, Crafts & Construction</option>
+              <!-- Option General Commerce -->
+              <option value="General Commerce">📦 General Trade & Commercial Enterprise</option>
+            <!-- End select -->
+            </select>
+          <!-- End category group -->
+          </div>
+          <!-- Operating Currency selector group -->
+          <div class="form-group" style="margin-bottom: 16px;">
+            <!-- Currency label -->
+            <label for="newBusinessCurrency" style="display: block; font-size: 0.82rem; font-weight: 700; color: var(--text-main); margin-bottom: 6px;">Operating Currency</label>
+            <!-- Currency dropdown select -->
+            <select id="newBusinessCurrency" style="background: var(--bg-secondary); border: 1px solid var(--color-border); color: var(--text-main); border-radius: var(--border-radius-sm); padding: 10px; font-family: inherit; width: 100%; font-size: 0.9rem; font-weight: 700;">
+              <!-- Currencies -->
+              <option value="GH₵">Ghana Cedi (GH₵)</option>
+              <option value="$">US Dollar ($)</option>
+              <option value="€">Euro (€)</option>
+              <option value="£">British Pound (£)</option>
+              <option value="₦">Nigerian Naira (₦)</option>
+              <option value="C$">Canadian Dollar (C$)</option>
+              <option value="A$">Australian Dollar (A$)</option>
+              <option value="KSh">Kenyan Shilling (KSh)</option>
+              <option value="R">South African Rand (R)</option>
+            <!-- End select -->
+            </select>
+          <!-- End currency group -->
+          </div>
+          <!-- Trial and Premium Information Notice -->
+          <div id="businessAccountTrialNotice" style="background: rgba(2, 132, 199, 0.08); border: 1px solid rgba(2, 132, 199, 0.25); border-radius: 8px; padding: 10px 12px; font-size: 0.78rem; color: var(--text-muted); line-height: 1.4;">
+            <!-- Trial information text -->
+            ⭐ <strong>Trial Access:</strong> Standard members receive up to <strong>2 free trial accesses</strong> to business workspaces. Unlimited business accounts and multi-account switching are unlocked with <strong>Premium</strong>.
+          <!-- End notice -->
+          </div>
+        <!-- End form body -->
+        </div>
+        <!-- Modal action buttons footer -->
+        <div class="modal-footer" style="border-top: 1px solid var(--color-border); padding-top: 14px; display: flex; justify-content: flex-end; gap: 10px;">
+          <!-- Cancel button -->
+          <button type="button" class="btn btn-secondary" onclick="window.closeModal(document.getElementById('addBusinessAccountModal'))">Cancel</button>
+          <!-- Submit button -->
+          <button type="submit" class="btn btn-primary" id="submitAddBusinessAccountBtn" style="font-weight: 700; background: linear-gradient(135deg, var(--color-primary), #0284c7); border: none;">Create Workspace</button>
+        <!-- End modal footer -->
+        </div>
+      <!-- End form -->
+      </form>
+    <!-- End modal content -->
+    </div>
+  <!-- End addBusinessAccountModal -->
   </div>
 
   <!-- ==================== OVERLAY: SHARE DASHBOARD MODAL ==================== -->

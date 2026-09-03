@@ -130,6 +130,56 @@
   };
 
   /**
+   * Dedicated business income and expense categorization dictionary.
+   * Tailored for small enterprises, sole proprietorships, freelancers, and commercial retail.
+   */
+  const BUSINESS_CATEGORIES = {
+    // Commercial revenue and capital inflows
+    income: [
+      // Direct product sales
+      'Product Sales',
+      // Paid client invoices
+      'Client Invoices',
+      // Service, consulting, and client fees
+      'Service & Consulting Fees',
+      // B2B contracts and project retainers
+      'Contracts & Projects',
+      // Capital investments, loans, and business grants
+      'Capital Investments / Grants',
+      // Miscellaneous business inflows
+      'Other Business Revenue'
+    // End income categories
+    ],
+    // Commercial expenditures and operational outflows
+    expense: [
+      // Cost of Goods Sold / Inventory procurement
+      'Inventory / Stock (COGS)',
+      // Employee wages and contractor compensation
+      'Payroll & Staff Wages',
+      // Commercial office, warehouse, or shop rent
+      'Workspace / Shop Rent',
+      // Power, water, commercial internet, and telephone
+      'Utilities & Internet',
+      // Digital ads, social promotions, and marketing campaigns
+      'Marketing, Ads & Promotions',
+      // Shipping, courier, packaging materials, and logistics
+      'Packaging & Logistics',
+      // Machinery, tools, hardware, and physical equipment
+      'Equipment & Hardware',
+      // Corporate income taxes, VAT, NHIL, levies, and municipal permits
+      'Taxes & Business Levies',
+      // Software licenses, hosting, cloud tools, and SaaS
+      'Software & Digital Tools',
+      // Legal, accounting, bookkeeping, and consulting fees
+      'Professional Fees (Legal/Audit)',
+      // Miscellaneous office and operational expenses
+      'General Operating Expenses'
+    // End expense categories
+    ]
+  // End BUSINESS_CATEGORIES
+  };
+
+  /**
    * Generates default structural seed data if no data exists in localStorage.
    * This sets up initial budgets, empty lists of transactions and goals, and default settings.
    */
@@ -175,20 +225,67 @@
      * Checks if a user is logged in. If yes, loads user profile data. If no, prepares seeder data.
      */
     init() {
-      this.undoStack = []; // Initialize empty stack for undo history tracking
-      this.redoStack = []; // Initialize empty stack for redo history tracking
-      
+      // Initialize empty stack for undo history tracking
+      this.undoStack = [];
+      // Initialize empty stack for redo history tracking
+      this.redoStack = [];
+
+      // Retrieve authenticated user session identifier
       const currentUser = localStorage.getItem(SESSION_KEY);
+      // Retrieve registered users database from storage
       const registry = JSON.parse(localStorage.getItem(USERS_REGISTRY_KEY) || '{}');
 
+      // Check if authenticated user session is active in registry
       if (currentUser && registry[currentUser]) {
-        // Load the logged-in user's private data object
-        this.data = registry[currentUser].data;
-        
+        // Multi-Account Workspace Migration: ensure accounts structure exists
+        if (!registry[currentUser].accounts || !Array.isArray(registry[currentUser].accounts)) {
+          // Extract user display name for personal profile label
+          const uName = registry[currentUser].data?.settings?.userName || 'Personal';
+          // Initialize primary personal account (no demo business accounts per user requirement)
+          registry[currentUser].accounts = [
+            // Personal workspace descriptor
+            {
+              // Unique account identifier
+              id: 'personal',
+              // Account display name
+              name: `${uName} (Personal)`,
+              // Account type classification
+              type: 'personal',
+              // Visual icon representation
+              icon: '👤',
+              // Account creation ISO timestamp
+              createdAt: new Date().toISOString()
+            // End personal account descriptor
+            }
+          // End accounts list
+          ];
+          // Default active workspace set to personal
+          registry[currentUser].activeAccountId = 'personal';
+          // Initialize isolated datasets map
+          registry[currentUser].accountDatasets = {
+            // Personal account maps directly to existing user ledger data
+            'personal': registry[currentUser].data || getSeedData()
+          // End accountDatasets
+          };
+          // Persist upgraded registry structure to localStorage
+          localStorage.setItem(USERS_REGISTRY_KEY, JSON.stringify(registry));
+        // End accounts migration check
+        }
+
+        // Retrieve active account identifier
+        const activeAccountId = registry[currentUser].activeAccountId || 'personal';
+        // Retrieve account datasets map
+        const datasets = registry[currentUser].accountDatasets || {};
+        // Load active account data object or fallback
+        this.data = datasets[activeAccountId] || registry[currentUser].data;
+
         // Safety check to ensure data structures are healthy
         if (!this.data || !this.data.settings) {
+          // Initialize clean seeder data
           this.data = getSeedData();
+          // Persist to storage
           this.save();
+        // If data exists
         } else {
           // Ensure debts array exists in loaded user data
           if (!this.data.debts) {
@@ -196,11 +293,15 @@
             this.data.debts = [];
           // End debts check
           }
+          // Validate subscription duration
           this.checkPremiumExpiry();
+        // End safety check
         }
+      // If no authenticated user session
       } else {
-        // No active session: fallback to default mock seeder data so components don't crash
+        // Fallback to default mock seeder data so components don't crash
         this.data = getSeedData();
+      // End session check
       }
     },
 
@@ -672,7 +773,13 @@
           const registry = JSON.parse(localStorage.getItem(USERS_REGISTRY_KEY) || '{}');
           // Check if registry record exists for active user
           if (registry[currentUser]) {
-            // Assign active data state to registry entry
+            // Multi-Account Workspace: identify active workspace ID
+            const activeId = registry[currentUser].activeAccountId || 'personal';
+            // Ensure accountDatasets container exists in user registry
+            if (!registry[currentUser].accountDatasets) registry[currentUser].accountDatasets = {};
+            // Persist current active workspace dataset
+            registry[currentUser].accountDatasets[activeId] = this.data;
+            // Assign active data state to registry entry for backward compatibility
             registry[currentUser].data = this.data;
             // Persist modified registry to storage
             localStorage.setItem(USERS_REGISTRY_KEY, JSON.stringify(registry));
@@ -1598,6 +1705,453 @@
       // End return object
       };
     // End getDebtSummary
+    },
+
+    // --- Multi-Account Workspaces API (Personal vs Business) ---
+
+    // Expose dedicated commercial categorization dictionary
+    BUSINESS_CATEGORIES: BUSINESS_CATEGORIES,
+
+    /**
+     * Retrieves the list of available workspaces/accounts for the current user.
+     * Guaranteed: No fake or demo business accounts are seeded by default.
+     */
+    getAccounts() {
+      // Retrieve active user session key
+      const currentUser = localStorage.getItem(SESSION_KEY);
+      // Retrieve registered users database from storage
+      const registry = JSON.parse(localStorage.getItem(USERS_REGISTRY_KEY) || '{}');
+      // If user session exists and has accounts list
+      if (currentUser && registry[currentUser] && Array.isArray(registry[currentUser].accounts)) {
+        // Return shallow clone of accounts array
+        return [...registry[currentUser].accounts];
+      // End registry check
+      }
+      // Fallback for demo or non-registered sessions: return personal workspace only
+      const uName = this.data?.settings?.userName || 'Personal';
+      // Return single personal profile
+      return [
+        // Personal profile descriptor
+        { id: 'personal', name: `${uName} (Personal)`, type: 'personal', icon: '👤', createdAt: new Date().toISOString() }
+      // End return
+      ];
+    // End getAccounts
+    },
+
+    /**
+     * Returns the currently active workspace/account object.
+     */
+    getActiveAccount() {
+      // Retrieve active user session key
+      const currentUser = localStorage.getItem(SESSION_KEY);
+      // Retrieve registered users database from storage
+      const registry = JSON.parse(localStorage.getItem(USERS_REGISTRY_KEY) || '{}');
+      // Read accounts list
+      const accounts = this.getAccounts();
+      // Read active account identifier from user registry
+      const activeId = (currentUser && registry[currentUser] && registry[currentUser].activeAccountId) || 'personal';
+      // Find matching account descriptor in list
+      const matched = accounts.find(a => a.id === activeId);
+      // Return matched account or fallback to first account
+      return matched || accounts[0] || { id: 'personal', name: 'Personal Profile', type: 'personal', icon: '👤' };
+    // End getActiveAccount
+    },
+
+    /**
+     * Helper to verify if the active workspace is a Business Account.
+     */
+    isBusinessAccount() {
+      // Check if active account classification is business
+      return this.getActiveAccount().type === 'business';
+    // End isBusinessAccount
+    },
+
+    /**
+     * Evaluates access permissions for business accounts.
+     * Enforces the 2-free-trials rule for unpaid users and allows unlimited access for Premium members.
+     */
+    getBusinessAccessStatus() {
+      // Retrieve active settings
+      const settings = this.getSettings();
+      // Retrieve active user session key
+      const currentUser = localStorage.getItem(SESSION_KEY);
+      // Retrieve registry database from storage
+      const registry = JSON.parse(localStorage.getItem(USERS_REGISTRY_KEY) || '{}');
+      // Check if user has active premium membership
+      const isPremium = !!(settings.isPremium || (currentUser && registry[currentUser] && registry[currentUser].isPremium) || (typeof localStorage !== 'undefined' && localStorage.getItem('FINFLOW_PREMIUM_ACTIVE') === 'true'));
+
+      // Read user-level switches counter from registry first, then fallback to settings
+      const regSwitches = (currentUser && registry[currentUser] && registry[currentUser].businessSwitchesUsed !== undefined)
+        ? Number(registry[currentUser].businessSwitchesUsed)
+        : null;
+      // Resolve switchesUsed
+      const switchesUsed = (regSwitches !== null) ? regSwitches : (Number(settings.businessSwitchesUsed) || 0);
+      // Max allowed free trial switches per user directive
+      const maxFree = 2;
+
+      // If premium member, grant unlimited access
+      if (isPremium) {
+        // Return permitted status with infinite allowance
+        return { allowed: true, switchesUsed, maxFree, remaining: Infinity, isPremium: true };
+      // End isPremium check
+      }
+
+      // Compute remaining free trial switches
+      const remaining = Math.max(0, maxFree - switchesUsed);
+      // Return allowance status based on remaining switches
+      return {
+        // Allowed if user has remaining trial switches
+        allowed: remaining > 0,
+        // Number of switches already consumed
+        switchesUsed,
+        // Maximum free switches allowed
+        maxFree,
+        // Remaining trial switches
+        remaining,
+        // Premium status flag
+        isPremium: false
+      // End return
+      };
+    // End getBusinessAccessStatus
+    },
+
+    /**
+     * Switches the active workspace to the target account.
+     * Enforces premium subscription requirement after 2 free trial accesses.
+     */
+    switchAccount(targetAccountId) {
+      // Retrieve active account descriptor
+      const currentActive = this.getActiveAccount();
+      // If target account is already active, return success
+      if (currentActive.id === targetAccountId) {
+        // Return success with unchanged status
+        return { success: true, account: currentActive, unchanged: true };
+      // End identity check
+      }
+
+      // Retrieve all available accounts
+      const accounts = this.getAccounts();
+      // Find target account in registry
+      const targetAccount = accounts.find(a => a.id === targetAccountId);
+      // If target account does not exist
+      if (!targetAccount) {
+        // Return failure notification
+        return { success: false, reason: 'Target account not found.' };
+      // End not found check
+      }
+
+      // If switching to a Business Account, enforce trial access and premium gating
+      if (targetAccount.type === 'business') {
+        // Retrieve business access status
+        const status = this.getBusinessAccessStatus();
+        // If user is not allowed to access business mode
+        if (!status.allowed) {
+          // Trigger premium membership upgrade modal
+          if (typeof window.openPremiumModal === 'function') {
+            // Open modal
+            window.openPremiumModal();
+          // End open check
+          }
+          // Inform user about trial exhaustion if alert is available
+          if (typeof alert === 'function') {
+            // Display alert message
+            alert('🔒 Business Account is a Premium feature. You have used your 2 free trial accesses. Upgrade to Premium for GH₵13.99/mo to unlock unlimited business workspaces!');
+          // End alert check
+          }
+          // Terminate switch
+          return { success: false, requiresPremium: true };
+        // End not allowed check
+        }
+
+        // If not premium, consume 1 trial access
+        if (!status.isPremium) {
+          // Increment used counter
+          const updatedUsed = (status.switchesUsed || 0) + 1;
+          // Retrieve session user
+          const currentUserKey = localStorage.getItem(SESSION_KEY);
+          // Retrieve registry from storage
+          const regObj = JSON.parse(localStorage.getItem(USERS_REGISTRY_KEY) || '{}');
+          // If registry record exists
+          if (currentUserKey && regObj[currentUserKey]) {
+            // Persist user-level trial switch count
+            regObj[currentUserKey].businessSwitchesUsed = updatedUsed;
+            // Write updated registry to storage
+            localStorage.setItem(USERS_REGISTRY_KEY, JSON.stringify(regObj));
+          // End registry update
+          }
+          // Persist counter in settings
+          this.updateSettings({ businessSwitchesUsed: updatedUsed });
+          // Inform user of remaining trial switches
+          const remainingAfter = Math.max(0, status.maxFree - updatedUsed);
+          // Alert user of trial consumption if alert is available
+          if (typeof alert === 'function') {
+            // Display trial consumption alert
+            alert(`⭐ Business Account Trial (${updatedUsed}/${status.maxFree} accesses used). ${remainingAfter > 0 ? `${remainingAfter} trial access remaining.` : 'This was your last free trial access. Upgrade to Premium for unlimited business access!'}`);
+          // End alert check
+          }
+        // End trial counter check
+        }
+      // End business check
+      }
+
+      // Retrieve authenticated user session key
+      const currentUser = localStorage.getItem(SESSION_KEY);
+      // Retrieve users registry
+      const registry = JSON.parse(localStorage.getItem(USERS_REGISTRY_KEY) || '{}');
+
+      // If user session exists in registry
+      if (currentUser && registry[currentUser]) {
+        // Ensure account datasets map exists
+        if (!registry[currentUser].accountDatasets) registry[currentUser].accountDatasets = {};
+        // Save current active workspace data to its dataset slot
+        registry[currentUser].accountDatasets[currentActive.id] = this.data;
+        // Update active account ID pointer
+        registry[currentUser].activeAccountId = targetAccountId;
+        // Load target account dataset or initialize seed
+        const targetData = registry[currentUser].accountDatasets[targetAccountId] || getSeedData();
+        // Synchronize user-level businessSwitchesUsed into target settings
+        if (registry[currentUser].businessSwitchesUsed !== undefined) {
+          // Ensure settings container exists
+          if (!targetData.settings) targetData.settings = {};
+          // Assign global counter
+          targetData.settings.businessSwitchesUsed = registry[currentUser].businessSwitchesUsed;
+        // End counter sync
+        }
+        // Assign to active memory
+        this.data = targetData;
+        // Keep registry.data pointing to active dataset
+        registry[currentUser].data = this.data;
+        // Persist registry changes
+        localStorage.setItem(USERS_REGISTRY_KEY, JSON.stringify(registry));
+      // End session check
+      }
+
+      // Re-initialize undo/redo history for new workspace
+      this.undoStack = [];
+      // Clear redo stack
+      this.redoStack = [];
+      // Persist locally and trigger observers
+      this.saveLocally(true);
+
+      // Return success confirmation
+      return { success: true, account: targetAccount };
+    // End switchAccount
+    },
+
+    /**
+     * Creates a new Business Account workspace.
+     * Enforces trial limit and premium gate.
+     */
+    createBusinessAccount({ name, category, currency }) {
+      // Validate business name
+      const cleanName = (name || '').trim();
+      // Check for empty name
+      if (!cleanName) {
+        // Alert user if alert function exists
+        if (typeof alert === 'function') {
+          // Display warning
+          alert('Please enter a valid name for your business account.');
+        // End alert check
+        }
+        // Return failure
+        return { success: false, reason: 'Empty business name.' };
+      // End validation
+      }
+
+      // Check business access permission
+      const status = this.getBusinessAccessStatus();
+      // If trial exhausted and not premium
+      if (!status.allowed) {
+        // Open premium modal
+        if (typeof window.openPremiumModal === 'function') window.openPremiumModal();
+        // Inform user if alert function is available
+        if (typeof alert === 'function') {
+          // Display alert
+          alert('🔒 Business Account creation is a Premium feature. You have used your 2 free trial accesses. Upgrade to Premium for GH₵13.99/mo to create business accounts!');
+        // End alert check
+        }
+        // Terminate
+        return { success: false, requiresPremium: true };
+      // End allowed check
+      }
+
+      // Retrieve authenticated user session key
+      const currentUser = localStorage.getItem(SESSION_KEY);
+      // Retrieve users registry
+      const registry = JSON.parse(localStorage.getItem(USERS_REGISTRY_KEY) || '{}');
+
+      // Generate unique business account ID
+      const newAccountId = `biz_${Date.now()}`;
+      // Determine currency
+      const activeCurr = currency || this.getSettings().currency || 'GH₵';
+
+      // Construct business account descriptor
+      const newAccount = {
+        // Unique ID
+        id: newAccountId,
+        // Business display name
+        name: cleanName,
+        // Account classification
+        type: 'business',
+        // Visual icon
+        icon: '💼',
+        // Business category
+        businessCategory: category || 'General Commerce',
+        // Currency symbol
+        currency: activeCurr,
+        // Creation timestamp
+        createdAt: new Date().toISOString()
+      // End descriptor
+      };
+
+      // Construct clean, isolated seed dataset tailored specifically for business operations
+      const newDataset = getSeedData();
+      // Set business name
+      newDataset.settings.userName = cleanName;
+      // Set business currency
+      newDataset.settings.currency = activeCurr;
+      // Inherit user's premium status
+      newDataset.settings.isPremium = this.getSettings().isPremium;
+      // Inherit premium expiration timestamp
+      newDataset.settings.premiumUntil = this.getSettings().premiumUntil;
+      // Seed default business budget categories with zero limits
+      newDataset.budgets = {
+        'Inventory / Stock (COGS)': 0,
+        'Payroll & Staff Wages': 0,
+        'Workspace / Shop Rent': 0,
+        'Marketing, Ads & Promotions': 0,
+        'Utilities & Internet': 0
+      // End budgets
+      };
+
+      // If user session exists
+      if (currentUser && registry[currentUser]) {
+        // Ensure accounts array exists
+        if (!registry[currentUser].accounts) registry[currentUser].accounts = [];
+        // Append new business account
+        registry[currentUser].accounts.push(newAccount);
+        // Ensure datasets map exists
+        if (!registry[currentUser].accountDatasets) registry[currentUser].accountDatasets = {};
+        // Save current active data
+        const currentActiveId = registry[currentUser].activeAccountId || 'personal';
+        // Persist current active
+        registry[currentUser].accountDatasets[currentActiveId] = this.data;
+        // Store new business dataset
+        registry[currentUser].accountDatasets[newAccountId] = newDataset;
+        // Update active pointer to new business account
+        registry[currentUser].activeAccountId = newAccountId;
+        // Point in-memory data to new dataset
+        this.data = newDataset;
+        // Update registry data pointer
+        registry[currentUser].data = this.data;
+        // Persist registry changes
+        localStorage.setItem(USERS_REGISTRY_KEY, JSON.stringify(registry));
+      // End registry update
+      }
+
+      // If unpaid user, consume 1 trial access
+      if (!status.isPremium) {
+        // Increment trial counter
+        const updatedUsed = (status.switchesUsed || 0) + 1;
+        // Check if user session exists in registry
+        if (currentUser && registry[currentUser]) {
+          // Persist user-level trial counter in registry
+          registry[currentUser].businessSwitchesUsed = updatedUsed;
+          // Write updated registry to localStorage
+          localStorage.setItem(USERS_REGISTRY_KEY, JSON.stringify(registry));
+        // End registry update check
+        }
+        // Persist counter in settings
+        this.updateSettings({ businessSwitchesUsed: updatedUsed });
+        // Inform user of trial usage
+        const remainingAfter = Math.max(0, status.maxFree - updatedUsed);
+        // Toast message if alert is available
+        if (typeof alert === 'function') {
+          // Display trial notification
+          alert(`🎉 Business Workspace "${cleanName}" created! (${updatedUsed}/${status.maxFree} trial accesses used).`);
+        // End alert check
+        }
+      // End trial check
+      } else {
+        // Toast success message if alert is available
+        if (typeof alert === 'function') {
+          // Display success notification
+          alert(`🎉 Business Workspace "${cleanName}" created successfully!`);
+        // End alert check
+        }
+      // End premium check
+      }
+
+      // Reset undo stack
+      this.undoStack = [];
+      // Reset redo stack
+      this.redoStack = [];
+      // Save locally and trigger UI redraw
+      this.saveLocally(true);
+
+      // Return success confirmation
+      return { success: true, account: newAccount };
+    // End createBusinessAccount
+    },
+
+    /**
+     * Deletes a business account workspace permanently.
+     * Prevents deletion of the primary Personal Account.
+     */
+    deleteBusinessAccount(accountId) {
+      // Prevent deletion of primary personal account
+      if (accountId === 'personal') {
+        // Alert user if alert function is available
+        if (typeof alert === 'function') {
+          // Display prevention alert
+          alert('Cannot delete your primary Personal Account.');
+        // End alert check
+        }
+        // Return failure
+        return false;
+      // End check
+      }
+
+      // Retrieve user session
+      const currentUser = localStorage.getItem(SESSION_KEY);
+      // Retrieve registry
+      const registry = JSON.parse(localStorage.getItem(USERS_REGISTRY_KEY) || '{}');
+
+      // If user session exists
+      if (currentUser && registry[currentUser]) {
+        // Filter out account from accounts list
+        registry[currentUser].accounts = (registry[currentUser].accounts || []).filter(a => a.id !== accountId);
+        // Delete account dataset
+        if (registry[currentUser].accountDatasets) {
+          // Delete dataset key
+          delete registry[currentUser].accountDatasets[accountId];
+        // End delete
+        }
+
+        // If currently active account was the deleted one, switch back to personal
+        if (registry[currentUser].activeAccountId === accountId) {
+          // Set active back to personal
+          registry[currentUser].activeAccountId = 'personal';
+          // Load personal dataset
+          this.data = (registry[currentUser].accountDatasets && registry[currentUser].accountDatasets['personal']) || registry[currentUser].data;
+        // End switch check
+        }
+
+        // Persist registry
+        localStorage.setItem(USERS_REGISTRY_KEY, JSON.stringify(registry));
+        // Reset undo history
+        this.undoStack = [];
+        // Reset redo history
+        this.redoStack = [];
+        // Save and trigger UI
+        this.saveLocally(true);
+        // Return true
+        return true;
+      // End user check
+      }
+      // Return false
+      return false;
+    // End deleteBusinessAccount
     },
 
     // --- Summaries & Calculations ---

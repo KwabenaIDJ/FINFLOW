@@ -674,33 +674,63 @@
   };
 
   /**
-   * Dynamic category options populator based on whether the transaction is an Income or Expense.
+   * Dynamic category options populator based on whether the transaction is an Income or Expense,
+   * and automatically adapts when operating inside a Business workspace.
    */
   function updateCategoryDropdown(typeSelect, categorySelect) {
+    // Extract current transaction type selection (income or expense)
     const type = typeSelect.value;
-    categorySelect.innerHTML = ''; // Wipe selection options
+    // Wipe previous options from category dropdown
+    categorySelect.innerHTML = '';
     
-    // Choose categories list based on transaction type selector
-    const categories = type === 'income' 
-      ? ['Salary', 'Freelance', 'Investments', 'Other']
-      : ['Rent', 'Food', 'Utilities', 'Shopping', 'Entertainment', 'Travel', 'Other'];
+    // Check if the currently active workspace is a Business Account
+    const isBusiness = window.AppStore && typeof window.AppStore.isBusinessAccount === 'function' && window.AppStore.isBusinessAccount();
+    // Retrieve business categories dictionary from store
+    const bizCats = (window.AppStore && window.AppStore.BUSINESS_CATEGORIES) || null;
+
+    // Determine category options array based on workspace type and transaction flow
+    let categories = [];
+    // If inside a business account
+    if (isBusiness && bizCats) {
+      // Inflow maps to commercial income categories, Outflow maps to commercial OPEX categories
+      categories = type === 'income' ? bizCats.income : bizCats.expense;
+    // Standard personal workspace categories
+    } else {
+      // Standard personal personal budget and salary categories
+      categories = type === 'income' 
+        ? ['Salary', 'Freelance', 'Investments', 'Other']
+        : ['Rent', 'Food', 'Utilities', 'Shopping', 'Entertainment', 'Travel', 'Other'];
+    // End workspace categories branching
+    }
       
-    // Loop through options and build nodes
+    // Loop through resolved category options and construct HTML option elements
     categories.forEach(cat => {
+      // Create new option node
       const opt = document.createElement('option');
+      // Set value attribute
       opt.value = cat;
+      // Set human-readable text
       opt.textContent = cat;
+      // Append option node to category select element
       categorySelect.appendChild(opt);
+    // End category loop
     });
 
-    // Clean up specify other input states
+    // Clean up specify other input container states
     if (elements.addTxCategoryOtherGroup) {
+      // Hide other custom text input group
       elements.addTxCategoryOtherGroup.style.display = 'none';
+    // End other group check
     }
+    // Clean up other input element values and attributes
     if (elements.addTxCategoryOther) {
+      // Reset input value
       elements.addTxCategoryOther.value = '';
+      // Remove required validation attribute
       elements.addTxCategoryOther.removeAttribute('required');
+    // End other input check
     }
+  // End updateCategoryDropdown
   }
 
   // --- Render Functions ---
@@ -765,8 +795,62 @@
       labelStr = yearVal === 'all' ? `${mName}` : `${mName} ${yearVal}`;
     }
 
-    if (incLabel) incLabel.textContent = `${labelStr} Income`;
-    if (expLabel) expLabel.textContent = `${labelStr} Expenses`;
+    // Check if operating in Business Workspace
+    const isBusiness = store && typeof store.isBusinessAccount === 'function' && store.isBusinessAccount();
+
+    // Query card titles and footers by ID or selector
+    const titleNetWorth = document.getElementById('kpiTitleNetWorth') || document.querySelector('.kpi-card.cash .kpi-title');
+    // Footer for Net Worth / Profit Margin
+    const footerNetWorth = document.getElementById('kpiFooterNetWorth') || document.querySelector('.kpi-card.cash .kpi-footer');
+    // Title for Cash Balance / Working Capital
+    const titleCash = document.getElementById('kpiTitleCash') || document.querySelector('.kpi-card.savings .kpi-title');
+    // Footer for Cash Balance / Working Capital
+    const footerCash = document.getElementById('kpiFooterCash') || document.querySelector('.kpi-card.savings .kpi-footer');
+    // Title for Income / Revenue
+    const titleIncome = document.getElementById('kpiTitleIncome') || document.querySelector('.kpi-card.income .kpi-title');
+    // Title for Expenses / OPEX
+    const titleExpense = document.getElementById('kpiTitleExpense') || document.querySelector('.kpi-card.expense .kpi-title');
+
+    // If currently inside a Business workspace
+    if (isBusiness) {
+      // Calculate Net Operating Profit
+      const netProfit = income - expenses;
+      // Calculate Profit Margin %
+      const marginPct = income > 0 ? ((netProfit / income) * 100).toFixed(1) : '0.0';
+      // Set Business Net Profit KPI Title
+      if (titleNetWorth) titleNetWorth.textContent = 'Net Operating Profit';
+      // Display Profit Margin badge in card footer
+      if (footerNetWorth) {
+        // Check if profit is positive or negative
+        const isPositive = netProfit >= 0;
+        // Inject styled profit margin badge
+        footerNetWorth.innerHTML = `<span class="badge" style="background: ${isPositive ? 'rgba(16, 185, 129, 0.15)' : 'rgba(239, 68, 68, 0.15)'}; color: ${isPositive ? '#10b981' : '#ef4444'}; font-weight: 800; font-size: 0.76rem; padding: 2px 8px; border-radius: 12px;">${marginPct}% Profit Margin</span>`;
+      // End footerNetWorth check
+      }
+      // Working capital / cash balance
+      if (titleCash) titleCash.textContent = 'Working Capital';
+      // Cash runway footer
+      if (footerCash) footerCash.textContent = 'Liquid Commercial Cash';
+      // Commercial Gross Revenue label
+      if (titleIncome) titleIncome.textContent = `${labelStr} Gross Revenue`;
+      // Commercial Operating Expenses / COGS label
+      if (titleExpense) titleExpense.textContent = `${labelStr} Operating Expenses (COGS)`;
+    // Standard Personal profile view
+    } else {
+      // Standard personal Net Worth title
+      if (titleNetWorth) titleNetWorth.textContent = 'Net Worth';
+      // Personal footer
+      if (footerNetWorth) footerNetWorth.textContent = 'Total Wealth';
+      // Personal cash balance title
+      if (titleCash) titleCash.textContent = 'Cash Balance';
+      // Personal liquid savings footer
+      if (footerCash) footerCash.textContent = 'Liquid savings';
+      // Personal income title
+      if (titleIncome) titleIncome.textContent = `${labelStr} Income`;
+      // Personal expense title
+      if (titleExpense) titleExpense.textContent = `${labelStr} Expenses`;
+    // End isBusiness check
+    }
 
     if (monthVal === 'current' && (yearVal === 'all' || yearVal === String(today.getFullYear()))) {
       const prevMonth = new Date(today.getFullYear(), today.getMonth() - 1, 1);
@@ -3004,10 +3088,358 @@
   }
 
   /**
+   * Renders and synchronizes all multi-account workspace switcher UI controls (Header, Sidebar, Dropdown Popover).
+   */
+  function renderWorkspaceSwitcher() {
+    // Reference central data store instance
+    const store = window.AppStore;
+    // Safety guard if store is not yet initialized
+    if (!store || typeof store.getActiveAccount !== 'function') return;
+
+    // Retrieve active workspace descriptor
+    const activeAccount = store.getActiveAccount();
+    // Retrieve list of all registered accounts for active user
+    const accounts = store.getAccounts();
+    // Retrieve business access permissions and remaining trial count
+    const status = store.getBusinessAccessStatus();
+
+    // Check if active workspace is a Business Account
+    const isBusiness = activeAccount.type === 'business';
+    // Resolve icon symbol
+    const iconStr = activeAccount.icon || (isBusiness ? '💼' : '👤');
+
+    // 1. Synchronize Sidebar Workspace UI elements
+    const sidebarIcon = document.getElementById('sidebarWorkspaceIcon');
+    // Sidebar workspace display name element
+    const sidebarName = document.getElementById('sidebarWorkspaceName');
+    // Sidebar workspace wrapper element
+    const sidebarContainer = document.getElementById('sidebarWorkspaceContainer');
+    // Update icon text
+    if (sidebarIcon) sidebarIcon.textContent = iconStr;
+    // Update name text
+    if (sidebarName) sidebarName.textContent = activeAccount.name;
+    // Apply styling indicator to sidebar container
+    if (sidebarContainer) {
+      // If business mode active, apply distinct blue accent background
+      if (isBusiness) {
+        // Apply gradient background
+        sidebarContainer.style.background = 'linear-gradient(135deg, rgba(2, 132, 199, 0.12), rgba(99, 102, 241, 0.08))';
+        // Apply left accent highlight border
+        sidebarContainer.style.borderLeft = '3px solid #0284c7';
+      // If personal mode
+      } else {
+        // Reset to transparent background
+        sidebarContainer.style.background = 'transparent';
+        // Remove left border
+        sidebarContainer.style.borderLeft = 'none';
+      // End container check
+      }
+    // End sidebar check
+    }
+
+    // 2. Synchronize Header Workspace Button elements
+    const headerIcon = document.getElementById('headerWorkspaceIcon');
+    // Header workspace display name element
+    const headerName = document.getElementById('headerWorkspaceName');
+    // Header workspace trigger button
+    const headerBtn = document.getElementById('headerWorkspaceBtn');
+    // Update header icon
+    if (headerIcon) headerIcon.textContent = iconStr;
+    // Update header name
+    if (headerName) headerName.textContent = activeAccount.name;
+    // Apply responsive styling to header workspace trigger
+    if (headerBtn) {
+      // If in business workspace
+      if (isBusiness) {
+        // Apply highlight border
+        headerBtn.style.borderColor = '#0284c7';
+        // Apply highlight background
+        headerBtn.style.background = 'linear-gradient(135deg, rgba(2, 132, 199, 0.18), rgba(99, 102, 241, 0.12))';
+        // Set title tooltip
+        headerBtn.title = `Business Mode: ${activeAccount.name} (${activeAccount.businessCategory || 'Commercial'})`;
+      // If in personal workspace
+      } else {
+        // Standard border
+        headerBtn.style.borderColor = 'var(--color-border)';
+        // Standard background
+        headerBtn.style.background = 'var(--bg-card)';
+        // Standard tooltip
+        headerBtn.title = 'Personal Financial Profile';
+      // End button style
+      }
+    // End headerBtn check
+    }
+
+    // 3. Synchronize Header Greeting and Subtitle based on workspace mode
+    const headerGreeting = document.getElementById('headerGreeting');
+    // Subtitle element
+    const headerSubtitle = document.getElementById('headerSubtitle');
+    // Check if greeting element exists
+    if (headerGreeting) {
+      // In business mode, show company name
+      if (isBusiness) {
+        // Display enterprise name
+        headerGreeting.textContent = `${activeAccount.name}`;
+      // In personal mode, show personalized greeting
+      } else {
+        // Extract user display name
+        const uName = store.getSettings().userName || 'User';
+        // Display friendly greeting
+        headerGreeting.textContent = `Greetings, ${uName}!`;
+      // End greeting condition
+      }
+    // End greeting check
+    }
+    // Check if subtitle element exists
+    if (headerSubtitle) {
+      // In business mode, show commercial badge description
+      if (isBusiness) {
+        // Set commercial subtitle text
+        headerSubtitle.textContent = `💼 Business Mode (${activeAccount.businessCategory || 'Commerce'}) · Commercial Financial Management`;
+      // In personal mode, show standard budgeting subtitle
+      } else {
+        // Set personal subtitle text
+        headerSubtitle.textContent = 'Keep track of your transactions, goals, budgets, and investments.';
+      // End subtitle condition
+      }
+    // End subtitle check
+    }
+
+    // 4. Synchronize Popover Dropdown Account List
+    const accountsListContainer = document.getElementById('workspaceAccountsList');
+    // Check if list container exists
+    if (accountsListContainer) {
+      // Clear previous list contents
+      accountsListContainer.innerHTML = '';
+      // Loop through all registered workspaces
+      accounts.forEach(acc => {
+        // Determine if this account is currently active
+        const isActive = acc.id === activeAccount.id;
+        // Check if account is a business type
+        const isBiz = acc.type === 'business';
+
+        // Construct workspace selection row
+        const row = document.createElement('div');
+        // Configure layout styling
+        row.style.display = 'flex';
+        // Align vertically center
+        row.style.alignItems = 'center';
+        // Space between content and action icons
+        row.style.justifyContent = 'space-between';
+        // Padding for touch ergonomics
+        row.style.padding = '10px 14px';
+        // Pointer cursor
+        row.style.cursor = 'pointer';
+        // Smooth hover transitions
+        row.style.transition = 'background 0.15s ease';
+        // Highlight active workspace with left border indicator
+        row.style.borderLeft = isActive ? '3px solid var(--color-primary)' : '3px solid transparent';
+        // Active item background tint
+        row.style.background = isActive ? 'var(--bg-secondary)' : 'transparent';
+
+        // Hover effect listeners
+        row.addEventListener('mouseenter', () => {
+          // Highlight on hover if not already active
+          if (!isActive) row.style.background = 'var(--bg-secondary)';
+        // End mouseenter
+        });
+        row.addEventListener('mouseleave', () => {
+          // Revert background on mouse leave
+          if (!isActive) row.style.background = 'transparent';
+        // End mouseleave
+        });
+
+        // Left container: Icon, Name, Category
+        const leftCol = document.createElement('div');
+        // Flex alignment
+        leftCol.style.display = 'flex';
+        // Align center
+        leftCol.style.alignItems = 'center';
+        // Gap between icon and text
+        leftCol.style.gap = '10px';
+        // Handle long names
+        leftCol.style.overflow = 'hidden';
+
+        // Workspace icon element
+        const iconSpan = document.createElement('span');
+        // Set font size
+        iconSpan.style.fontSize = '1.2rem';
+        // Set icon character
+        iconSpan.textContent = acc.icon || (isBiz ? '💼' : '👤');
+
+        // Information text container
+        const infoDiv = document.createElement('div');
+        // Handle text overflow
+        infoDiv.style.overflow = 'hidden';
+
+        // Account name label
+        const nameSpan = document.createElement('div');
+        // Bolder font for active workspace
+        nameSpan.style.fontWeight = isActive ? '800' : '600';
+        // Font sizing
+        nameSpan.style.fontSize = '0.86rem';
+        // Text color
+        nameSpan.style.color = 'var(--text-main)';
+        // Prevent wrapping
+        nameSpan.style.whiteSpace = 'nowrap';
+        // Overflow hidden
+        nameSpan.style.overflow = 'hidden';
+        // Ellipsis truncation
+        nameSpan.style.textOverflow = 'ellipsis';
+        // Set account name text
+        nameSpan.textContent = acc.name;
+
+        // Account classification sub-label
+        const badgeDiv = document.createElement('div');
+        // Smaller font size
+        badgeDiv.style.fontSize = '0.7rem';
+        // Muted color
+        badgeDiv.style.color = 'var(--text-muted)';
+        // Category description
+        badgeDiv.textContent = isBiz ? (acc.businessCategory || 'Business Account') : 'Personal Profile';
+
+        // Assemble left column
+        infoDiv.appendChild(nameSpan);
+        // Append category
+        infoDiv.appendChild(badgeDiv);
+        // Append icon
+        leftCol.appendChild(iconSpan);
+        // Append text block
+        leftCol.appendChild(infoDiv);
+        // Append left column to row
+        row.appendChild(leftCol);
+
+        // Right container: Active checkmark or Delete button
+        const rightCol = document.createElement('div');
+        // Layout styling
+        rightCol.style.display = 'flex';
+        // Align center
+        rightCol.style.alignItems = 'center';
+        // Gap
+        rightCol.style.gap = '8px';
+
+        // If currently active, render checkmark
+        if (isActive) {
+          // Create check icon element
+          const checkIcon = document.createElement('span');
+          // Color indicator
+          checkIcon.style.color = 'var(--color-primary)';
+          // Bold weight
+          checkIcon.style.fontWeight = '800';
+          // Sizing
+          checkIcon.style.fontSize = '0.9rem';
+          // Checkmark symbol
+          checkIcon.textContent = '✓';
+          // Append to right column
+          rightCol.appendChild(checkIcon);
+        // End active check
+        }
+
+        // Add Delete option for business accounts
+        if (isBiz) {
+          // Create delete button
+          const delBtn = document.createElement('button');
+          // Set type
+          delBtn.type = 'button';
+          // Tooltip description
+          delBtn.title = `Delete ${acc.name}`;
+          // Transparent background
+          delBtn.style.background = 'transparent';
+          // Borderless
+          delBtn.style.border = 'none';
+          // Muted icon color
+          delBtn.style.color = 'var(--text-muted)';
+          // Pointer cursor
+          delBtn.style.cursor = 'pointer';
+          // Sizing padding
+          delBtn.style.padding = '4px';
+          // Icon sizing
+          delBtn.style.fontSize = '0.8rem';
+          // Trash icon
+          delBtn.innerHTML = '🗑️';
+          // Attach delete click handler
+          delBtn.addEventListener('click', (e) => {
+            // Stop row selection propagation
+            e.stopPropagation();
+            // Prompt user confirmation
+            if (confirm(`Are you sure you want to delete "${acc.name}" workspace and all its data?`)) {
+              // Delete business workspace
+              store.deleteBusinessAccount(acc.id);
+              // Redraw full application
+              syncUI();
+            // End confirm
+            }
+          // End delete click
+          });
+          // Append delete button
+          rightCol.appendChild(delBtn);
+        // End isBiz check
+        }
+
+        // Append right column
+        row.appendChild(rightCol);
+
+        // Click row to switch active workspace
+        row.addEventListener('click', () => {
+          // Request workspace switch from store
+          const res = store.switchAccount(acc.id);
+          // If switch succeeded
+          if (res && res.success) {
+            // Close dropdown menu popover
+            const menu = document.getElementById('workspaceDropdownMenu');
+            // Hide popover
+            if (menu) menu.style.display = 'none';
+            // Synchronize entire application interface
+            syncUI();
+          // End success check
+          }
+        // End row click
+        });
+
+        // Append completed row to account list container
+        accountsListContainer.appendChild(row);
+      // End account iteration
+      });
+    // End accountsListContainer check
+    }
+
+    // 5. Synchronize Trial / Premium Status Badge in Popover
+    const trialBadge = document.getElementById('workspaceTrialStatusBadge');
+    // Check if trial badge element exists
+    if (trialBadge) {
+      // If user holds active premium tier
+      if (status.isPremium) {
+        // Display premium unlimited status
+        trialBadge.textContent = '👑 Premium (Unlimited)';
+        // Gold background tint
+        trialBadge.style.background = 'rgba(241, 196, 15, 0.2)';
+        // Gold text color
+        trialBadge.style.color = '#f1c40f';
+      // If free user on trial
+      } else {
+        // Display remaining free switches
+        trialBadge.textContent = `Trial: ${status.remaining} left`;
+        // Primary background tint
+        trialBadge.style.background = 'rgba(2, 132, 199, 0.15)';
+        // Primary text color
+        trialBadge.style.color = 'var(--color-primary)';
+      // End status branching
+      }
+    // End trialBadge check
+    }
+  // End renderWorkspaceSwitcher
+  }
+
+  // Expose renderWorkspaceSwitcher to window scope
+  window.renderWorkspaceSwitcher = renderWorkspaceSwitcher;
+
+  /**
    * Main synchronization routing function. Redraws all view panels.
    */
   function syncUI() {
     const store = window.AppStore; // Reference store instance
+    // Synchronize workspace switcher buttons and dropdown popovers
+    renderWorkspaceSwitcher();
     // Sync header currency switcher value to active settings currency
     if (elements.headerCurrencySelector) {
       const activeCurr = store.getSettings().currency;
@@ -5922,5 +6354,196 @@ Ask me specific financial questions like:
     }
   // Set interval timer to 4000 milliseconds
   }, 4000);
+
+  // --- Multi-Account Workspace Handlers and Event Listeners ---
+
+  /**
+   * Toggles the global workspace switcher dropdown popover positioned near the triggering element.
+   */
+  window.toggleWorkspaceDropdown = function(event) {
+    // Prevent default touch/click behavior
+    if (event) {
+      // Prevent default
+      event.preventDefault();
+      // Prevent bubbling to document click listener
+      event.stopPropagation();
+    // End event check
+    }
+
+    // Retrieve dropdown popover container
+    const menu = document.getElementById('workspaceDropdownMenu');
+    // Guard against missing element
+    if (!menu) return;
+
+    // Check if dropdown is already visible
+    if (menu.style.display === 'block') {
+      // Hide dropdown popover
+      menu.style.display = 'none';
+      // Return early
+      return;
+    // End display check
+    }
+
+    // Identify target trigger element
+    const btn = (event && event.currentTarget) ? event.currentTarget : (document.getElementById('headerWorkspaceBtn') || document.getElementById('sidebarWorkspaceBtn'));
+    // If button reference is valid
+    if (btn) {
+      // Measure button bounding coordinates
+      const rect = btn.getBoundingClientRect();
+      // Check viewport width for mobile layout adjustment
+      const isMobile = window.innerWidth <= 768;
+      // Position menu directly beneath trigger button
+      menu.style.top = `${rect.bottom + 8}px`;
+      // If running on mobile viewport
+      if (isMobile) {
+        // Stretch width across screen margins
+        menu.style.left = '16px';
+        // Right margin
+        menu.style.right = '16px';
+        // Auto width
+        menu.style.width = 'auto';
+      // If desktop layout
+      } else {
+        // Clamp left coordinate to prevent screen cutoff
+        menu.style.left = `${Math.min(rect.left, window.innerWidth - 300)}px`;
+        // Clear right
+        menu.style.right = 'auto';
+        // Set fixed width
+        menu.style.width = '280px';
+      // End layout positioning
+      }
+    // End btn check
+    }
+
+    // Render latest workspace accounts into dropdown
+    renderWorkspaceSwitcher();
+    // Reveal dropdown popover
+    menu.style.display = 'block';
+  // End toggleWorkspaceDropdown
+  };
+
+  /**
+   * Opens the Create Business Workspace Modal Dialog.
+   */
+  window.openAddBusinessModal = function() {
+    // Close dropdown menu popover
+    const menu = document.getElementById('workspaceDropdownMenu');
+    // Hide popover
+    if (menu) menu.style.display = 'none';
+
+    // Retrieve store instance
+    const store = window.AppStore;
+    // Check business access permission
+    const status = store ? store.getBusinessAccessStatus() : { allowed: false, isPremium: false };
+
+    // If trial is exhausted and user is not premium
+    if (!status.allowed) {
+      // Trigger premium upgrade dialog
+      if (typeof window.openPremiumModal === 'function') {
+        // Open modal
+        window.openPremiumModal();
+      // End modal open
+      }
+      // Notify user of requirement
+      alert('🔒 Business Account is a Premium feature. You have used your 2 free trial accesses. Upgrade to Premium for GH₵13.99/mo to unlock unlimited business workspaces!');
+      // Abort opening dialog
+      return;
+    // End allowed check
+    }
+
+    // Update informative trial status banner in modal
+    const trialNotice = document.getElementById('businessAccountTrialNotice');
+    // If notice container exists
+    if (trialNotice) {
+      // If user holds active premium tier
+      if (status.isPremium) {
+        // Set premium text
+        trialNotice.innerHTML = '👑 <strong>Premium Active:</strong> You have unlimited access to create and manage commercial workspaces.';
+      // If user is on free trial
+      } else {
+        // Set trial counter message
+        trialNotice.innerHTML = `⭐ <strong>Trial Access:</strong> You have <strong>${status.remaining}</strong> free trial business access remaining. Upgrade to <strong>Premium</strong> for unlimited workspaces.`;
+      // End status check
+      }
+    // End trialNotice check
+    }
+
+    // Pre-fill default currency from current workspace settings
+    const currSelect = document.getElementById('newBusinessCurrency');
+    // If currency selector exists
+    if (currSelect && store) {
+      // Set value
+      currSelect.value = store.getSettings().currency || 'GH₵';
+    // End currSelect check
+    }
+
+    // Reset name input field
+    const nameInput = document.getElementById('newBusinessName');
+    // Clear value
+    if (nameInput) nameInput.value = '';
+
+    // Retrieve add business modal element
+    const modal = document.getElementById('addBusinessAccountModal');
+    // Open modal using global window modal helper
+    if (modal && typeof window.openModal === 'function') {
+      // Trigger modal open
+      window.openModal(modal);
+    // End openModal check
+    }
+  // End openAddBusinessModal
+  };
+
+  // Close workspace dropdown popover when clicking anywhere outside
+  document.addEventListener('click', (e) => {
+    // Retrieve dropdown popover element
+    const menu = document.getElementById('workspaceDropdownMenu');
+    // Guard against hidden or absent popover
+    if (!menu || menu.style.display !== 'block') return;
+    // Reference header workspace button
+    const headerBtn = document.getElementById('headerWorkspaceBtn');
+    // Reference sidebar workspace button
+    const sidebarBtn = document.getElementById('sidebarWorkspaceBtn');
+    // If click was inside header button, sidebar button, or the menu itself, do not close
+    if ((headerBtn && headerBtn.contains(e.target)) || (sidebarBtn && sidebarBtn.contains(e.target)) || menu.contains(e.target)) {
+      // Keep dropdown open
+      return;
+    // End containment check
+    }
+    // Hide popover
+    menu.style.display = 'none';
+  // End click listener
+  });
+
+  // Attach submit event listener to Add Business Account Form
+  const addBizForm = document.getElementById('addBusinessAccountForm');
+  // If form exists
+  if (addBizForm) {
+    // Listen for form submit
+    addBizForm.addEventListener('submit', (e) => {
+      // Prevent browser default page refresh
+      e.preventDefault();
+      // Extract trimmed business name
+      const name = (document.getElementById('newBusinessName') ? document.getElementById('newBusinessName').value : '').trim();
+      // Extract selected business category
+      const category = document.getElementById('newBusinessCategory') ? document.getElementById('newBusinessCategory').value : 'General Commerce';
+      // Extract selected operating currency
+      const currency = document.getElementById('newBusinessCurrency') ? document.getElementById('newBusinessCurrency').value : 'GH₵';
+
+      // Call store method to create new business account
+      const res = window.AppStore.createBusinessAccount({ name, category, currency });
+      // If business account was successfully created
+      if (res && res.success) {
+        // Close modal dialog
+        const modal = document.getElementById('addBusinessAccountModal');
+        // Trigger modal close
+        if (modal && typeof window.closeModal === 'function') window.closeModal(modal);
+        // Refresh full application UI to switch into new business workspace
+        syncUI();
+      // End success check
+      }
+    // End submit listener
+    });
+  // End addBizForm check
+  }
 
 })(window);
