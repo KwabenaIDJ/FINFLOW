@@ -2590,6 +2590,17 @@
   let activeDebtFilter = 'all';
 
   /**
+   * Sets the active debt filter tab and re-renders the debts grid.
+   */
+  window.setDebtFilter = function(filter) {
+    // Update active filter state variable
+    activeDebtFilter = filter || 'all';
+    // Re-render debts view
+    renderDebts();
+  // End setDebtFilter
+  };
+
+  /**
    * Renders the Debts & Loans / IOUs tracker interface.
    * Calculates liabilities, receivables, net position in active currency, and renders interactive debt cards.
    */
@@ -2608,6 +2619,45 @@
     const debtsGrid = document.getElementById('debtsGrid');
     // Exit if debts grid not in DOM
     if (!debtsGrid) return;
+
+    // Synchronize Filter Button Active States in UI
+    const filterKeys = ['all', 'owe', 'lent', 'settled'];
+    // Loop through each filter key
+    filterKeys.forEach(key => {
+      // Find matching button element by ID
+      const btn = document.getElementById(`debtFilter-${key}`);
+      // If button exists
+      if (btn) {
+        // If this button matches active filter
+        if (key === activeDebtFilter) {
+          // Set solid primary background
+          btn.style.setProperty('background', 'var(--color-primary)', 'important');
+          // Set white text color
+          btn.style.setProperty('color', '#ffffff', 'important');
+          // Set primary border
+          btn.style.setProperty('border-color', 'var(--color-primary)', 'important');
+          // Set bold text weight
+          btn.style.setProperty('font-weight', '700', 'important');
+          // Add active class
+          btn.classList.add('active');
+        // If button is inactive
+        } else {
+          // Transparent background
+          btn.style.setProperty('background', 'transparent', 'important');
+          // Neutral text color
+          btn.style.setProperty('color', 'var(--text-main)', 'important');
+          // Default border
+          btn.style.setProperty('border-color', 'var(--color-border)', 'important');
+          // Normal weight
+          btn.style.setProperty('font-weight', '500', 'important');
+          // Remove active class
+          btn.classList.remove('active');
+        // End active check
+        }
+      // End btn check
+      }
+    // End forEach
+    });
 
     // Accumulators for liabilities and receivables in base currency (GH₵)
     let totalOweGhs = 0;
@@ -2689,17 +2739,56 @@
 
     // Render empty state if no matching debts
     if (filteredDebts.length === 0) {
+      // Default empty state title
+      let emptyTitle = 'No Debts or Loans Recorded';
+      // Default empty state message
+      let emptyMsg = 'Keep track of money borrowed or lent with partial repayment tracking.';
+      // Flag indicating whether to show View All Debts button
+      let showAllBtn = false;
+
+      // Customize empty state message based on active filter
+      if (activeDebtFilter === 'owe') {
+        // I owe title
+        emptyTitle = 'No Active Debts You Owe';
+        // I owe explanation
+        emptyMsg = 'You have no outstanding liabilities or money you currently owe to anyone.';
+        // Enable return button
+        showAllBtn = (debts.length > 0);
+      } else if (activeDebtFilter === 'lent') {
+        // Lent title
+        emptyTitle = 'No Active Loans Owed to You';
+        // Lent explanation
+        emptyMsg = 'You have no outstanding money lent out to friends, family, or colleagues.';
+        // Enable return button
+        showAllBtn = (debts.length > 0);
+      } else if (activeDebtFilter === 'settled') {
+        // Settled title
+        emptyTitle = 'No Settled Debts Found';
+        // Settled explanation
+        emptyMsg = 'You do not have any fully settled debts yet. Debts that are 100% paid off will appear here.';
+        // Enable return button
+        showAllBtn = (debts.length > 0);
+      // End filter check
+      }
+
       // Display empty placeholder banner
       debtsGrid.innerHTML = `
         <div class="empty-state" style="grid-column: 1 / -1; text-align: center; padding: 40px 20px; background: var(--bg-card); border-radius: var(--border-radius-md); border: 1px dashed var(--color-border);">
           <div style="font-size: 2.2rem; margin-bottom: 10px;">🤝</div>
-          <h3 style="font-size: 1.1rem; color: var(--text-main); margin-bottom: 6px;">No Debts or Loans Recorded</h3>
-          <p style="color: var(--text-muted); font-size: 0.85rem; max-width: 400px; margin: 0 auto 16px;">
-            ${activeDebtFilter === 'settled' ? 'No settled debts found.' : 'Keep track of money borrowed or lent with partial repayment tracking.'}
+          <h3 style="font-size: 1.1rem; color: var(--text-main); margin-bottom: 6px;">${emptyTitle}</h3>
+          <p style="color: var(--text-muted); font-size: 0.85rem; max-width: 420px; margin: 0 auto 16px;">
+            ${emptyMsg}
           </p>
-          <button type="button" class="btn btn-primary btn-sm" onclick="window.openModal(document.getElementById('addDebtModal'))">
-            + Add New Debt or Loan
-          </button>
+          <div style="display: flex; gap: 10px; justify-content: center; flex-wrap: wrap;">
+            ${showAllBtn ? `
+              <button type="button" class="btn btn-secondary btn-sm" onclick="window.setDebtFilter('all')">
+                View All Records (${debts.length})
+              </button>
+            ` : ''}
+            <button type="button" class="btn btn-primary btn-sm" onclick="window.openModal(document.getElementById('addDebtModal'))">
+              + Add New Debt or Loan
+            </button>
+          </div>
         </div>
       `;
       // Exit render
@@ -3821,6 +3910,13 @@ Ask me specific financial questions like:
       }, 50);
     }
 
+    // Refresh debts view whenever user navigates to the debts & loans tab
+    if (targetTab === 'debts') {
+      // Re-render debts panel metrics, filters, and cards
+      renderDebts();
+    // End debts check
+    }
+
     // Automatically check for latest profile & ledger updates from cloud when navigating
     if (window.AppStore && typeof window.AppStore.syncFromCloud === 'function' && window.AppStore.isLoggedIn()) {
       window.AppStore.syncFromCloud().then(() => {
@@ -4629,6 +4725,8 @@ Ask me specific financial questions like:
           window.closeModal(modal);
         // End closeModal check
         }
+        // Auto-switch filter to 'all' so the newly created debt is guaranteed to be visible immediately
+        activeDebtFilter = 'all';
         // Reset form inputs
         addDebtForm.reset();
         // Synchronize UI
@@ -4703,14 +4801,12 @@ Ask me specific financial questions like:
     debtFilterBtns.forEach(btn => {
       // Click event listener
       btn.addEventListener('click', (e) => {
-        // Remove active class from all filter buttons
-        debtFilterBtns.forEach(b => b.classList.remove('active'));
-        // Add active class to clicked button
-        e.currentTarget.classList.add('active');
-        // Set active debt filter state
-        activeDebtFilter = e.currentTarget.getAttribute('data-filter') || 'all';
-        // Re-render debts view
-        renderDebts();
+        // Prevent any default behavior
+        if (e && typeof e.preventDefault === 'function') e.preventDefault();
+        // Extract target filter attribute value
+        const filterVal = e.currentTarget.getAttribute('data-filter') || 'all';
+        // Delegate to global setDebtFilter function
+        window.setDebtFilter(filterVal);
       // End click listener
       });
     // End forEach

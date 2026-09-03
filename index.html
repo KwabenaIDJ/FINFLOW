@@ -602,8 +602,8 @@
 
       <!-- Debt Summary KPI Cards Grid -->
       <div class="kpi-grid" style="grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); margin-bottom: 24px;">
-        <!-- KPI Card 1: Total I Owe -->
-        <div class="card kpi-card" style="border-left: 4px solid #ef4444;">
+        <!-- KPI Card 1: Total I Owe (Clickable to filter I Owe debts) -->
+        <div class="card kpi-card" onclick="window.setDebtFilter('owe')" title="Click to view all liabilities you owe" style="border-left: 4px solid #ef4444; cursor: pointer; transition: transform 0.15s ease;">
           <!-- Card header -->
           <div class="card-header">
             <!-- Title -->
@@ -619,8 +619,8 @@
         <!-- End KPI Card 1 -->
         </div>
 
-        <!-- KPI Card 2: Total Owed to Me -->
-        <div class="card kpi-card" style="border-left: 4px solid #10b981;">
+        <!-- KPI Card 2: Total Owed to Me (Clickable to filter Owed to Me debts) -->
+        <div class="card kpi-card" onclick="window.setDebtFilter('lent')" title="Click to view all loans owed to you" style="border-left: 4px solid #10b981; cursor: pointer; transition: transform 0.15s ease;">
           <!-- Card header -->
           <div class="card-header">
             <!-- Title -->
@@ -636,8 +636,8 @@
         <!-- End KPI Card 2 -->
         </div>
 
-        <!-- KPI Card 3: Net Debt Position -->
-        <div class="card kpi-card" style="border-left: 4px solid #6366f1;">
+        <!-- KPI Card 3: Net Debt Position (Clickable to view all debts) -->
+        <div class="card kpi-card" onclick="window.setDebtFilter('all')" title="Click to view all debts and loans" style="border-left: 4px solid #6366f1; cursor: pointer; transition: transform 0.15s ease;">
           <!-- Card header -->
           <div class="card-header">
             <!-- Title -->
@@ -659,14 +659,14 @@
       <div class="card" style="padding: 16px 20px; margin-bottom: 20px; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 12px;">
         <!-- Filter Pills Group -->
         <div style="display: flex; gap: 8px; flex-wrap: wrap;" id="debtsFilterGroup">
-          <!-- Filter All -->
-          <button type="button" class="btn btn-secondary btn-sm btn-debt-filter active" data-filter="all">All</button>
-          <!-- Filter I Owe -->
-          <button type="button" class="btn btn-secondary btn-sm btn-debt-filter" data-filter="owe">I Owe</button>
-          <!-- Filter Owed to Me -->
-          <button type="button" class="btn btn-secondary btn-sm btn-debt-filter" data-filter="lent">Owed to Me</button>
-          <!-- Filter Settled -->
-          <button type="button" class="btn btn-secondary btn-sm btn-debt-filter" data-filter="settled">Settled</button>
+          <!-- Filter All button with direct onclick handler -->
+          <button type="button" class="btn btn-sm btn-debt-filter active" id="debtFilter-all" onclick="window.setDebtFilter('all')" style="padding: 6px 14px; font-size: 0.8rem; font-weight: 700; border-radius: 20px; transition: all 0.2s ease;">All</button>
+          <!-- Filter I Owe button with direct onclick handler -->
+          <button type="button" class="btn btn-sm btn-debt-filter" id="debtFilter-owe" onclick="window.setDebtFilter('owe')" style="padding: 6px 14px; font-size: 0.8rem; font-weight: 500; border-radius: 20px; transition: all 0.2s ease;">🔴 I Owe</button>
+          <!-- Filter Owed to Me button with direct onclick handler -->
+          <button type="button" class="btn btn-sm btn-debt-filter" id="debtFilter-lent" onclick="window.setDebtFilter('lent')" style="padding: 6px 14px; font-size: 0.8rem; font-weight: 500; border-radius: 20px; transition: all 0.2s ease;">🟢 Owed to Me</button>
+          <!-- Filter Settled button with direct onclick handler -->
+          <button type="button" class="btn btn-sm btn-debt-filter" id="debtFilter-settled" onclick="window.setDebtFilter('settled')" style="padding: 6px 14px; font-size: 0.8rem; font-weight: 500; border-radius: 20px; transition: all 0.2s ease;">🎉 Settled</button>
         <!-- End Filter Pills Group -->
         </div>
         <!-- Status count indicator text -->
