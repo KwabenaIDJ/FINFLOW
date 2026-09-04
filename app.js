@@ -751,9 +751,14 @@
     const currency = settings.currency;
     const balance = store.getBalance();
     
-    // Update main net worth value card
-    elements.netWorthValue.textContent = formatMoney(balance.total, currency);
-    elements.netWorthValue.title = elements.netWorthValue.textContent;
+    // Update main net worth value card if mounted in DOM
+    if (elements.netWorthValue) {
+      // Format net worth money amount
+      elements.netWorthValue.textContent = formatMoney(balance.total, currency);
+      // Set tooltip title
+      elements.netWorthValue.title = elements.netWorthValue.textContent;
+    // End netWorthValue guard
+    }
     
     // Update cash balance value card
     elements.cashBalanceValue.textContent = formatMoney(balance.cash, currency);
@@ -4630,9 +4635,96 @@
   // Expose syncUI on global window so external events and callbacks can trigger view updates
   window.syncUI = syncUI;
 
+  // Active slide index for Proactive AI Insights carousel
+  window.currentAiInsightIndex = 0;
+  // Slide collection array storing insight descriptors
+  window.aiInsightSlides = [];
+
   /**
-   * Generates proactive AI Insights based on user transaction history, budgets, and savings goals.
+   * Navigates the Proactive AI Insights carousel to a target slide index.
    */
+  window.showAiInsight = function(index) {
+    // Reference slide collection
+    const slides = window.aiInsightSlides || [];
+    // Number of available slides
+    const total = slides.length;
+    // Guard against empty collection
+    if (total === 0) return;
+    // Compute normalized wrapped index for continuous looping
+    const targetIdx = ((index % total) + total) % total;
+    // Update active index state
+    window.currentAiInsightIndex = targetIdx;
+    // Reference horizontal slide track container
+    const track = document.getElementById('aiInsightsContent');
+    // If track element exists, apply horizontal translation
+    if (track) {
+      // Slide active card smoothly into view
+      track.style.transform = `translateX(-${targetIdx * 100}%)`;
+    // End track check
+    }
+    // Reference counter badge element
+    const counterEl = document.getElementById('aiInsightCounter');
+    // Update counter display
+    if (counterEl) {
+      // Show 1-indexed slide position and total count
+      counterEl.textContent = `${targetIdx + 1} / ${total}`;
+    // End counter check
+    }
+    // Reference pagination indicator dots container
+    const dotsContainer = document.getElementById('aiCarouselDots');
+    // Update active dot visual style
+    if (dotsContainer) {
+      // Query all dot buttons
+      const dots = dotsContainer.querySelectorAll('.ai-dot');
+      // Iterate through dots
+      dots.forEach((dot, dIdx) => {
+        // If active dot
+        if (dIdx === targetIdx) {
+          // Elongate active pill
+          dot.style.width = '24px';
+          // Rounded pill border radius
+          dot.style.borderRadius = '4px';
+          // Brand primary accent color
+          dot.style.background = 'var(--color-primary)';
+          // Full opacity
+          dot.style.opacity = '1';
+        // Inactive dots
+        } else {
+          // Compact circular shape
+          dot.style.width = '7px';
+          // Circular border radius
+          dot.style.borderRadius = '50%';
+          // Translucent white dot
+          dot.style.background = 'rgba(255, 255, 255, 0.3)';
+          // Dimmed opacity
+          dot.style.opacity = '0.6';
+        // End dot condition
+        }
+      // End dots forEach
+      });
+    // End dotsContainer check
+    }
+  // End showAiInsight function
+  };
+
+  /**
+   * Navigates to the previous AI insight slide in carousel.
+   */
+  window.prevAiInsight = function() {
+    // Decrement slide index
+    window.showAiInsight((window.currentAiInsightIndex || 0) - 1);
+  // End prevAiInsight function
+  };
+
+  /**
+   * Navigates to the next AI insight slide in carousel.
+   */
+  window.nextAiInsight = function() {
+    // Increment slide index
+    window.showAiInsight((window.currentAiInsightIndex || 0) + 1);
+  // End nextAiInsight function
+  };
+
   /**
    * Generates Proactive AI Insights (v1 Roadmap) based on user transaction history, budgets, and savings goals.
    */
@@ -4812,41 +4904,93 @@
     // Helper to safely escape prompt attributes
     const escapeAttr = (str) => (str || '').replace(/"/g, '&quot;');
 
-    // --- RENDER LOGIC: FREE TEASER GATE VS PREMIUM UNLOCKED ---
-    let insightsHTML = '';
-
-    if (!isPremium) {
-      const freeInsight = generatedInsights[0] || {
+    // --- RENDER LOGIC: SINGLE-CARD SLIDER (FREE TEASER GATE VS PREMIUM UNLOCKED) ---
+    // Construct items array for carousel slider
+    const itemsToDisplay = isPremium ? generatedInsights : [
+      // Standard free insight slide
+      generatedInsights[0] || {
         title: '💡 Smart Money Tip',
         desc: 'Keep 1-2 weeks of operational cash on MoMo and route the rest into high-yield savings or T-Bills.'
-      };
+      },
+      // Locked teaser slide for non-premium members
+      {
+        isLocked: true,
+        title: '👑 Proactive AI Insights (15+ Active)',
+        desc: 'Unlock background leak detection, idle cash alerts, category spike warnings & Accra benchmark stats with Premium (GH₵13.99/mo).'
+      }
+    ];
 
-      insightsHTML = `
-        <div class="ai-insight-item">
-          <div class="insight-title">${freeInsight.title}</div>
-          <div class="insight-desc">${freeInsight.desc}</div>
-        </div>
+    // Store in global slides collection for carousel navigation
+    window.aiInsightSlides = itemsToDisplay;
 
-        <div class="ai-insight-item locked-teaser">
-          <div class="insight-title" style="color: #f1c40f; font-weight: 800;">👑 Proactive AI Insights (15+ Active)</div>
-          <div class="insight-desc" style="margin-bottom: 8px;">
-            Unlock background leak detection, idle cash alerts, category spike warnings & Accra benchmark stats with Premium (GH₵13.99/mo).
+    // Generate single-card carousel slides HTML (each taking 100% width of slider)
+    const slidesHTML = itemsToDisplay.map((item, idx) => `
+      <div class="ai-insight-carousel-slide" style="min-width: 100%; max-width: 100%; flex-shrink: 0; box-sizing: border-box; padding: 2px 42px;">
+        <div class="ai-insight-item ${item.isLocked ? 'locked-teaser' : ''}" style="background: rgba(15, 23, 42, 0.72); border: 1px solid rgba(255, 255, 255, 0.08); border-radius: var(--border-radius-md); padding: 18px 24px; min-height: 108px; display: flex; flex-direction: column; justify-content: center; backdrop-filter: blur(8px); box-shadow: 0 4px 16px rgba(0, 0, 0, 0.2);">
+          <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 8px; flex-wrap: wrap; gap: 6px;">
+            <div class="insight-title" style="font-size: 1.05rem; font-weight: 800; color: ${item.isLocked ? '#f1c40f' : 'var(--text-main)'}; display: flex; align-items: center; gap: 8px;">
+              ${item.title}
+            </div>
+            <span style="font-size: 0.72rem; font-weight: 700; color: var(--text-muted); background: rgba(255, 255, 255, 0.06); padding: 3px 8px; border-radius: 10px;">
+              Insight ${idx + 1} of ${itemsToDisplay.length}
+            </span>
           </div>
-          <button type="button" class="btn btn-primary btn-sm upgrade-trigger-btn" style="background: linear-gradient(135deg, #f1c40f, #f39c12); color: #0b0f19; font-weight: 800; border: none; font-size: 0.76rem; padding: 6px 14px; border-radius: 14px; cursor: pointer;">
-            Upgrade to Premium (GH₵13.99)
-          </button>
+          <div class="insight-desc" style="font-size: 0.92rem; line-height: 1.55; color: var(--text-muted); margin-bottom: ${item.isLocked ? '12px' : '0'};">
+            ${item.desc}
+          </div>
+          ${item.isLocked ? `
+            <button type="button" class="btn btn-primary btn-sm upgrade-trigger-btn" onclick="window.openPremiumModal()" style="background: linear-gradient(135deg, #f1c40f, #f39c12); color: #0b0f19; font-weight: 800; border: none; font-size: 0.76rem; padding: 7px 16px; border-radius: 14px; cursor: pointer; align-self: flex-start; margin-top: 6px;">
+              Upgrade to Premium (GH₵13.99/mo)
+            </button>
+          ` : ''}
         </div>
-      `;
-    } else {
-      insightsHTML = generatedInsights.map(item => `
-        <div class="ai-insight-item">
-          <div class="insight-title">${item.title}</div>
-          <div class="insight-desc">${item.desc}</div>
-        </div>
+      </div>
+    `).join('');
+
+    // Inject carousel slide track HTML
+    elements.aiInsightsContent.innerHTML = slidesHTML;
+
+    // Generate pagination dots
+    const dotsContainer = document.getElementById('aiCarouselDots');
+    // If dots container mounted
+    if (dotsContainer) {
+      // Build dot buttons
+      dotsContainer.innerHTML = itemsToDisplay.map((_, dIdx) => `
+        <button type="button" class="ai-dot" onclick="window.showAiInsight(${dIdx})" aria-label="Go to insight ${dIdx + 1}" title="Go to insight ${dIdx + 1}" style="border: none; padding: 0; cursor: pointer; height: 7px; transition: all 0.25s ease; ${dIdx === 0 ? 'width: 24px; border-radius: 4px; background: var(--color-primary); opacity: 1;' : 'width: 7px; border-radius: 50%; background: rgba(255, 255, 255, 0.3); opacity: 0.6;'}"></button>
       `).join('');
+    // End dotsContainer check
     }
 
-    elements.aiInsightsContent.innerHTML = insightsHTML;
+    // Attach touch swipe gesture listeners for mobile users
+    if (!elements.aiInsightsContent.dataset.touchListener) {
+      // Mark listener attached
+      elements.aiInsightsContent.dataset.touchListener = 'true';
+      // Touch start coordinate
+      let touchStartX = 0;
+      // Record touchstart position
+      elements.aiInsightsContent.addEventListener('touchstart', (e) => {
+        touchStartX = e.changedTouches[0].screenX;
+      }, { passive: true });
+      // Evaluate touchend position
+      elements.aiInsightsContent.addEventListener('touchend', (e) => {
+        const touchEndX = e.changedTouches[0].screenX;
+        const diffX = touchStartX - touchEndX;
+        // Threshold check for swipe
+        if (Math.abs(diffX) > 40) {
+          // Swipe left advances to next
+          if (diffX > 0) window.nextAiInsight();
+          // Swipe right goes to previous
+          else window.prevAiInsight();
+        // End threshold check
+        }
+      }, { passive: true });
+    // End touchListener check
+    }
+
+    // Initialize carousel view to current or first slide
+    const targetInitIndex = (window.currentAiInsightIndex || 0) < itemsToDisplay.length ? (window.currentAiInsightIndex || 0) : 0;
+    // Display targeted slide
+    window.showAiInsight(targetInitIndex);
   }
 
   // --- AI Chat Coach Core Engine ---

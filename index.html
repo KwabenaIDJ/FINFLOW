@@ -513,42 +513,70 @@
               <span id="aiBannerSub" style="font-size: 0.74rem; color: var(--text-muted);">Automated spending leak detection & 90-day predictive cash flow runway</span>
             </div>
           </div>
-          <!-- Button to trigger premium upgrade modal (visible ONLY to non-premium members) -->
-          <button type="button" class="btn btn-secondary btn-sm upgrade-trigger-btn upgrade-only-element" id="insightsUpgradeBtn" onclick="window.openPremiumModal()" style="font-size: 0.78rem; font-weight: 700; background: linear-gradient(135deg, #f1c40f, #f39c12); border: none; color: #0b0f19; padding: 6px 14px; border-radius: 20px; display: flex; align-items: center; gap: 6px; cursor: pointer; box-shadow: 0 4px 12px rgba(241, 196, 15, 0.3);">
-            <!-- Sparkles emoji and upgrade CTA text -->
-            ✨ Upgrade to Premium
-          <!-- Closing button tag for banner upgrade trigger -->
-          </button>
-          <!-- Active Premium badge (visible ONLY when user has paid for Premium) -->
-          <span id="insightsPremiumBadge" style="display: none; font-size: 0.76rem; font-weight: 800; background: rgba(241, 196, 15, 0.15); border: 1px solid rgba(241, 196, 15, 0.4); color: #f1c40f; padding: 5px 12px; border-radius: 20px; align-items: center; gap: 5px;">
-            <!-- Crown badge icon and active status indicator -->
-            👑 Premium Active
-          <!-- Closing span tag for premium badge -->
-          </span>
+          <!-- Right side container with Carousel Controls and Premium status/upgrade button -->
+          <div style="display: flex; align-items: center; gap: 10px; flex-wrap: wrap;">
+            <!-- Carousel Navigation Arrows & Counter Badge -->
+            <div id="aiCarouselNav" style="display: flex; align-items: center; gap: 6px; background: rgba(0, 0, 0, 0.3); border: 1px solid rgba(255, 255, 255, 0.12); padding: 3px 8px; border-radius: 20px; backdrop-filter: blur(8px);">
+              <!-- Previous insight button -->
+              <button type="button" class="ai-carousel-nav-btn" id="aiInsightPrevBtn" onclick="window.prevAiInsight()" title="Previous insight (Arrow Left)" style="background: none; border: none; color: var(--text-main); font-size: 1.2rem; font-weight: 800; cursor: pointer; padding: 2px 7px; border-radius: 50%; line-height: 1; display: flex; align-items: center; justify-content: center;">‹</button>
+              <!-- Carousel insight counter -->
+              <span id="aiInsightCounter" style="font-size: 0.75rem; font-weight: 800; color: var(--text-muted); min-width: 42px; text-align: center; user-select: none;">1 / 5</span>
+              <!-- Next insight button -->
+              <button type="button" class="ai-carousel-nav-btn" id="aiInsightNextBtn" onclick="window.nextAiInsight()" title="Next insight (Arrow Right)" style="background: none; border: none; color: var(--text-main); font-size: 1.2rem; font-weight: 800; cursor: pointer; padding: 2px 7px; border-radius: 50%; line-height: 1; display: flex; align-items: center; justify-content: center;">›</button>
+            <!-- End carousel navigation container -->
+            </div>
+            <!-- Button to trigger premium upgrade modal (visible ONLY to non-premium members) -->
+            <button type="button" class="btn btn-secondary btn-sm upgrade-trigger-btn upgrade-only-element" id="insightsUpgradeBtn" onclick="window.openPremiumModal()" style="font-size: 0.78rem; font-weight: 700; background: linear-gradient(135deg, #f1c40f, #f39c12); border: none; color: #0b0f19; padding: 6px 14px; border-radius: 20px; display: flex; align-items: center; gap: 6px; cursor: pointer; box-shadow: 0 4px 12px rgba(241, 196, 15, 0.3);">
+              <!-- Sparkles emoji and upgrade CTA text -->
+              ✨ Upgrade to Premium
+            <!-- Closing button tag for banner upgrade trigger -->
+            </button>
+            <!-- Active Premium badge (visible ONLY when user has paid for Premium) -->
+            <span id="insightsPremiumBadge" style="display: none; font-size: 0.76rem; font-weight: 800; background: rgba(241, 196, 15, 0.15); border: 1px solid rgba(241, 196, 15, 0.4); color: #f1c40f; padding: 5px 12px; border-radius: 20px; align-items: center; gap: 5px;">
+              <!-- Crown badge icon and active status indicator -->
+              👑 Premium Active
+            <!-- Closing span tag for premium badge -->
+            </span>
+          <!-- End right side header controls -->
+          </div>
+        <!-- End header container -->
         </div>
 
-        <div id="aiInsightsContent" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 14px;">
-          <!-- Dynamically populated in app.js -->
+        <!-- Single Card Carousel Viewport with Floating Quick-Scroll Arrows -->
+        <div style="position: relative; width: 100%; overflow: hidden; border-radius: var(--border-radius-md);">
+          <!-- Floating Left Quick-Scroll Arrow -->
+          <button type="button" onclick="window.prevAiInsight()" aria-label="Previous Insight" title="Previous Insight" style="position: absolute; left: 6px; top: 50%; transform: translateY(-50%); z-index: 5; width: 32px; height: 32px; border-radius: 50%; background: rgba(15, 23, 42, 0.88); border: 1px solid rgba(255, 255, 255, 0.2); color: #ffffff; font-size: 1.25rem; font-weight: 800; display: flex; align-items: center; justify-content: center; cursor: pointer; box-shadow: 0 4px 14px rgba(0,0,0,0.45); backdrop-filter: blur(8px);">
+            <!-- Left chevron symbol -->
+            ‹
+          <!-- End left floating button -->
+          </button>
+
+          <!-- Floating Right Quick-Scroll Arrow -->
+          <button type="button" onclick="window.nextAiInsight()" aria-label="Next Insight" title="Next Insight" style="position: absolute; right: 6px; top: 50%; transform: translateY(-50%); z-index: 5; width: 32px; height: 32px; border-radius: 50%; background: rgba(15, 23, 42, 0.88); border: 1px solid rgba(255, 255, 255, 0.2); color: #ffffff; font-size: 1.25rem; font-weight: 800; display: flex; align-items: center; justify-content: center; cursor: pointer; box-shadow: 0 4px 14px rgba(0,0,0,0.45); backdrop-filter: blur(8px);">
+            <!-- Right chevron symbol -->
+            ›
+          <!-- End right floating button -->
+          </button>
+
+          <!-- Horizontal Slide Track (Single card visible at a time) -->
+          <div id="aiInsightsContent" style="display: flex; transition: transform 0.35s cubic-bezier(0.4, 0, 0.2, 1); width: 100%; will-change: transform;">
+            <!-- Dynamically populated in app.js -->
+          <!-- End carousel slide track -->
+          </div>
+        <!-- End carousel viewport -->
         </div>
+
+        <!-- Carousel Pagination Indicator Dots -->
+        <div id="aiCarouselDots" style="display: flex; align-items: center; justify-content: center; gap: 6px; margin-top: 12px;">
+          <!-- Dynamically populated in app.js with clickable dots -->
+        <!-- End dots container -->
+        </div>
+      <!-- End AI Insights banner card -->
       </div>
       
       <!-- KPI GRID -->
       <section class="kpi-grid" aria-label="Financial Summary Totals">
-        <!-- KPI Card 1: Net Worth / Net Operating Profit -->
-        <div class="card kpi-card cash">
-          <div class="kpi-header">
-            <!-- Dynamic title for Personal (Net Worth) vs Business (Net Operating Profit) -->
-            <span class="kpi-title" id="kpiTitleNetWorth">Net Worth</span>
-            <div class="kpi-icon">
-              <svg><use href="#icon-wallet"></use></svg>
-            </div>
-          </div>
-          <div class="kpi-value" id="netWorthValue">$0.00</div>
-          <!-- Dynamic footer for Personal (Total Wealth) vs Business (Profit Margin %) -->
-          <div class="kpi-footer" id="kpiFooterNetWorth">Total Wealth</div>
-        </div>
-
-        <!-- KPI Card 2: Cash Balance / Working Capital -->
+        <!-- KPI Card 1: Cash Balance / Working Capital -->
         <div class="card kpi-card savings">
           <div class="kpi-header">
             <!-- Dynamic title for Personal (Cash Balance) vs Business (Working Capital) -->

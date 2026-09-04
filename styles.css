@@ -428,11 +428,15 @@ header {
   box-shadow: var(--shadow-main);
 }
 
-/* --- KPI Summary Grid --- */
+/* --- KPI Summary Grid (Configured for 3 Cards: Balance, Income, Expenses) --- */
 .kpi-grid {
+  /* Use CSS grid layout */
   display: grid;
-  grid-template-columns: repeat(4, 1fr);
+  /* Format 3 balanced equal-width columns for summary metrics */
+  grid-template-columns: repeat(3, 1fr);
+  /* Standard gutter spacing between cards */
   gap: 20px;
+/* End kpi-grid definition */
 }
 
 .kpi-card {
