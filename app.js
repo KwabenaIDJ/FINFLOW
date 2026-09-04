@@ -3330,6 +3330,308 @@
   // End issueCustomerReceipt
   };
 
+  // Active customer ID currently targeted in the Business SMS modal
+  window._activeSmsCustomerId = null;
+
+  /**
+   * Opens the Business Customer SMS modal dialog.
+   * Enforces the 5 free trial SMS quota for free accounts and unrestricted access for Premium members.
+   */
+  window.openBusinessSmsModal = function(id) {
+    // Reference central data store instance
+    const store = window.AppStore;
+    // Guard check to ensure store exists
+    if (!store) return;
+    // Retrieve Business SMS quota access status
+    const status = store.getBusinessSmsStatus ? store.getBusinessSmsStatus() : { allowed: true, isPremium: false };
+    // If access is not allowed (user consumed all 5 free trial SMS messages)
+    if (!status.allowed) {
+      // Trigger premium membership checkout modal
+      if (typeof window.openPremiumModal === 'function') {
+        // Open premium upgrade dialog
+        window.openPremiumModal();
+      // End modal check
+      }
+      // Notify user that their 5 free trial SMS messages have expired
+      if (typeof alert === 'function') {
+        // Display explanatory alert
+        alert('🔒 Business Customer SMS is a Premium feature. You have used your 5 free trial SMS messages. Upgrade to FinFlow Premium for GH₵13.99/mo to unlock unlimited customer SMS messaging!');
+      // End alert check
+      }
+      // Abort opening SMS modal
+      return;
+    // End quota enforcement check
+    }
+
+    // Retrieve target customer record from database
+    const cust = store.getCustomer(id);
+    // If customer record is not found, terminate
+    if (!cust) return;
+
+    // Cache active customer ID in global window state
+    window._activeSmsCustomerId = id;
+
+    // Update customer name label in SMS modal
+    const nameEl = document.getElementById('smsRecipientName');
+    // If element exists in DOM
+    if (nameEl) {
+      // Set text content to customer name
+      nameEl.textContent = cust.name;
+    // End name element check
+    }
+
+    // Update recipient phone number display
+    const phoneEl = document.getElementById('smsRecipientPhone');
+    // If element exists in DOM
+    if (phoneEl) {
+      // Set text content to customer phone number or fallback warning
+      phoneEl.textContent = cust.phone ? `${cust.phone}${cust.company ? ' • ' + cust.company : ''}` : '⚠️ No phone number saved';
+    // End phone element check
+    }
+
+    // Update SMS quota badge display
+    const badgeEl = document.getElementById('businessSmsQuotaBadge');
+    // If badge container exists in DOM
+    if (badgeEl) {
+      // If user holds active premium subscription
+      if (status.isPremium) {
+        // Render gold VIP unlimited badge
+        badgeEl.innerHTML = '<span style="background: rgba(241, 196, 15, 0.15); border: 1px solid #f1c40f; color: #f1c40f; padding: 4px 10px; border-radius: 12px; font-size: 0.76rem; font-weight: 800;">👑 Premium • Unlimited SMS</span>';
+      // If user is enjoying free trial tier
+      } else {
+        // Render blue free trial remaining count badge
+        badgeEl.innerHTML = `<span style="background: rgba(37, 99, 235, 0.15); border: 1px solid #2563eb; color: #3b82f6; padding: 4px 10px; border-radius: 12px; font-size: 0.76rem; font-weight: 800;">⭐ Free Trial: ${status.remaining} of ${status.maxFree} SMS remaining</span>`;
+      // End tier check
+      }
+    // End badge element check
+    }
+
+    // Apply default Friendly Check-in template
+    window.applyBusinessSmsTemplate('checkup');
+
+    // Retrieve SMS modal overlay element
+    const modal = document.getElementById('businessSmsModal');
+    // Open modal dialog if present in DOM
+    if (modal) window.openModal(modal);
+  // End openBusinessSmsModal
+  };
+
+  /**
+   * Applies pre-composed professional SMS templates to the SMS message textarea.
+   */
+  window.applyBusinessSmsTemplate = function(templateKey) {
+    // Reference application data store
+    const store = window.AppStore;
+    // Target customer record or fallback name
+    const cust = (store && window._activeSmsCustomerId) ? (store.getCustomer(window._activeSmsCustomerId) || {}) : {};
+    // Clean customer display name
+    const custName = cust.name || 'Valued Client';
+    // Retrieve active business account profile
+    const activeAccount = (store && store.getActiveAccount && store.getActiveAccount()) || {};
+    // Clean business enterprise name
+    const bizName = activeAccount.name || 'our business';
+
+    // Variable to hold chosen template string
+    let message = '';
+    // Switch on template key
+    switch (templateKey) {
+      // Friendly customer check-up template
+      case 'checkup':
+        // Construct checkup message text
+        message = `Hello ${custName}! Checking in from ${bizName}. Hope you are having a wonderful week! Let us know if you need any products or support. Best regards, ${bizName}.`;
+        // Break case
+        break;
+      // Payment and outstanding balance reminder template
+      case 'payment':
+        // Construct payment reminder message text
+        message = `Hello ${custName}, this is a gentle reminder regarding your pending balance/invoice with ${bizName}. Kindly arrange payment at your earliest convenience. Thank you! - ${bizName}`;
+        // Break case
+        break;
+      // Order completion / pickup notification template
+      case 'ready':
+        // Construct order ready message text
+        message = `Hello ${custName}, great news! Your order/service from ${bizName} is ready. Thank you for your business! - ${bizName}`;
+        // Break case
+        break;
+      // Promotional announcement and discount template
+      case 'promo':
+        // Construct promotional offer message text
+        message = `Hello ${custName}! Special offer from ${bizName} just for you. Visit us or call to take advantage of our current discounts! - ${bizName}`;
+        // Break case
+        break;
+      // Custom blank message template
+      case 'custom':
+        // Empty message string for custom typing
+        message = '';
+        // Break case
+        break;
+      // Default fallback
+      default:
+        // Fallback to checkup text
+        message = `Hello ${custName}! Warm greetings from ${bizName}. We appreciate your valued patronage! - ${bizName}`;
+    // End template key switch
+    }
+
+    // Retrieve textarea element
+    const textarea = document.getElementById('businessSmsTextarea');
+    // If textarea exists
+    if (textarea) {
+      // Set textarea value to template message
+      textarea.value = message;
+      // If custom template selected, focus textarea for typing
+      if (templateKey === 'custom') textarea.focus();
+    // End textarea check
+    }
+
+    // Update template pill button active highlight styles
+    document.querySelectorAll('.sms-tpl-btn').forEach(btn => {
+      // Check if button corresponds to active template
+      const isActive = btn.getAttribute('data-tpl') === templateKey;
+      // Apply active primary background or secondary background
+      btn.style.background = isActive ? 'linear-gradient(135deg, #0284c7, #2563eb)' : 'var(--bg-secondary)';
+      // Apply white text for active button or muted text for inactive
+      btn.style.color = isActive ? '#ffffff' : 'var(--text-main)';
+      // Apply border styling
+      btn.style.border = isActive ? '1px solid #0284c7' : '1px solid var(--color-border)';
+      // Set font weight
+      btn.style.fontWeight = isActive ? '800' : '600';
+    // End button loop
+    });
+
+    // Recalculate and render live character count
+    window.updateBusinessSmsCharCounter();
+  // End applyBusinessSmsTemplate
+  };
+
+  /**
+   * Recalculates and updates the live character and SMS segment counter in the SMS dialog.
+   */
+  window.updateBusinessSmsCharCounter = function() {
+    // Retrieve textarea element
+    const textarea = document.getElementById('businessSmsTextarea');
+    // Text content length or zero
+    const len = textarea ? textarea.value.length : 0;
+    // Calculate SMS segment count (standard 160 characters per standard SMS)
+    const segments = Math.max(1, Math.ceil(len / 160));
+    // Calculate characters remaining in current segment
+    const remainingInSegment = (len === 0) ? 160 : (160 - (len % 160 || 160));
+
+    // Retrieve character count text span
+    const countEl = document.getElementById('businessSmsCharCountText');
+    // If element exists in DOM
+    if (countEl) {
+      // Display character count string
+      countEl.textContent = `${len} character${len === 1 ? '' : 's'}`;
+    // End countEl check
+    }
+
+    // Retrieve segment text span
+    const segEl = document.getElementById('businessSmsSegmentText');
+    // If element exists in DOM
+    if (segEl) {
+      // Display segment count and remaining characters in current segment
+      segEl.textContent = `${segments} SMS (${remainingInSegment} chars left in segment)`;
+    // End segEl check
+    }
+  // End updateBusinessSmsCharCounter
+  };
+
+  /**
+   * Dispatches the composed SMS message via universal native sms: mobile link.
+   * Records trial usage or permits unlimited sending for Premium subscribers.
+   */
+  window.submitBusinessSms = function() {
+    // Reference data store instance
+    const store = window.AppStore;
+    // If store missing, abort
+    if (!store) return;
+    // Check SMS quota access permission
+    const status = store.getBusinessSmsStatus ? store.getBusinessSmsStatus() : { allowed: true, isPremium: false };
+    // If user has exhausted 5 free trial SMS sends and is not premium
+    if (!status.allowed) {
+      // Open premium subscription upgrade modal
+      if (typeof window.openPremiumModal === 'function') window.openPremiumModal();
+      // Alert user of trial exhaustion
+      alert('🔒 Business Customer SMS is a Premium feature. You have used your 5 free trial SMS messages. Upgrade to FinFlow Premium for GH₵13.99/mo to unlock unlimited customer SMS messaging!');
+      // Terminate dispatch
+      return;
+    // End allowance check
+    }
+
+    // Retrieve textarea input
+    const textarea = document.getElementById('businessSmsTextarea');
+    // Sanitize message content
+    const message = textarea ? textarea.value.trim() : '';
+    // If message is blank
+    if (!message) {
+      // Alert user to enter a message
+      alert('Please enter a message before sending.');
+      // Terminate dispatch
+      return;
+    // End blank message check
+    }
+
+    // Retrieve target customer by active ID
+    const cust = store.getCustomer(window._activeSmsCustomerId);
+    // If customer not found
+    if (!cust) {
+      // Alert user
+      alert('Customer record not found.');
+      // Terminate dispatch
+      return;
+    // End customer check
+    }
+
+    // Sanitize raw phone number
+    let rawPhone = (cust.phone || '').replace(/[\s\-\(\)\+]/g, '');
+    // If phone number is missing
+    if (!rawPhone) {
+      // Alert user
+      alert('This customer does not have a valid phone number saved. Please update their profile contact number first.');
+      // Terminate dispatch
+      return;
+    // End missing phone check
+    }
+
+    // If local Ghana number starting with 0 and length 10 digits
+    if (rawPhone.startsWith('0') && rawPhone.length === 10) {
+      // Convert to international country code 233
+      rawPhone = '233' + rawPhone.substring(1);
+    // End Ghana local formatting
+    }
+
+    // Detect iOS operating system for proper SMS URI separator syntax
+    const isIos = /iPad|iPhone|iPod/.test(navigator.userAgent);
+    // Use ampersand for iOS and question mark for Android/Web standard
+    const separator = isIos ? '&' : '?';
+    // Construct universal SMS protocol URL
+    const smsUrl = `sms:${rawPhone}${separator}body=${encodeURIComponent(message)}`;
+
+    // Trigger universal SMS app dispatch on device
+    window.location.href = smsUrl;
+
+    // Record SMS dispatch and consume trial credit in data store
+    const newStatus = store.recordBusinessSmsDispatch ? store.recordBusinessSmsDispatch(window._activeSmsCustomerId) : { countUsed: 1, remaining: 4, isPremium: false };
+
+    // Close SMS modal dialog
+    const modal = document.getElementById('businessSmsModal');
+    // If modal present
+    if (modal) window.closeModal(modal);
+
+    // Re-render customers list to update last contacted timestamp
+    if (typeof renderCustomers === 'function') renderCustomers();
+
+    // If user is on the free trial tier, inform them of trial consumption
+    if (!newStatus.isPremium) {
+      // Construct remaining text
+      const remainingMsg = newStatus.remaining > 0 ? `${newStatus.remaining} free trial SMS remaining.` : 'This was your last free SMS. Upgrade to Premium for unlimited SMS!';
+      // Show informative alert
+      alert(`⭐ Customer SMS dispatched! (${newStatus.countUsed}/${newStatus.maxFree} free sends used). ${remainingMsg}`);
+    // End free trial notification
+    }
+  // End submitBusinessSms
+  };
+
   /**
    * Populates the quick-select customer dropdown in the Receipt Modal.
    */
@@ -3607,22 +3909,36 @@
             </div>
           </div>
 
-          <!-- Bottom Action Buttons: 1-Tap WhatsApp, Call, Issue Receipt -->
+          <!-- Bottom Action Buttons: 1-Tap WhatsApp, 1-Tap SMS, Issue Receipt, Direct Call -->
           <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-top: 8px;">
             <!-- 1-Tap WhatsApp Check-up Button -->
-            <button type="button" class="btn btn-sm" onclick="window.checkupCustomerWhatsApp('${c.id}')" style="grid-column: 1 / -1; background: linear-gradient(135deg, #25D366, #128C7E); color: #ffffff; font-weight: 800; font-size: 0.82rem; padding: 9px; border-radius: var(--border-radius-sm); border: none; display: flex; align-items: center; justify-content: center; gap: 6px; box-shadow: 0 2px 6px rgba(37, 211, 102, 0.25);">
-              <span>💬 Check Up on WhatsApp</span>
+            <button type="button" class="btn btn-sm" onclick="window.checkupCustomerWhatsApp('${c.id}')" style="background: linear-gradient(135deg, #25D366, #128C7E); color: #ffffff; font-weight: 800; font-size: 0.82rem; padding: 9px; border-radius: var(--border-radius-sm); border: none; display: flex; align-items: center; justify-content: center; gap: 6px; box-shadow: 0 2px 6px rgba(37, 211, 102, 0.25);">
+              <!-- WhatsApp icon and text -->
+              <span>💬 WhatsApp</span>
+            <!-- End WhatsApp button -->
+            </button>
+
+            <!-- 1-Tap Send SMS Button (Premium Feature with 5 Free Trials) -->
+            <button type="button" class="btn btn-sm" onclick="window.openBusinessSmsModal('${c.id}')" style="background: linear-gradient(135deg, #0284c7, #2563eb); color: #ffffff; font-weight: 800; font-size: 0.82rem; padding: 9px; border-radius: var(--border-radius-sm); border: none; display: flex; align-items: center; justify-content: center; gap: 6px; box-shadow: 0 2px 6px rgba(37, 99, 235, 0.25);">
+              <!-- SMS icon and text -->
+              <span>📱 Send SMS</span>
+            <!-- End SMS button -->
             </button>
 
             <!-- Issue Sales Receipt Button -->
             <button type="button" class="btn btn-secondary btn-sm" onclick="window.issueCustomerReceipt('${c.id}')" style="font-size: 0.78rem; font-weight: 700; padding: 7px; border-radius: var(--border-radius-sm); display: flex; align-items: center; justify-content: center; gap: 4px;">
+              <!-- Receipt icon and text -->
               <span>🧾 Issue Receipt</span>
+            <!-- End Receipt button -->
             </button>
 
             <!-- Phone Call Button -->
             <button type="button" class="btn btn-secondary btn-sm" onclick="window.callCustomer('${c.id}')" style="font-size: 0.78rem; font-weight: 700; padding: 7px; border-radius: var(--border-radius-sm); display: flex; align-items: center; justify-content: center; gap: 4px;">
+              <!-- Call icon and text -->
               <span>📞 Direct Call</span>
+            <!-- End Call button -->
             </button>
+          <!-- End action buttons container -->
           </div>
         </div>
       `;
@@ -7984,6 +8300,113 @@ _Powered by FinFlow Commercial Suite_`;
     // End click listener
     });
   // End shareReceiptWhatsappBtnEl check
+  }
+
+  /**
+   * Formats and shares the digital receipt directly via SMS to the customer.
+   * Enforces 5-free-trials rule and allows unlimited for Premium subscribers.
+   */
+  window.shareReceiptSms = function() {
+    // Reference application data store
+    const store = window.AppStore;
+    // Guard check for store
+    if (!store) return;
+    // Evaluate SMS feature access permissions
+    const status = store.getBusinessSmsStatus ? store.getBusinessSmsStatus() : { allowed: true, isPremium: false };
+    // If user has consumed all 5 free trial SMS dispatches and is not premium
+    if (!status.allowed) {
+      // Open premium subscription upgrade modal
+      if (typeof window.openPremiumModal === 'function') window.openPremiumModal();
+      // Alert user of trial exhaustion
+      alert('🔒 Business SMS is a Premium feature. You have used your 5 free trial SMS dispatches. Upgrade to FinFlow Premium (GH₵13.99/mo) to text receipts and send unlimited customer SMS!');
+      // Terminate receipt dispatch
+      return;
+    // End quota check
+    }
+
+    // Retrieve active business workspace profile
+    const activeAccount = store.getActiveAccount ? store.getActiveAccount() : { name: 'FinFlow Enterprise' };
+    // Commercial enterprise name
+    const bizName = activeAccount.name || 'Commercial Enterprise';
+    // Billed customer name
+    const custName = (document.getElementById('receiptPaperCustomerName') ? document.getElementById('receiptPaperCustomerName').textContent : '').trim();
+    // Customer contact input value
+    const custContact = (document.getElementById('receiptCustomerContact') ? document.getElementById('receiptCustomerContact').value : '').trim();
+    // Receipt serial number
+    const recNum = (document.getElementById('receiptPaperNumber') ? document.getElementById('receiptPaperNumber').textContent : '').trim();
+    // Receipt issuance date
+    const recDate = (document.getElementById('receiptPaperDate') ? document.getElementById('receiptPaperDate').textContent : '').trim();
+    // Item or service description
+    const itemDesc = (document.getElementById('receiptPaperItemDesc') ? document.getElementById('receiptPaperItemDesc').textContent : '').trim();
+    // Total amount paid
+    const totalPaid = (document.getElementById('receiptPaperTotalPaid') ? document.getElementById('receiptPaperTotalPaid').textContent : '').trim();
+    // Payment rail method
+    const payMethod = (document.getElementById('receiptPaperPaymentMethod') ? document.getElementById('receiptPaperPaymentMethod').textContent : '').trim();
+
+    // Sanitize recipient phone number
+    let cleanPhone = custContact.replace(/[^0-9]/g, '');
+    // If local Ghana number starting with 0, convert to 233 international
+    if (cleanPhone.startsWith('0') && cleanPhone.length === 10) {
+      // Prepend country code
+      cleanPhone = '233' + cleanPhone.substring(1);
+    // End Ghana local formatting
+    }
+
+    // Construct concise, professional plain-text SMS receipt
+    const smsMsg = `RECEIPT from ${bizName}\nNo: ${recNum}\nDate: ${recDate}\nBilled To: ${custName}\nItem: ${itemDesc}\nTotal Paid: ${totalPaid} (${payMethod})\nStatus: PAID IN FULL\nThank you for your business!`;
+
+    // Detect iOS operating system for proper SMS URI separator syntax
+    const isIos = /iPad|iPhone|iPod/.test(navigator.userAgent);
+    // Use ampersand for iOS and question mark for standard Android/Web
+    const separator = isIos ? '&' : '?';
+    // Construct SMS dispatch URL
+    const smsUrl = cleanPhone ? `sms:${cleanPhone}${separator}body=${encodeURIComponent(smsMsg)}` : `sms:${separator}body=${encodeURIComponent(smsMsg)}`;
+
+    // Dispatch SMS via native messaging app
+    window.location.href = smsUrl;
+
+    // Record receipt SMS dispatch in data store
+    const newStatus = store.recordBusinessSmsDispatch ? store.recordBusinessSmsDispatch() : { countUsed: 1, remaining: 4, isPremium: false };
+
+    // If user is on the free trial tier, inform them of trial consumption
+    if (!newStatus.isPremium) {
+      // Construct remaining trial notification
+      const remainingMsg = newStatus.remaining > 0 ? `${newStatus.remaining} free trial SMS remaining.` : 'This was your last free SMS. Upgrade to Premium for unlimited SMS!';
+      // Show informative alert
+      alert(`⭐ SMS Receipt sent! (${newStatus.countUsed}/${newStatus.maxFree} free sends used). ${remainingMsg}`);
+    // End free tier alert
+    }
+  // End shareReceiptSms
+  };
+
+  // Attach click listener to SMS Customer Share button
+  const shareReceiptSmsBtnEl = document.getElementById('shareReceiptSmsBtn');
+  // If button exists
+  if (shareReceiptSmsBtnEl) {
+    // Listen for click event
+    shareReceiptSmsBtnEl.addEventListener('click', () => {
+      // Share receipt via SMS
+      window.shareReceiptSms();
+    // End click listener
+    });
+  // End shareReceiptSmsBtnEl check
+  }
+
+  // Attach live input listener to Business SMS textarea to update character counter
+  const smsTextareaEl = document.getElementById('businessSmsTextarea');
+  // If textarea exists
+  if (smsTextareaEl) {
+    // Listen for keystrokes and text modifications
+    smsTextareaEl.addEventListener('input', () => {
+      // Recalculate character and segment counters
+      if (typeof window.updateBusinessSmsCharCounter === 'function') {
+        // Run live counter calculation
+        window.updateBusinessSmsCharCounter();
+      // End counter function check
+      }
+    // End input event listener
+    });
+  // End smsTextareaEl check
   }
 
 })(window);

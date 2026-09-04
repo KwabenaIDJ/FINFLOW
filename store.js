@@ -1637,12 +1637,18 @@
     checkPremiumExpiry() {
       // Guard check to ensure active data and settings structures exist in memory
       if (!this.data || !this.data.settings) return;
-      // Evaluate if current active profile is flagged as a Premium member
-      if (this.data.settings.isPremium) {
-        // Retrieve the expiration timestamp from settings
-        const expiry = this.data.settings.premiumExpiryDate;
+      // Retrieve session user key from local storage
+      const currentUserKey = localStorage.getItem(SESSION_KEY);
+      // Retrieve users registry object from storage
+      const regObj = JSON.parse(localStorage.getItem(USERS_REGISTRY_KEY) || '{}');
+      // Resolve expiration timestamp from settings or registry
+      const expiry = this.data.settings.premiumExpiryDate || (currentUserKey && regObj[currentUserKey] ? regObj[currentUserKey].premiumExpiryDate : null);
+      // Check if user has an expiration date recorded that has already passed
+      const isExpired = expiry && Date.now() > Number(expiry);
+      // Evaluate if current active profile is flagged as a Premium member or has expired
+      if (this.data.settings.isPremium || isExpired) {
         // If 30-day period has elapsed, expire premium status and clear flags
-        if (expiry && Date.now() > Number(expiry)) {
+        if (isExpired) {
           // Reset premium flag to false in memory
           this.data.settings.isPremium = false;
           // Clear the expiration timestamp reference
@@ -1651,10 +1657,23 @@
           this.data.settings.premiumPlanType = null;
           // Remove local storage flag indicating active premium status
           try { localStorage.removeItem('FINFLOW_PREMIUM_ACTIVE'); } catch (e) {}
+          // If registry record exists for active user session
+          if (currentUserKey && regObj[currentUserKey]) {
+            // Revoke premium status in registry
+            regObj[currentUserKey].isPremium = false;
+            // Clear premium expiration date in registry
+            regObj[currentUserKey].premiumExpiryDate = null;
+            // Persist registry changes to storage
+            localStorage.setItem(USERS_REGISTRY_KEY, JSON.stringify(regObj));
+          // End registry update check
+          }
           // Persist expired status across storage and cloud sync
           this.save();
+        // End isExpired check
         }
+      // End isPremium or isExpired check
       }
+    // End checkPremiumExpiry
     },
 
     /**
@@ -1691,6 +1710,10 @@
     setPremiumStatus(isPremium, planType) {
       // Record undo stack snapshot prior to state mutation
       this.pushState();
+      // Retrieve authenticated user session key
+      const currentUserKey = localStorage.getItem(SESSION_KEY);
+      // Retrieve users registry from storage
+      const regObj = JSON.parse(localStorage.getItem(USERS_REGISTRY_KEY) || '{}');
       // Check if user status is being upgraded or revoked
       if (isPremium) {
         // Set premium boolean flag to true in settings memory
@@ -1699,10 +1722,22 @@
         this.data.settings.premiumPlanType = planType || 'monthly';
         // Calculate subscription validity days (30 days for monthly, 365 for annual)
         const durationDays = (planType === 'monthly') ? 30 : 365;
-        // Compute and store future expiration timestamp
-        this.data.settings.premiumExpiryDate = Date.now() + (durationDays * 24 * 60 * 60 * 1000);
+        // Compute and store future expiration timestamp (30 days from now)
+        const expiryDate = Date.now() + (durationDays * 24 * 60 * 60 * 1000);
+        // Persist expiration timestamp in settings
+        this.data.settings.premiumExpiryDate = expiryDate;
         // Persist active premium marker in browser localStorage for offline durability
         try { localStorage.setItem('FINFLOW_PREMIUM_ACTIVE', 'true'); } catch (e) {}
+        // If current user is registered in registry
+        if (currentUserKey && regObj[currentUserKey]) {
+          // Set premium flag in registry
+          regObj[currentUserKey].isPremium = true;
+          // Set premium expiration date in registry
+          regObj[currentUserKey].premiumExpiryDate = expiryDate;
+          // Save updated registry to localStorage
+          localStorage.setItem(USERS_REGISTRY_KEY, JSON.stringify(regObj));
+        // End registry check
+        }
       } else {
         // Set premium boolean flag to false in settings memory
         this.data.settings.isPremium = false;
@@ -1712,6 +1747,16 @@
         this.data.settings.premiumExpiryDate = null;
         // Remove offline premium persistence marker from localStorage
         try { localStorage.removeItem('FINFLOW_PREMIUM_ACTIVE'); } catch (e) {}
+        // If current user exists in registry
+        if (currentUserKey && regObj[currentUserKey]) {
+          // Revoke premium status in registry
+          regObj[currentUserKey].isPremium = false;
+          // Clear expiration date in registry
+          regObj[currentUserKey].premiumExpiryDate = null;
+          // Save updated registry to localStorage
+          localStorage.setItem(USERS_REGISTRY_KEY, JSON.stringify(regObj));
+        // End registry check
+        }
       }
       // Save data changes to localStorage and initiate cloud synchronization
       this.save();
@@ -2246,6 +2291,90 @@
       // End return
       };
     // End getBusinessAccessStatus
+    },
+
+    /**
+     * Evaluates access permissions for Business Customer SMS feature.
+     * Enforces 5 free trial SMS accesses for free users and unlimited for Premium members.
+     */
+    getBusinessSmsStatus() {
+      // Retrieve active configuration settings
+      const settings = this.getSettings();
+      // Retrieve active authenticated user session key
+      const currentUser = localStorage.getItem(SESSION_KEY);
+      // Retrieve user registry database from local storage
+      const registry = JSON.parse(localStorage.getItem(USERS_REGISTRY_KEY) || '{}');
+      // Verify if current user holds an active premium membership
+      const isPremium = !!(settings.isPremium || (currentUser && registry[currentUser] && registry[currentUser].isPremium) || (typeof localStorage !== 'undefined' && localStorage.getItem('FINFLOW_PREMIUM_ACTIVE') === 'true'));
+      // Read user-level SMS count from user registry if present
+      const regSms = (currentUser && registry[currentUser] && registry[currentUser].businessSmsUsed !== undefined)
+        ? Number(registry[currentUser].businessSmsUsed)
+        : null;
+      // Resolve countUsed from registry or settings fallback
+      const countUsed = (regSms !== null) ? regSms : (Number(settings.businessSmsUsed) || 0);
+      // Maximum free SMS dispatches allowed per business account directive
+      const maxFree = 5;
+      // If user has premium membership, grant unrestricted SMS sending
+      if (isPremium) {
+        // Return permitted status with infinite allowance
+        return { allowed: true, countUsed, maxFree, remaining: Infinity, isPremium: true };
+      // End isPremium check
+      }
+      // Calculate remaining free trial SMS sends
+      const remaining = Math.max(0, maxFree - countUsed);
+      // Return status descriptor for free tier
+      return {
+        // Feature allowed if remaining trial sends exist
+        allowed: remaining > 0,
+        // Number of free SMS sends already consumed
+        countUsed,
+        // Total free allowance
+        maxFree,
+        // Remaining trial sends
+        remaining,
+        // Flag denoting non-premium status
+        isPremium: false
+      // End return object
+      };
+    // End getBusinessSmsStatus
+    },
+
+    /**
+     * Records an SMS dispatch to a customer.
+     * Consumes one trial credit for free users and updates the customer's CRM checkup timestamp.
+     */
+    recordBusinessSmsDispatch(customerId) {
+      // Retrieve current SMS status
+      const status = this.getBusinessSmsStatus();
+      // If not premium, increment the consumed SMS trial counter
+      if (!status.isPremium) {
+        // Calculate new count of consumed trial SMS messages
+        const updatedCount = (status.countUsed || 0) + 1;
+        // Retrieve current user session key
+        const currentUserKey = localStorage.getItem(SESSION_KEY);
+        // Retrieve registry object from storage
+        const regObj = JSON.parse(localStorage.getItem(USERS_REGISTRY_KEY) || '{}');
+        // Update user registry if session exists
+        if (currentUserKey && regObj[currentUserKey]) {
+          // Persist user-level trial SMS count
+          regObj[currentUserKey].businessSmsUsed = updatedCount;
+          // Store updated registry in local storage
+          localStorage.setItem(USERS_REGISTRY_KEY, JSON.stringify(regObj));
+        // End registry update check
+        }
+        // Persist updated SMS counter in settings
+        this.updateSettings({ businessSmsUsed: updatedCount });
+      // End non-premium counter increment
+      }
+      // If a customer ID is specified, update customer's last contacted timestamp in CRM
+      if (customerId) {
+        // Record checkup date in customer database
+        this.recordCustomerCheckup(customerId);
+      // End customerId check
+      }
+      // Return latest SMS status after recording dispatch
+      return this.getBusinessSmsStatus();
+    // End recordBusinessSmsDispatch
     },
 
     /**

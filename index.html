@@ -2620,6 +2620,14 @@
           <!-- End whatsapp button -->
           </button>
 
+          <!-- SMS Share Button (Premium Feature with 5 Free Trials) -->
+          <button type="button" class="btn" id="shareReceiptSmsBtn" title="Send digital receipt directly to customer via SMS" style="background: linear-gradient(135deg, #0284c7, #2563eb); color: #ffffff; border: none; font-weight: 700; display: flex; align-items: center; gap: 6px; padding: 10px 14px; border-radius: var(--border-radius-sm); cursor: pointer;">
+            <!-- SMS icon -->
+            <span>📱</span>
+            <span>SMS Receipt</span>
+          <!-- End SMS receipt button -->
+          </button>
+
           <!-- Print / Save as PDF Button -->
           <button type="button" class="btn btn-secondary" id="downloadReceiptPdfBtn" title="Generate clean PDF file to save or email" style="font-weight: 700; display: flex; align-items: center; gap: 6px; padding: 10px 14px;">
             <!-- Document icon -->
@@ -2679,6 +2687,136 @@
     </div>
   </div>
 
+  <!-- ==================== OVERLAY: BUSINESS SMS MODAL ==================== -->
+  <!-- Modal overlay container for composing and sending customer SMS -->
+  <div class="modal-overlay" id="businessSmsModal">
+    <!-- Modal content wrapper with responsive max-width -->
+    <div class="modal-content" style="max-width: 480px; width: 95%; border: 1px solid var(--color-border); box-shadow: 0 10px 40px rgba(0, 0, 0, 0.4);">
+      <!-- Modal header section -->
+      <div class="modal-header" style="border-bottom: 1px solid var(--color-border); padding-bottom: 14px; display: flex; align-items: center; justify-content: space-between;">
+        <!-- Modal title with icon -->
+        <h3 class="modal-title" style="display: flex; align-items: center; gap: 8px; font-size: 1.15rem; margin: 0; color: var(--text-main);">
+          <!-- Phone SMS icon -->
+          <span>📱</span>
+          <!-- Title text -->
+          <span>Send Customer SMS</span>
+        <!-- End modal title -->
+        </h3>
+        <!-- Close dialog button -->
+        <button type="button" class="modal-close-btn" onclick="window.closeModal(document.getElementById('businessSmsModal'))" aria-label="Close dialog">
+          <!-- Close SVG icon -->
+          <svg><use href="#icon-close"></use></svg>
+        <!-- End close button -->
+        </button>
+      <!-- End modal header -->
+      </div>
+
+      <!-- Modal body content -->
+      <div class="modal-body" style="padding-top: 14px; display: flex; flex-direction: column; gap: 14px;">
+        <!-- Quota & Access Status Banner -->
+        <div id="businessSmsQuotaBanner" style="display: flex; align-items: center; justify-content: space-between; background: var(--bg-secondary); border: 1px solid var(--color-border); padding: 9px 12px; border-radius: var(--border-radius-sm);">
+          <!-- Quota description label -->
+          <span style="font-size: 0.78rem; color: var(--text-muted); font-weight: 600;">SMS Feature Tier:</span>
+          <!-- Dynamic Quota Badge Container -->
+          <span id="businessSmsQuotaBadge" style="font-size: 0.76rem; font-weight: 800;"></span>
+        <!-- End quota banner -->
+        </div>
+
+        <!-- Recipient Information Card -->
+        <div style="background: var(--bg-secondary); border-radius: var(--border-radius-sm); padding: 10px 14px; border: 1px solid var(--color-border); display: flex; align-items: center; justify-content: space-between;">
+          <!-- Left side: Customer details -->
+          <div>
+            <!-- Customer Name Label -->
+            <div id="smsRecipientName" style="font-weight: 800; font-size: 0.92rem; color: var(--text-main);">Customer Name</div>
+            <!-- Customer Phone Number Display -->
+            <div id="smsRecipientPhone" style="font-size: 0.8rem; color: var(--text-muted); margin-top: 2px;">+233 XX XXX XXXX</div>
+          <!-- End customer details -->
+          </div>
+          <!-- Right side: Customer icon avatar -->
+          <div style="font-size: 1.2rem;">👤</div>
+        <!-- End recipient card -->
+        </div>
+
+        <!-- Quick Template Selector Section -->
+        <div>
+          <!-- Templates label -->
+          <label style="display: block; font-size: 0.78rem; font-weight: 700; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 6px;">
+            Quick Templates
+          <!-- End templates label -->
+          </label>
+          <!-- Horizontal template pill button list -->
+          <div style="display: flex; flex-wrap: wrap; gap: 6px;">
+            <!-- Check-up template pill -->
+            <button type="button" class="btn btn-secondary btn-sm sms-tpl-btn" data-tpl="checkup" onclick="window.applyBusinessSmsTemplate('checkup')" style="font-size: 0.75rem; padding: 5px 10px; border-radius: 20px;">
+              💬 Friendly Check-in
+            <!-- End checkup button -->
+            </button>
+            <!-- Payment Reminder template pill -->
+            <button type="button" class="btn btn-secondary btn-sm sms-tpl-btn" data-tpl="payment" onclick="window.applyBusinessSmsTemplate('payment')" style="font-size: 0.75rem; padding: 5px 10px; border-radius: 20px;">
+              💰 Payment Reminder
+            <!-- End payment button -->
+            </button>
+            <!-- Order Ready template pill -->
+            <button type="button" class="btn btn-secondary btn-sm sms-tpl-btn" data-tpl="ready" onclick="window.applyBusinessSmsTemplate('ready')" style="font-size: 0.75rem; padding: 5px 10px; border-radius: 20px;">
+              📦 Order Ready
+            <!-- End ready button -->
+            </button>
+            <!-- Special Promo template pill -->
+            <button type="button" class="btn btn-secondary btn-sm sms-tpl-btn" data-tpl="promo" onclick="window.applyBusinessSmsTemplate('promo')" style="font-size: 0.75rem; padding: 5px 10px; border-radius: 20px;">
+              🎁 Special Offer
+            <!-- End promo button -->
+            </button>
+            <!-- Custom Message template pill -->
+            <button type="button" class="btn btn-secondary btn-sm sms-tpl-btn" data-tpl="custom" onclick="window.applyBusinessSmsTemplate('custom')" style="font-size: 0.75rem; padding: 5px 10px; border-radius: 20px;">
+              ✍️ Custom
+            <!-- End custom button -->
+            </button>
+          <!-- End template buttons container -->
+          </div>
+        <!-- End quick templates section -->
+        </div>
+
+        <!-- SMS Message Text Area Section -->
+        <div>
+          <!-- Message text area label -->
+          <label for="businessSmsTextarea" style="display: block; font-size: 0.78rem; font-weight: 700; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 6px;">
+            Message Content
+          <!-- End textarea label -->
+          </label>
+          <!-- Message composition textarea -->
+          <textarea id="businessSmsTextarea" rows="4" style="width: 100%; border: 1px solid var(--color-border); border-radius: var(--border-radius-sm); padding: 10px; font-family: inherit; font-size: 0.85rem; background: var(--bg-main); color: var(--text-main); line-height: 1.45; resize: vertical;" placeholder="Type your SMS message here..."></textarea>
+          <!-- Character counter and segment indicator -->
+          <div id="businessSmsCharCounter" style="display: flex; justify-content: space-between; font-size: 0.72rem; color: var(--text-muted); margin-top: 4px; padding: 0 2px;">
+            <!-- Character count text -->
+            <span id="businessSmsCharCountText">0 characters</span>
+            <!-- SMS segments text -->
+            <span id="businessSmsSegmentText">1 SMS (160 chars max)</span>
+          <!-- End char counter -->
+          </div>
+        <!-- End SMS textarea section -->
+        </div>
+      <!-- End modal body -->
+      </div>
+
+      <!-- Modal footer action buttons -->
+      <div class="modal-footer" style="padding: 14px 20px; border-top: 1px solid var(--color-border); display: flex; justify-content: space-between; align-items: center; background: var(--bg-secondary);">
+        <!-- Cancel button -->
+        <button type="button" class="btn btn-secondary" onclick="window.closeModal(document.getElementById('businessSmsModal'))">Cancel</button>
+        <!-- Primary Send SMS button -->
+        <button type="button" class="btn btn-primary" id="businessSmsSubmitBtn" onclick="window.submitBusinessSms()" style="display: flex; align-items: center; gap: 6px; font-weight: 800; background: linear-gradient(135deg, #0284c7, #2563eb); border: none; padding: 10px 18px; border-radius: var(--border-radius-sm);">
+          <!-- Send icon -->
+          <span>📱</span>
+          <!-- Button label -->
+          <span>Send SMS via Phone</span>
+        <!-- End send button -->
+        </button>
+      <!-- End modal footer -->
+      </div>
+    <!-- End modal content -->
+    </div>
+  <!-- End businessSmsModal overlay -->
+  </div>
+
   <!-- ==================== OVERLAY: PREMIUM UPGRADE MODAL ==================== -->
   <div class="modal-overlay" id="premiumUpgradeModal">
     <div class="modal-content" style="max-width: 440px; width: 95%; border: 2px solid #f1c40f; box-shadow: 0 0 35px rgba(241, 196, 15, 0.3);">
@@ -2700,6 +2838,10 @@
         <div style="background: var(--bg-secondary); border: 1px solid var(--color-border); border-radius: var(--border-radius-md); padding: 12px 14px; margin-bottom: 14px; text-align: left;">
           <div style="font-size: 0.78rem; font-weight: 800; color: var(--text-main); margin-bottom: 8px; text-transform: uppercase; letter-spacing: 0.5px;">✨ What's Included in Premium:</div>
           <ul style="list-style: none; padding: 0; margin: 0; display: flex; flex-direction: column; gap: 7px; font-size: 0.82rem;">
+            <li style="display: flex; align-items: center; gap: 8px;">
+              <span style="color: #f1c40f; font-weight: 800;">📱</span>
+              <span><strong>Unlimited Business SMS:</strong> Text customers, payment reminders & receipts.</span>
+            </li>
             <li style="display: flex; align-items: center; gap: 8px;">
               <span style="color: #f1c40f; font-weight: 800;">🔮</span>
               <span><strong>90-Day Cash Flow Runway:</strong> 3-month predictive balance chart.</span>
