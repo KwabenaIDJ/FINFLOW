@@ -2028,8 +2028,8 @@
         tag: tag || 'Regular',
         // Relationship notes
         notes: (notes || '').trim(),
-        // Last check-up date (null initially)
-        lastContacted: null,
+        // Initial contact date set to current creation timestamp so new clients are not marked overdue
+        lastContacted: new Date().toISOString(),
         // Creation date
         createdAt: new Date().toISOString()
       // End newCustomer object
@@ -2147,25 +2147,19 @@
       customers.forEach(c => {
         // Count VIPs
         if (c.tag === 'VIP Client') vipCount++;
-        // If customer was never contacted or contacted > 14 days ago
-        if (!c.lastContacted) {
-          // Flag check-up due
+        // Determine effective contact timestamp (fallback to createdAt or current time if null)
+        const effectiveContact = c.lastContacted || c.createdAt || new Date().toISOString();
+        // Calculate time difference in milliseconds between now and effective contact
+        const diff = now - new Date(effectiveContact);
+        // Overdue if gap exceeds fourteen days
+        if (diff > fourteenDaysMs) {
+          // Increment checkups due counter
           checkupsDue++;
-        // If contacted previously
-        } else {
-          // Calculate time difference
-          const diff = now - new Date(c.lastContacted);
-          // Overdue if > 14 days
-          if (diff > fourteenDaysMs) {
-            // Increment due counter
-            checkupsDue++;
-          // Recently contacted if <= 7 days
-          } else if (diff <= sevenDaysMs) {
-            // Increment recently contacted counter
-            recentlyContacted++;
-          // End diff condition
-          }
-        // End lastContacted condition
+        // Recently contacted if within seven days
+        } else if (diff <= sevenDaysMs) {
+          // Increment recently contacted counter
+          recentlyContacted++;
+        // End contact interval evaluation
         }
       // End loop
       });

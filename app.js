@@ -3691,6 +3691,29 @@
   };
 
   /**
+   * Helper function to safely escape HTML special characters to prevent syntax errors and XSS.
+   */
+  function escapeHtml(str) {
+    // Return empty string if value is null or undefined
+    if (str === null || str === undefined) return '';
+    // Convert target to string and replace HTML special characters
+    return String(str)
+      // Escape ampersands
+      .replace(/&/g, '&amp;')
+      // Escape opening angle brackets
+      .replace(/</g, '&lt;')
+      // Escape closing angle brackets
+      .replace(/>/g, '&gt;')
+      // Escape double quotes
+      .replace(/"/g, '&quot;')
+      // Escape single quote apostrophes
+      .replace(/'/g, '&#039;');
+  // End escapeHtml helper
+  }
+  // Expose escapeHtml globally for UI template access
+  window.escapeHtml = escapeHtml;
+
+  /**
    * Renders the complete Customer & Client CRM Directory interface.
    * Calculates KPI statistics, filters cards, and handles 1-tap WhatsApp follow-ups.
    */
@@ -3729,17 +3752,19 @@
     let filtered = customers.filter(c => {
       // If filtering VIP
       if (currentCustomerFilter === 'vip') return c.tag === 'VIP Client';
-      // If filtering check-ups due (> 14 days or never contacted)
+      // Determine effective contact timestamp (fallback to createdAt or current time)
+      const effectiveDateStr = c.lastContacted || c.createdAt || new Date().toISOString();
+      // If filtering check-ups due (> 14 days)
       if (currentCustomerFilter === 'due') {
-        if (!c.lastContacted) return true;
-        return (now - new Date(c.lastContacted)) > fourteenDaysMs;
+        // Return true only if gap exceeds fourteen days
+        return (now - new Date(effectiveDateStr)) > fourteenDaysMs;
       }
       // If filtering recently contacted (<= 7 days)
       if (currentCustomerFilter === 'recent') {
-        if (!c.lastContacted) return false;
-        return (now - new Date(c.lastContacted)) <= sevenDaysMs;
+        // Return true if contact was within seven days
+        return (now - new Date(effectiveDateStr)) <= sevenDaysMs;
       }
-      // All
+      // Return all customers
       return true;
     });
 
@@ -3802,39 +3827,40 @@
       // Pick avatar color deterministically
       const color = avatarColors[Math.abs(c.name.split('').reduce((acc, ch) => acc + ch.charCodeAt(0), 0)) % avatarColors.length];
 
-      // Calculate follow-up status
+      // Calculate follow-up status badge using effective contact timestamp
       let statusBadgeHtml = '';
+      // Flag indicating whether client requires urgent check-up
       let isOverdue = false;
-      if (!c.lastContacted) {
+      // Determine effective contact string (fallback to createdAt or current timestamp)
+      const effectiveContactStr = c.lastContacted || c.createdAt || new Date().toISOString();
+      // Compute millisecond elapsed difference from current moment
+      const diffMs = now - new Date(effectiveContactStr);
+      // Convert difference to elapsed whole days
+      const daysAgo = Math.floor(diffMs / (24 * 60 * 60 * 1000));
+      // Overdue check-up badge if older than 14 days
+      if (diffMs > fourteenDaysMs) {
         statusBadgeHtml = `
           <span style="background: rgba(239, 68, 68, 0.12); color: #ef4444; border: 1px solid rgba(239, 68, 68, 0.3); font-size: 0.72rem; font-weight: 700; padding: 3px 8px; border-radius: 12px; display: inline-flex; align-items: center; gap: 4px;">
-            <span style="width: 6px; height: 6px; border-radius: 50%; background: #ef4444;"></span> Never Contacted
+            <span style="width: 6px; height: 6px; border-radius: 50%; background: #ef4444;"></span> Check-up Overdue (${daysAgo}d ago)
           </span>
         `;
         isOverdue = true;
+      // Due for check-up badge if older than 7 days
+      } else if (diffMs > sevenDaysMs) {
+        statusBadgeHtml = `
+          <span style="background: rgba(245, 158, 11, 0.12); color: #f59e0b; border: 1px solid rgba(245, 158, 11, 0.3); font-size: 0.72rem; font-weight: 700; padding: 3px 8px; border-radius: 12px; display: inline-flex; align-items: center; gap: 4px;">
+            <span style="width: 6px; height: 6px; border-radius: 50%; background: #f59e0b;"></span> Due for Check-up (${daysAgo}d ago)
+          </span>
+        `;
+      // Freshly contacted or newly added client badge
       } else {
-        const diffMs = now - new Date(c.lastContacted);
-        const daysAgo = Math.floor(diffMs / (24 * 60 * 60 * 1000));
-        if (diffMs > fourteenDaysMs) {
-          statusBadgeHtml = `
-            <span style="background: rgba(239, 68, 68, 0.12); color: #ef4444; border: 1px solid rgba(239, 68, 68, 0.3); font-size: 0.72rem; font-weight: 700; padding: 3px 8px; border-radius: 12px; display: inline-flex; align-items: center; gap: 4px;">
-              <span style="width: 6px; height: 6px; border-radius: 50%; background: #ef4444;"></span> Check-up Overdue (${daysAgo}d ago)
-            </span>
-          `;
-          isOverdue = true;
-        } else if (diffMs > sevenDaysMs) {
-          statusBadgeHtml = `
-            <span style="background: rgba(245, 158, 11, 0.12); color: #f59e0b; border: 1px solid rgba(245, 158, 11, 0.3); font-size: 0.72rem; font-weight: 700; padding: 3px 8px; border-radius: 12px; display: inline-flex; align-items: center; gap: 4px;">
-              <span style="width: 6px; height: 6px; border-radius: 50%; background: #f59e0b;"></span> Due for Check-up (${daysAgo}d ago)
-            </span>
-          `;
-        } else {
-          statusBadgeHtml = `
-            <span style="background: rgba(16, 185, 129, 0.12); color: #10b981; border: 1px solid rgba(16, 185, 129, 0.3); font-size: 0.72rem; font-weight: 700; padding: 3px 8px; border-radius: 12px; display: inline-flex; align-items: center; gap: 4px;">
-              <span style="width: 6px; height: 6px; border-radius: 50%; background: #10b981;"></span> ${daysAgo === 0 ? 'Checked Up Today' : `Checked Up ${daysAgo}d ago`}
-            </span>
-          `;
-        }
+        const isNewClient = !c.lastContacted;
+        const labelText = isNewClient ? (daysAgo === 0 ? '✨ Added Today' : `Added ${daysAgo}d ago`) : (daysAgo === 0 ? 'Checked Up Today' : `Checked Up ${daysAgo}d ago`);
+        statusBadgeHtml = `
+          <span style="background: rgba(16, 185, 129, 0.12); color: #10b981; border: 1px solid rgba(16, 185, 129, 0.3); font-size: 0.72rem; font-weight: 700; padding: 3px 8px; border-radius: 12px; display: inline-flex; align-items: center; gap: 4px;">
+            <span style="width: 6px; height: 6px; border-radius: 50%; background: #10b981;"></span> ${labelText}
+          </span>
+        `;
       }
 
       // Tag badge formatting
