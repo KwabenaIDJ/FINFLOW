@@ -2205,13 +2205,45 @@ header {
   box-shadow: 0 4px 12px rgba(2, 132, 199, 0.3) !important;
 }
 /* --- Multi-Account Workspace Switcher Styles --- */
+.workspace-switcher-trigger {
+  /* Relative positioning */
+  position: relative;
+  /* Smooth transition for hover effects */
+  transition: all 0.22s cubic-bezier(0.4, 0, 0.2, 1) !important;
+}
+
+.workspace-switcher-trigger:hover {
+  /* Vibrant primary border glow */
+  border-color: var(--color-primary) !important;
+  /* Subtle lift effect */
+  transform: translateY(-2px);
+  /* Radiant glowing shadow on hover */
+  box-shadow: 0 6px 18px rgba(2, 132, 199, 0.28) !important;
+}
+
+.workspace-switcher-trigger:active {
+  /* Micro pressed scale */
+  transform: scale(0.98);
+}
+
+.workspace-switcher-trigger:hover .workspace-switch-badge {
+  /* Brighten badge background on hover */
+  background: var(--color-primary) !important;
+  /* White text on active hover */
+  color: #ffffff !important;
+  /* Solid border */
+  border-color: var(--color-primary) !important;
+  /* Glow effect */
+  box-shadow: 0 2px 8px rgba(2, 132, 199, 0.4);
+}
+
 #headerWorkspaceBtn:hover {
   /* Subtle primary hover border */
   border-color: var(--color-primary) !important;
   /* Hover elevation lift */
   transform: translateY(-1px);
   /* Hover shadow glow */
-  box-shadow: 0 4px 12px rgba(2, 132, 199, 0.2) !important;
+  box-shadow: 0 4px 12px rgba(2, 132, 199, 0.25) !important;
 }
 
 #sidebarWorkspaceBtn:hover {
@@ -2219,13 +2251,15 @@ header {
   border-color: var(--color-primary) !important;
   /* Lift effect */
   transform: translateY(-1px);
+  /* Rich hover shadow */
+  box-shadow: 0 4px 14px rgba(2, 132, 199, 0.2) !important;
 }
 
 #workspaceDropdownMenu {
   /* Backdrop blur for modern glassmorphism effect */
-  backdrop-filter: blur(12px);
+  backdrop-filter: blur(14px);
   /* Webkit backdrop blur support */
-  -webkit-backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(14px);
 }
 
 /* ==========================================================================

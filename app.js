@@ -4004,10 +4004,18 @@
     const sidebarName = document.getElementById('sidebarWorkspaceName');
     // Sidebar workspace wrapper element
     const sidebarContainer = document.getElementById('sidebarWorkspaceContainer');
+    // Sidebar workspace hint element
+    const sidebarHint = document.getElementById('sidebarWorkspaceHint');
     // Update icon text
     if (sidebarIcon) sidebarIcon.textContent = iconStr;
     // Update name text
     if (sidebarName) sidebarName.textContent = activeAccount.name;
+    // Update hint text
+    if (sidebarHint) {
+      // Set distinct prompt based on active account type
+      sidebarHint.textContent = isBusiness ? 'Tap to switch / Personal' : 'Tap to switch / Business';
+    // End sidebarHint check
+    }
     // Apply styling indicator to sidebar container
     if (sidebarContainer) {
       // If business mode active, apply distinct blue accent background
@@ -4046,15 +4054,15 @@
         // Apply highlight background
         headerBtn.style.background = 'linear-gradient(135deg, rgba(2, 132, 199, 0.18), rgba(99, 102, 241, 0.12))';
         // Set title tooltip
-        headerBtn.title = `Business Mode: ${activeAccount.name} (${activeAccount.businessCategory || 'Commercial'})`;
+        headerBtn.title = `Active: ${activeAccount.name} (Business) · Click to switch workspace`;
       // If in personal workspace
       } else {
         // Standard border
-        headerBtn.style.borderColor = 'var(--color-border)';
+        headerBtn.style.borderColor = 'rgba(2, 132, 199, 0.35)';
         // Standard background
-        headerBtn.style.background = 'var(--bg-card)';
+        headerBtn.style.background = 'linear-gradient(135deg, rgba(2, 132, 199, 0.10), rgba(99, 102, 241, 0.06))';
         // Standard tooltip
-        headerBtn.title = 'Personal Financial Profile';
+        headerBtn.title = `Active: ${activeAccount.name} (Personal) · Click to switch workspace`;
       // End button style
       }
     // End headerBtn check
