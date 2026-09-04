@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Round adaptive launcher icon definition for API 26+ devices -->
+<adaptive-icon xmlns:android="http://schemas.android.com/apk/res/android">
+    <!-- Deep midnight navy background layer -->
+    <background android:drawable="@color/ic_launcher_background"/>
+    <!-- High resolution stylized FinFlow vector monogram foreground layer -->
+    <foreground android:drawable="@mipmap/ic_launcher_foreground"/>
+<!-- End adaptive icon -->
+</adaptive-icon>
