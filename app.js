@@ -410,8 +410,8 @@
     elements.dashboardRoutinesList = document.getElementById('dashboardRoutinesList');
     // Store reference to routines progress bar fill div element
     elements.routineProgressBar = document.getElementById('routineProgressBar');
-    // Store reference to routines progress stats label element
-    elements.routineProgressStats = document.getElementById('routineProgressStats');
+    // Store reference to routines progress stats label element or badge
+    elements.routineProgressStats = document.getElementById('routineProgressBadge') || document.getElementById('routineProgressStats');
     // Store reference to browser notifications permission request button
     elements.enableRoutineNotificationBtn = document.getElementById('enableRoutineNotificationBtn');
     // Store reference to chime sound audio test trigger button
@@ -1802,12 +1802,12 @@
     // End progressBar check
     }
 
-    // Update routine progress stats label
-    const progressStats = document.getElementById('routineProgressStats');
+    // Update routine progress stats badge or label element
+    const progressStats = document.getElementById('routineProgressBadge') || document.getElementById('routineProgressStats') || elements.routineProgressStats;
     // If progress stats element exists
     if (progressStats) {
-      // Format text representation
-      progressStats.textContent = `${completedCount} of ${totalCount} habits completed today (${percent}%)`;
+      // Format text representation with completed count, total count, and percentage
+      progressStats.textContent = `${completedCount} of ${totalCount} Completed (${percent}%)`;
     // End progressStats check
     }
 
