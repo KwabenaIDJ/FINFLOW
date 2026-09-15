@@ -31,129 +31,385 @@
     return 'success';                    // Budget is healthy (Green color scheme)
   }
 
-  // Default exchange rates: How many Ghanaian Cedis (GH₵) equal 1 unit of foreign currency
+  // Default real-world exchange rates: How many Ghanaian Cedis (GH₵) equal 1 unit of foreign currency
   const DEFAULT_GHS_RATES = {
-    'GH₵': 1.0,      // Ghanaian Cedi (Base)
-    '$': 15.50,      // US Dollar
-    '€': 12.60,      // Euro
-    '£': 14.80,      // British Pound
-    '¥': 2.15,       // Chinese Yuan (CNY)
-    '₹': 0.19,       // Indian Rupee
-    'C$': 11.30,     // Canadian Dollar
-    'A$': 10.30,     // Australian Dollar
-    'Fr': 17.50,     // Swiss Franc
-    'kr': 1.45,      // Swedish Krona
-    'zł': 3.90,      // Polish Zloty
-    'R$': 2.80,      // Brazilian Real
-    '₽': 0.17,       // Russian Ruble
-    'R': 0.85,       // South African Rand
-    'د.إ': 4.22,     // UAE Dirham
-    'ر.س': 4.13,     // Saudi Riyal
-    '₪': 4.20,       // Israeli Shekel
-    '₱': 0.27,       // Philippine Peso
-    'Rp': 0.0010,    // Indonesian Rupiah
-    'RM': 3.30,      // Malaysian Ringgit
-    '฿': 0.43,       // Thai Baht
-    '₫': 0.00061,    // Vietnamese Dong
-    '₦': 0.010,      // Nigerian Naira
-    'KSh': 0.12      // Kenyan Shilling
+    // Ghanaian Cedi base currency symbol
+    'GH₵': 1.0,
+    // Ghanaian Cedi ISO code
+    'GHS': 1.0,
+    // US Dollar symbol (Accurate market & Bank of Ghana interbank benchmark: ~11.50 GHS per USD)
+    '$': 11.50,
+    // US Dollar ISO code
+    'USD': 11.50,
+    // Euro symbol (~13.26 GHS per EUR)
+    '€': 13.26,
+    // Euro ISO code
+    'EUR': 13.26,
+    // British Pound symbol (~15.50 GHS per GBP)
+    '£': 15.50,
+    // British Pound ISO code
+    'GBP': 15.50,
+    // Chinese Yuan / Japanese Yen symbol
+    '¥': 1.70,
+    // Chinese Yuan ISO code
+    'CNY': 1.70,
+    // Japanese Yen ISO code
+    'JPY': 0.075,
+    // Indian Rupee symbol
+    '₹': 0.12,
+    // Indian Rupee ISO code
+    'INR': 0.12,
+    // Canadian Dollar symbol
+    'C$': 8.26,
+    // Canadian Dollar ISO code
+    'CAD': 8.26,
+    // Australian Dollar symbol
+    'A$': 8.19,
+    // Australian Dollar ISO code
+    'AUD': 8.19,
+    // Swiss Franc symbol
+    'Fr': 14.05,
+    // Swiss Franc ISO code
+    'CHF': 14.05,
+    // Scandinavian Krona symbol
+    'kr': 1.18,
+    // Swedish Krona ISO code
+    'SEK': 1.18,
+    // Polish Zloty symbol
+    'zł': 3.06,
+    // Polish Zloty ISO code
+    'PLN': 3.06,
+    // Brazilian Real symbol
+    'R$': 2.23,
+    // Brazilian Real ISO code
+    'BRL': 2.23,
+    // Russian Ruble symbol
+    '₽': 0.14,
+    // Russian Ruble ISO code
+    'RUB': 0.14,
+    // South African Rand symbol
+    'R': 0.71,
+    // South African Rand ISO code
+    'ZAR': 0.71,
+    // UAE Dirham symbol
+    'د.إ': 3.11,
+    // UAE Dirham ISO code
+    'AED': 3.11,
+    // Saudi Riyal symbol
+    'ر.س': 3.05,
+    // Saudi Riyal ISO code
+    'SAR': 3.05,
+    // Israeli Shekel symbol
+    '₪': 3.77,
+    // Israeli Shekel ISO code
+    'ILS': 3.77,
+    // Philippine Peso symbol
+    '₱': 0.18,
+    // Philippine Peso ISO code
+    'PHP': 0.18,
+    // Indonesian Rupiah symbol
+    'Rp': 0.0006,
+    // Indonesian Rupiah ISO code
+    'IDR': 0.0006,
+    // Malaysian Ringgit symbol
+    'RM': 2.82,
+    // Malaysian Ringgit ISO code
+    'MYR': 2.82,
+    // Thai Baht symbol
+    '฿': 0.35,
+    // Thai Baht ISO code
+    'THB': 0.35,
+    // Vietnamese Dong symbol
+    '₫': 0.0004,
+    // Vietnamese Dong ISO code
+    'VND': 0.0004,
+    // Nigerian Naira symbol
+    '₦': 0.0085,
+    // Nigerian Naira ISO code
+    'NGN': 0.0085,
+    // Kenyan Shilling symbol
+    'KSh': 0.089,
+    // Kenyan Shilling ISO code
+    'KES': 0.089
+  // End DEFAULT_GHS_RATES
   };
 
+  // Dictionary mapping currency symbols and identifiers to ISO currency codes
+  const SYMBOL_TO_CODE = {
+    // US Dollar mapping
+    '$': 'USD',
+    // Euro mapping
+    '€': 'EUR',
+    // British Pound mapping
+    '£': 'GBP',
+    // Chinese Yuan mapping
+    '¥': 'CNY',
+    // Indian Rupee mapping
+    '₹': 'INR',
+    // Canadian Dollar mapping
+    'C$': 'CAD',
+    // Australian Dollar mapping
+    'A$': 'AUD',
+    // Swiss Franc mapping
+    'Fr': 'CHF',
+    // Scandinavian Krona mapping
+    'kr': 'SEK',
+    // Polish Zloty mapping
+    'zł': 'PLN',
+    // Brazilian Real mapping
+    'R$': 'BRL',
+    // Russian Ruble mapping
+    '₽': 'RUB',
+    // South African Rand mapping
+    'R': 'ZAR',
+    // UAE Dirham mapping
+    'د.إ': 'AED',
+    // Saudi Riyal mapping
+    'ر.س': 'SAR',
+    // Israeli Shekel mapping
+    '₪': 'ILS',
+    // Philippine Peso mapping
+    '₱': 'PHP',
+    // Indonesian Rupiah mapping
+    'Rp': 'IDR',
+    // Malaysian Ringgit mapping
+    'RM': 'MYR',
+    // Thai Baht mapping
+    '฿': 'THB',
+    // Vietnamese Dong mapping
+    '₫': 'VND',
+    // Nigerian Naira mapping
+    '₦': 'NGN',
+    // Kenyan Shilling mapping
+    'KSh': 'KES',
+    // Ghana Cedi mapping
+    'GH₵': 'GHS'
+  // End SYMBOL_TO_CODE
+  };
+
+  /**
+   * Retrieves active exchange rates dictionary, applying inflation overrides and cleaning up legacy rates.
+   */
   function getGhsExchangeRates() {
+    // Reference AppStore instance
     const store = window.AppStore;
+    // Retrieve settings object from store
     const settings = (store && store.getSettings) ? store.getSettings() : {};
-    return (settings && settings.exchangeRates) ? settings.exchangeRates : DEFAULT_GHS_RATES;
+    // Check if settings contain old inaccurate legacy rate (such as USD = 15.50)
+    if (settings && settings.exchangeRates && (settings.exchangeRates['$'] === 15.50 || settings.exchangeRates['USD'] === 15.50)) {
+      // Overwrite with accurate default rates
+      settings.exchangeRates = { ...DEFAULT_GHS_RATES };
+      // Check if store has direct data reference
+      if (store.data && store.data.settings) {
+        // Update store memory settings
+        store.data.settings.exchangeRates = settings.exchangeRates;
+        // Persist to local storage quietly
+        if (typeof store.saveLocally === 'function') store.saveLocally(true);
+      // End store data check
+      }
+    // End legacy rate detection check
+    }
+    // Clone custom exchange rates or fallback to defaults
+    const activeRates = (settings && settings.exchangeRates) ? { ...settings.exchangeRates } : { ...DEFAULT_GHS_RATES };
+    // Check if user specified a custom exchange rate override for inflation or bureau rate
+    if (settings && settings.customFxRate && Number(settings.customFxRate) > 0) {
+      // Extract numeric override value
+      const customRate = Number(settings.customFxRate);
+      // Determine active selected currency or default to USD
+      let targetCurr = (settings.currency || '$').trim();
+      // If target currency is base Cedi, apply override to US Dollar as the primary forex anchor
+      if (targetCurr === 'GH₵' || targetCurr === 'GHS') {
+        // Default target currency to USD symbol
+        targetCurr = '$';
+      // End base currency check
+      }
+      // Loop through SYMBOL_TO_CODE to apply override to matching symbol or ISO code
+      for (const [sym, code] of Object.entries(SYMBOL_TO_CODE)) {
+        // If symbol or code matches target currency
+        if (sym === targetCurr || code === targetCurr) {
+          // Apply custom rate override to symbol
+          activeRates[sym] = customRate;
+          // Apply custom rate override to code
+          activeRates[code] = customRate;
+        // End match check
+        }
+      // End loop
+      }
+      // Also ensure direct key assignment for custom symbol
+      activeRates[targetCurr] = customRate;
+    // End customFxRate check
+    }
+    // Return resolved exchange rates dictionary
+    return activeRates;
+  // End getGhsExchangeRates
   }
 
-  const SYMBOL_TO_CODE = {
-    '$': 'USD',
-    '€': 'EUR',
-    '£': 'GBP',
-    '¥': 'CNY',
-    '₹': 'INR',
-    'C$': 'CAD',
-    'A$': 'AUD',
-    'Fr': 'CHF',
-    'kr': 'SEK',
-    'zł': 'PLN',
-    'R$': 'BRL',
-    '₽': 'RUB',
-    'R': 'ZAR',
-    'د.إ': 'AED',
-    'ر.س': 'SAR',
-    '₪': 'ILS',
-    '₱': 'PHP',
-    'Rp': 'IDR',
-    'RM': 'MYR',
-    '฿': 'THB',
-    '₫': 'VND',
-    '₦': 'NGN',
-    'KSh': 'KES',
-    'GH₵': 'GHS'
-  };
+  /**
+   * Fetches live real-time foreign exchange rates against Ghanaian Cedi with multi-provider fallbacks.
+   * @param {boolean} showNotification - Optional flag to trigger an interactive confirmation alert.
+   */
+  async function fetchLiveExchangeRates(showNotification = false) {
+    // Array of free, open financial exchange rate endpoints with base currency GHS
+    const apiEndpoints = [
+      // Primary API endpoint
+      'https://open.er-api.com/v6/latest/GHS',
+      // Secondary fallback API endpoint
+      'https://api.exchangerate-api.com/v4/latest/GHS',
+      // Tertiary jsdelivr CDN cached fallback endpoint
+      'https://cdn.jsdelivr.net/npm/@fawazahmed0/currency-api@latest/v1/currencies/ghs.json'
+    // End API endpoints array
+    ];
 
-  async function fetchLiveExchangeRates() {
-    try {
-      const response = await fetch('https://open.er-api.com/v6/latest/GHS');
-      if (!response.ok) throw new Error('API fetch failed');
-      const data = await response.json();
-      
-      if (data && data.result === 'success' && data.rates) {
-        const liveRates = { 'GH₵': 1.0 };
-        for (const [symbol, code] of Object.entries(SYMBOL_TO_CODE)) {
-          if (code === 'GHS') continue;
-          const ratePerGhs = data.rates[code];
-          if (ratePerGhs && ratePerGhs > 0) {
-            // How many GHS equal 1 unit of foreign currency
-            liveRates[symbol] = 1 / ratePerGhs;
+    // Loop through each provider endpoint until successful
+    for (const url of apiEndpoints) {
+      // Wrap network call in try block
+      try {
+        // Fetch rates with 5-second network timeout
+        const controller = new AbortController();
+        // Set timeout handler to abort hung requests
+        const timeoutId = setTimeout(() => controller.abort(), 5000);
+        // Dispatch asynchronous HTTP GET request
+        const response = await fetch(url, { signal: controller.signal });
+        // Clear abort timer upon response receipt
+        clearTimeout(timeoutId);
+        // Verify response status code
+        if (!response.ok) throw new Error(`HTTP error ${response.status}`);
+        // Parse JSON response body
+        const data = await response.json();
+
+        // Extract rates payload supporting different response formats
+        const rawRates = data.rates || (data.ghs ? data.ghs : null);
+        // Check if valid rates object was returned
+        if (rawRates && typeof rawRates === 'object') {
+          // Initialize live rates dictionary with base Cedi
+          const liveRates = { 'GH₵': 1.0, 'GHS': 1.0 };
+
+          // Iterate through currency symbols and ISO codes
+          for (const [symbol, code] of Object.entries(SYMBOL_TO_CODE)) {
+            // Skip base Cedi
+            if (code === 'GHS') continue;
+            // Lookup rate per GHS from response (case-insensitive)
+            const ratePerGhs = rawRates[code] || rawRates[code.toLowerCase()];
+            // If valid positive conversion rate is returned
+            if (ratePerGhs && Number(ratePerGhs) > 0) {
+              // Calculate how many Ghanaian Cedis (GHS) equal 1 unit of this foreign currency
+              const ghsPerUnit = +(1 / Number(ratePerGhs)).toFixed(4);
+              // Store by symbol
+              liveRates[symbol] = ghsPerUnit;
+              // Store by ISO currency code
+              liveRates[code] = ghsPerUnit;
+            // End ratePerGhs check
+            }
+          // End loop
           }
+
+          // Cache live rates on global window
+          window.EXCHANGE_RATES = liveRates;
+
+          // Reference data store
+          const store = window.AppStore;
+          // Check if store and data structures are active
+          if (store && store.data && store.data.settings) {
+            // Update store settings with fresh live rates
+            store.data.settings.exchangeRates = liveRates;
+            // Persist rates locally without triggering recursive push
+            if (typeof store.saveLocally === 'function') store.saveLocally(true);
+          // End store check
+          }
+
+          // Log successful update to console
+          console.log(`✅ Live FX exchange rates refreshed from ${url} (1 USD = ${liveRates['$']} GH₵)`);
+          // Check if explicit interactive user alert was requested
+          if (showNotification) {
+            // Determine active currency from store
+            const activeCurr = (store && store.getSettings) ? (store.getSettings().currency || '$') : '$';
+            // Look up rate for active currency or USD
+            const dispRate = liveRates[activeCurr] || liveRates['$'] || DEFAULT_GHS_RATES['$'];
+            // Display alert confirmation to user
+            alert(`✅ Exchange Rates Updated!\nLive market rates synced successfully.\n1 ${activeCurr !== 'GH₵' ? activeCurr : 'USD'} = ${dispRate.toFixed(2)} GH₵`);
+          // End showNotification check
+          }
+          // Return resolved promise indicating success
+          return liveRates;
+        // End rawRates check
         }
-        
-        // Cache rates in settings
-        const store = window.AppStore;
-        if (store && store.getSettings) {
-          const settings = store.getSettings();
-          store.updateSettings({ exchangeRates: liveRates });
-          console.log('Live exchange rates updated from API successfully:', liveRates);
-        }
+      // Catch network or parsing failures and attempt next provider
+      } catch (err) {
+        // Log warning for this provider
+        console.warn(`FX provider ${url} failed, trying next fallback:`, err.message || err);
+      // End try catch
       }
-    } catch (err) {
-      console.warn('Could not fetch live exchange rates, using local fallback:', err);
+    // End provider loop
     }
+
+    // If all online endpoints fail, fall back to accurate offline defaults
+    console.warn('All live FX providers unavailable; active rates calibrated to accurate defaults.');
+    // Check if notification was requested during failure
+    if (showNotification) {
+      // Alert user with friendly offline message
+      alert('⚠️ Unable to connect to live exchange rate services. Using cached rates.');
+    // End showNotification check
+    }
+    // Return default rates
+    return DEFAULT_GHS_RATES;
+  // End fetchLiveExchangeRates
   }
 
   /**
    * Converts a numeric value between supported currencies using exact GHS rates per unit.
    */
   function convertCurrencyAmount(amount, targetCurrency = 'GH₵', baseCurrency = 'GH₵') {
+    // Parse numeric input value safely
     const num = Number(amount) || 0;
+    // Normalize target currency string
+    const target = (targetCurrency || 'GH₵').trim();
+    // Normalize base currency string
+    const base = (baseCurrency || 'GH₵').trim();
+    // Return amount unmodified if zero or currencies are identical
+    if (num === 0 || target === base) return num;
+
+    // Fetch active exchange rates dictionary
     const rates = getGhsExchangeRates();
     
-    const fromGhsRate = rates[baseCurrency] || DEFAULT_GHS_RATES[baseCurrency] || 1.0;
-    const toGhsRate = rates[targetCurrency] || DEFAULT_GHS_RATES[targetCurrency] || 1.0;
+    // Determine how many GHS equals 1 unit of base currency
+    const fromGhsRate = rates[base] || DEFAULT_GHS_RATES[base] || 1.0;
+    // Determine how many GHS equals 1 unit of target currency
+    const toGhsRate = rates[target] || DEFAULT_GHS_RATES[target] || 1.0;
     
-    // Step 1: Convert base input to GH₵
-    const amountInGhs = baseCurrency === 'GH₵' ? num : (num * fromGhsRate);
+    // Step 1: Convert base input currency into Ghanaian Cedis (GH₵)
+    const amountInGhs = (base === 'GH₵' || base === 'GHS') ? num : (num * fromGhsRate);
     
-    // Step 2: Convert GH₵ to target currency
-    const finalConverted = targetCurrency === 'GH₵' ? amountInGhs : (amountInGhs / toGhsRate);
+    // Step 2: Convert Ghanaian Cedis (GH₵) into target foreign currency
+    const finalConverted = (target === 'GH₵' || target === 'GHS') ? amountInGhs : (amountInGhs / toGhsRate);
     
+    // Return computed converted value
     return finalConverted;
+  // End convertCurrencyAmount
   }
 
   /**
    * Helper: formats numeric inputs into local currency strings with automatic real-time FX conversion.
-   * Example: formatMoney(1550, "$", "GH₵") -> "$100.00"
+   * Example: formatMoney(1150, "$", "GH₵") -> "$100.00"
    */
   function formatMoney(amount, currency = null, baseCurrency = 'GH₵') {
+    // Reference AppStore instance
     const store = window.AppStore;
-    const activeCurrency = currency || (store && store.getSettings ? store.getSettings().currency : 'GH₵');
+    // Retrieve active currency from parameters or store settings
+    const activeCurrency = (currency || (store && store.getSettings ? store.getSettings().currency : 'GH₵') || 'GH₵').trim();
+    // Perform exact FX conversion to active target currency
     const converted = convertCurrencyAmount(amount, activeCurrency, baseCurrency);
+    // Determine spacing between symbol and numbers for word-like currency tags
+    const spacePrefix = (activeCurrency.length > 1 && !activeCurrency.endsWith('$')) ? ' ' : '';
     
-    return activeCurrency + converted.toLocaleString('en-US', {
+    // Return formatted currency string with locale commas and 2 decimals
+    return activeCurrency + spacePrefix + converted.toLocaleString('en-US', {
+      // Minimum fractional digits
       minimumFractionDigits: 2,
+      // Maximum fractional digits
       maximumFractionDigits: 2
+    // End toLocaleString options
     });
+  // End formatMoney
   }
 
   /**
@@ -370,14 +626,33 @@
     // Timeframe Selectors
     elements.yearSelector = document.getElementById('yearSelector'); // Year selector element
     elements.monthSelector = document.getElementById('monthSelector'); // Month selector element
-    elements.headerCurrencySelector = document.getElementById('headerCurrencySelector'); // Currency selector element
+    // Currency selector element
+    elements.headerCurrencySelector = document.getElementById('headerCurrencySelector');
+    // Header exchange rate refresh button element
+    elements.headerRefreshFxBtn = document.getElementById('headerRefreshFxBtn');
     
     // Settings Form
+    // Settings profile form element
     elements.settingsForm = document.getElementById('settingsForm');
+    // Settings user name input element
     elements.settingsUserName = document.getElementById('settingsUserName');
+    // Settings currency dropdown element
     elements.settingsCurrency = document.getElementById('settingsCurrency');
+    // Settings custom currency form group element
     elements.settingsCustomCurrencyGroup = document.getElementById('customCurrencyGroup');
+    // Settings custom currency text input element
     elements.settingsCustomCurrency = document.getElementById('settingsCustomCurrency');
+    // Settings custom FX rate input field element
+    elements.settingsCustomFxRate = document.getElementById('settingsCustomFxRate');
+    // Settings clear custom FX rate button element
+    elements.clearCustomFxRateBtn = document.getElementById('clearCustomFxRateBtn');
+    // Settings panel exchange rate refresh button element
+    elements.refreshFxBtnSettings = document.getElementById('refreshFxBtnSettings');
+    // Settings active exchange rate hint element
+    elements.activeFxRateHint = document.getElementById('activeFxRateHint');
+    // Settings active exchange rate subtitle element
+    elements.activeFxRateSub = document.getElementById('activeFxRateSub');
+    // Settings monthly savings goal input element
     elements.settingsSavingsGoal = document.getElementById('settingsSavingsGoal');
     elements.settingsGeminiApiKey = document.getElementById('settingsGeminiApiKey');
     elements.resetAppDataBtn = document.getElementById('resetAppDataBtn');
@@ -1233,6 +1508,56 @@
       // End custom currency check
       }
     // End activeElement guard for currency
+    }
+
+    // Guard custom FX rate input from being clobbered while user is actively typing
+    if (elements.settingsCustomFxRate && document.activeElement !== elements.settingsCustomFxRate) {
+      // Populate custom FX rate value if present or reset to blank
+      elements.settingsCustomFxRate.value = (settings.customFxRate && Number(settings.customFxRate) > 0) ? settings.customFxRate : '';
+    // End activeElement guard for settingsCustomFxRate
+    }
+
+    // Update live FX rate hint below preferred currency selector
+    const fxHintEl = document.getElementById('activeFxRateHint');
+    // Reference subtitle descriptor element
+    const fxSubEl = document.getElementById('activeFxRateSub');
+    // If hint element exists in DOM
+    if (fxHintEl) {
+      // Resolve active currency string
+      const activeCurr = (settings.currency || 'GH₵').trim();
+      // Fetch active exchange rates
+      const rates = getGhsExchangeRates();
+      // Look up current rate for active currency
+      const currentRate = rates[activeCurr] || DEFAULT_GHS_RATES[activeCurr] || 1.0;
+      // Check if custom rate override is active
+      const isCustom = settings.customFxRate && Number(settings.customFxRate) > 0;
+      // If currency is not base Ghana Cedi
+      if (activeCurr !== 'GH₵' && activeCurr !== 'GHS') {
+        // Display real-time or custom conversion rate
+        fxHintEl.textContent = isCustom
+          ? `⚙️ Custom Override: 1 ${activeCurr} = ${currentRate.toFixed(2)} GH₵`
+          : `💱 Live Market Rate: 1 ${activeCurr} = ${currentRate.toFixed(2)} GH₵`;
+        // Check if subtitle element exists
+        if (fxSubEl) {
+          // Update subtitle with status
+          fxSubEl.textContent = isCustom
+            ? 'Using your custom forex bureau / inflation override rate. Click "Reset Auto" to restore live market rates.'
+            : 'Market rates update automatically against inflation & currency depreciation.';
+        // End fxSubEl check
+        }
+      // If currency is base Ghana Cedi
+      } else {
+        // Display base currency status
+        fxHintEl.textContent = '💱 Base Currency: 1 GH₵ = 1.00 GHS';
+        // Check if subtitle element exists
+        if (fxSubEl) {
+          // Update subtitle for domestic base ledger
+          fxSubEl.textContent = 'Ghanaian Cedi is your primary domestic ledger currency.';
+        // End fxSubEl check
+        }
+      // End currency comparison check
+      }
+    // End fxHintEl check
     }
 
     // Update circular profile avatars text contents or backgrounds
@@ -5500,15 +5825,39 @@
     renderWorkspaceSwitcher();
     // Sync header currency switcher value to active settings currency
     if (elements.headerCurrencySelector) {
-      const activeCurr = store.getSettings().currency;
+      // Retrieve current active currency from settings
+      const activeCurr = (store.getSettings().currency || 'GH₵').trim();
+      // Check if current currency exists in options
       const hasOption = Array.from(elements.headerCurrencySelector.options).some(opt => opt.value === activeCurr);
+      // If currency is not in default options, append dynamic option
       if (!hasOption && activeCurr) {
+        // Create new option element
         const newOpt = document.createElement('option');
+        // Set option value
         newOpt.value = activeCurr;
+        // Set option text label
         newOpt.textContent = activeCurr;
+        // Append to selector dropdown
         elements.headerCurrencySelector.appendChild(newOpt);
+      // End option check
       }
+      // Set dropdown selected value
       elements.headerCurrencySelector.value = activeCurr;
+      // Fetch exchange rates for tooltip annotation
+      const fxRates = getGhsExchangeRates();
+      // Look up current rate for active currency
+      const rateVal = fxRates[activeCurr] || DEFAULT_GHS_RATES[activeCurr] || 1.0;
+      // If currency is not base Cedi, annotate with live conversion rate
+      if (activeCurr !== 'GH₵' && activeCurr !== 'GHS') {
+        // Set informative hover title
+        elements.headerCurrencySelector.title = `Active Currency: ${activeCurr} (1 ${activeCurr} = ${rateVal.toFixed(2)} GH₵)`;
+      // If base Cedi
+      } else {
+        // Set base currency hover title
+        elements.headerCurrencySelector.title = 'Active Currency: Ghanaian Cedi (Base GH₵)';
+      // End title check
+      }
+    // End headerCurrencySelector check
     }
     populateTimeframeOptions();
     renderKPIs();
@@ -6745,12 +7094,50 @@ Ask me specific financial questions like:
 
     // Header Currency Quick Switcher Listener
     const headerCurrSel = document.getElementById('headerCurrencySelector');
+    // If header currency select element exists
     if (headerCurrSel) {
+      // Attach change event listener
       headerCurrSel.addEventListener('change', (e) => {
+        // Read newly selected currency value
         const newCurr = e.target.value;
+        // Persist new currency to AppStore settings
         window.AppStore.updateSettings({ currency: newCurr });
+        // Redraw entire UI immediately
         syncUI();
+        // Trigger background live FX check to ensure fresh accurate rates
+        fetchLiveExchangeRates().then(() => {
+          // Re-sync UI with live rates if updated
+          syncUI();
+        // End promise handler
+        });
+      // End change event listener
       });
+    // End headerCurrSel check
+    }
+
+    // Header Live Exchange Rate Refresh Button Listener
+    const headerRefreshBtn = document.getElementById('headerRefreshFxBtn');
+    // If header refresh FX button exists
+    if (headerRefreshBtn) {
+      // Attach click event listener
+      headerRefreshBtn.addEventListener('click', async () => {
+        // Save initial button text
+        const origText = headerRefreshBtn.textContent;
+        // Set loading hourglass icon
+        headerRefreshBtn.textContent = '⏳';
+        // Disable button during sync
+        headerRefreshBtn.disabled = true;
+        // Trigger live rates fetch with interactive alert
+        await fetchLiveExchangeRates(true);
+        // Redraw UI to reflect updated conversion figures
+        syncUI();
+        // Restore initial icon
+        headerRefreshBtn.textContent = origText;
+        // Re-enable refresh button
+        headerRefreshBtn.disabled = false;
+      // End click listener
+      });
+    // End headerRefreshBtn check
     }
 
     // Export PDF listener handled centrally in Section 25 via exportPdfStatement()
@@ -7064,6 +7451,49 @@ Ask me specific financial questions like:
         elements.settingsCurrency.dataset.lastVal = activeCurr;
       // End savings goal check
       }
+
+      // Update dynamic live FX rate hint
+      const fxHintEl = document.getElementById('activeFxRateHint');
+      // Update dynamic live FX rate subtitle
+      const fxSubEl = document.getElementById('activeFxRateSub');
+      // If hint element exists
+      if (fxHintEl) {
+        // Fetch current rates
+        const rates = getGhsExchangeRates();
+        // Look up rate for selected currency
+        const currentRate = rates[activeCurr] || DEFAULT_GHS_RATES[activeCurr] || 1.0;
+        // Check if settings has custom override
+        const settings = window.AppStore ? window.AppStore.getSettings() : {};
+        // Check if custom rate override is active
+        const isCustom = settings.customFxRate && Number(settings.customFxRate) > 0;
+        // If active currency is not Ghana Cedi
+        if (activeCurr !== 'GH₵' && activeCurr !== 'GHS') {
+          // Display rate
+          fxHintEl.textContent = isCustom
+            ? `⚙️ Custom Override: 1 ${activeCurr} = ${currentRate.toFixed(2)} GH₵`
+            : `💱 Live Market Rate: 1 ${activeCurr} = ${currentRate.toFixed(2)} GH₵`;
+          // If subtitle exists
+          if (fxSubEl) {
+            // Update subtitle
+            fxSubEl.textContent = isCustom
+              ? 'Using your custom forex bureau / inflation override rate. Click "Reset Auto" to restore live market rates.'
+              : 'Market rates update automatically against inflation & currency depreciation.';
+          // End fxSubEl check
+          }
+        // If Ghana Cedi
+        } else {
+          // Set base currency message
+          fxHintEl.textContent = '💱 Base Currency: 1 GH₵ = 1.00 GHS';
+          // If subtitle exists
+          if (fxSubEl) {
+            // Update subtitle
+            fxSubEl.textContent = 'Ghanaian Cedi is your primary domestic ledger currency.';
+          // End fxSubEl check
+          }
+        // End currency check
+        }
+      // End fxHintEl check
+      }
     };
 
     // Preferred currency dropdown change listener
@@ -7124,6 +7554,85 @@ Ask me specific financial questions like:
         // Recalculate savings goal conversion
         refreshFxCalibration();
       });
+    }
+
+    // Settings Live Exchange Rate Refresh Button Listener
+    if (elements.refreshFxBtnSettings) {
+      // Attach click event listener
+      elements.refreshFxBtnSettings.addEventListener('click', async () => {
+        // Save initial button label
+        const origText = elements.refreshFxBtnSettings.innerHTML;
+        // Display loading text indicator
+        elements.refreshFxBtnSettings.innerHTML = '<span>⏳ Syncing...</span>';
+        // Disable button during network request
+        elements.refreshFxBtnSettings.disabled = true;
+        // Fetch fresh live rates with interactive notification
+        await fetchLiveExchangeRates(true);
+        // Refresh entire UI display
+        syncUI();
+        // Restore initial button label
+        elements.refreshFxBtnSettings.innerHTML = origText;
+        // Re-enable refresh button
+        elements.refreshFxBtnSettings.disabled = false;
+      // End click listener
+      });
+    // End refreshFxBtnSettings check
+    }
+
+    // Check if custom FX rate override input exists
+    if (elements.settingsCustomFxRate) {
+      // Helper function to persist custom FX rate
+      const saveCustomFxRate = () => {
+        // Read raw string value
+        const rawVal = elements.settingsCustomFxRate.value.trim();
+        // Parse numeric float value or zero
+        const parsedRate = rawVal ? parseFloat(rawVal) : 0;
+        // Check if AppStore is available
+        if (window.AppStore) {
+          // Update store settings with validated positive rate or zero
+          window.AppStore.updateSettings({ customFxRate: (parsedRate > 0 ? parsedRate : 0) });
+          // Refresh entire UI with new exchange rate calibration
+          if (typeof syncUI === 'function') syncUI();
+        // End AppStore check
+        }
+      // End saveCustomFxRate helper
+      };
+
+      // Auto-save on blur when leaving the field
+      elements.settingsCustomFxRate.addEventListener('blur', saveCustomFxRate);
+      // Auto-save on Enter key press
+      elements.settingsCustomFxRate.addEventListener('keydown', (e) => {
+        // Check if Enter key pressed
+        if (e.key === 'Enter') {
+          // Prevent standard form submission
+          e.preventDefault();
+          // Persist custom rate
+          saveCustomFxRate();
+          // Blur input element
+          elements.settingsCustomFxRate.blur();
+        // End Enter key check
+        }
+      });
+    // End settingsCustomFxRate check
+    }
+
+    // Check if clear custom FX rate button exists
+    if (elements.clearCustomFxRateBtn) {
+      // Attach click event listener to reset to auto live rates
+      elements.clearCustomFxRateBtn.addEventListener('click', () => {
+        // Clear input value
+        if (elements.settingsCustomFxRate) elements.settingsCustomFxRate.value = '';
+        // Check if AppStore is available
+        if (window.AppStore) {
+          // Reset custom FX rate to zero
+          window.AppStore.updateSettings({ customFxRate: 0 });
+          // Redraw UI to reflect auto live market rate
+          if (typeof syncUI === 'function') syncUI();
+        // End AppStore check
+        }
+      // End clear click listener
+      });
+    // End clearCustomFxRateBtn check
     }
 
     // Check if profile display name input exists
@@ -7213,8 +7722,13 @@ Ask me specific financial questions like:
       // End savings goal check
       }
 
+      // Read custom FX rate if provided
+      const customFxRateRaw = elements.settingsCustomFxRate ? parseFloat(elements.settingsCustomFxRate.value.trim()) : 0;
+      // Resolve customFxRate value
+      const customFxRate = (!isNaN(customFxRateRaw) && customFxRateRaw > 0) ? customFxRateRaw : 0;
+
       // Update store settings with new profile configuration
-      window.AppStore.updateSettings({ userName, currency, monthlySavingsGoal, paystackKey, geminiApiKey });
+      window.AppStore.updateSettings({ userName, currency, customFxRate, monthlySavingsGoal, paystackKey, geminiApiKey });
       // Redraw all UI views to reflect updated profile immediately
       if (typeof syncUI === 'function') syncUI();
       // Show success alert
@@ -8858,6 +9372,13 @@ Ask me specific financial questions like:
       window.AppCharts.init();     // Initialize Charts.js default configurations
     }
     syncUI();                    // Redraw all UI elements
+
+    // Fetch fresh live real-world FX rates on startup across open banking providers
+    fetchLiveExchangeRates().then(() => {
+      // Re-sync UI with live real-time conversion rates
+      syncUI();
+    // End live rates resolution
+    });
     
     if (window.AppStore.isLoggedIn()) {
       // Pull latest profile picture, settings, and ledger data from Supabase Cloud on startup
@@ -8870,11 +9391,6 @@ Ask me specific financial questions like:
       initLocalNotifications();    // Setup local notifications reminders
       // Schedule mobile notifications for daily routines on startup
       scheduleRoutineReminders();
-
-      // Fetch fresh FX rates in the background to update conversions in real-time
-      fetchLiveExchangeRates().then(() => {
-        syncUI();
-      });
       
       // Auto-trigger help tour on first loading index context
       if (!localStorage.getItem('FINANCIAL_DASHBOARD_TOUR_DONE')) {

@@ -489,7 +489,15 @@
             <option value="₦">NGN (₦)</option>
             <option value="KSh">KES (KSh)</option>
             <option value="GH₵">GHS (GH₵)</option>
+          <!-- End currency select dropdown -->
           </select>
+
+          <!-- One-tap live exchange rates refresh button -->
+          <button type="button" id="headerRefreshFxBtn" class="btn btn-secondary" title="Sync live exchange rates against market inflation" style="padding: 0 10px; height: 38px; display: inline-flex; align-items: center; justify-content: center; font-size: 0.85rem; border-radius: var(--border-radius-sm); margin-right: 4px; cursor: pointer; flex-shrink: 0;">
+            <!-- Unicode sync arrow icon -->
+            🔄
+          <!-- End refresh button -->
+          </button>
 
           <!-- Year Filter Selector -->
           <select id="yearSelector" title="Select filter year" style="background: var(--bg-card); border: 1px solid var(--color-border); color: var(--text-main); border-radius: var(--border-radius-sm); padding: 10px 10px; font-family: inherit; font-size: 0.88rem; outline: none; cursor: pointer; transition: all var(--transition-fast); font-weight: 700;">
@@ -1806,9 +1814,51 @@
               <option value="₦">NGN (₦)</option>
               <option value="KSh">KES (KSh)</option>
               <option value="GH₵">GHS (GH₵)</option>
-              <option value="custom">Custom Symbol...</option>
-            </select>
+            <!-- Custom Symbol option -->
+            <option value="custom">Custom Symbol...</option>
+          <!-- End currency select dropdown -->
+          </select>
+          <!-- Dynamic live FX exchange rate banner container with interactive refresh button -->
+          <div id="activeFxRateContainer" style="margin-top: 8px; padding: 10px 14px; background: var(--bg-secondary); border-radius: var(--border-radius-sm); border: 1px solid var(--color-border); display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 8px;">
+            <!-- Text descriptors container -->
+            <div>
+              <!-- Real-time FX conversion rate hint -->
+              <div id="activeFxRateHint" style="font-size: 0.82rem; color: var(--color-primary); font-weight: 700;"></div>
+              <!-- Subtitle explaining inflation and market sync -->
+              <div id="activeFxRateSub" style="font-size: 0.72rem; color: var(--text-muted); margin-top: 2px;">Market rates update automatically against inflation & currency depreciation.</div>
+            <!-- End text descriptors container -->
+            </div>
+            <!-- Refresh live rates button -->
+            <button type="button" id="refreshFxBtnSettings" class="btn btn-secondary btn-sm" style="font-size: 0.75rem; padding: 5px 10px; display: inline-flex; align-items: center; gap: 4px;">
+              <!-- Refresh button label text -->
+              <span>🔄 Refresh Market Rate</span>
+            <!-- End refresh button -->
+            </button>
+          <!-- End activeFxRateContainer -->
           </div>
+
+          <!-- Custom Exchange Rate Override for Inflation or Forex Bureau -->
+          <div class="form-group" id="customFxRateGroup" style="margin-top: 12px; margin-bottom: 0;">
+            <!-- Override label with bureau inflation hint -->
+            <label for="settingsCustomFxRate" style="font-size: 0.8rem; font-weight: 600; display: flex; justify-content: space-between; align-items: center; margin-bottom: 4px;">
+              <!-- Label title -->
+              <span>Custom Exchange Rate Override (Optional)</span>
+              <!-- Bureau hint badge -->
+              <span style="font-size: 0.72rem; color: var(--text-muted); font-weight: normal;">Forex bureau / parallel market rate</span>
+            <!-- End label -->
+            </label>
+            <!-- Input container with reset button -->
+            <div style="display: flex; gap: 8px; align-items: center;">
+              <!-- Numeric custom rate input field -->
+              <input type="number" step="0.01" min="0" id="settingsCustomFxRate" placeholder="Leave empty for Auto Live Market Rate" style="flex: 1; padding: 9px 12px; border-radius: var(--border-radius-sm); border: 1px solid var(--color-border); background: var(--bg-secondary); color: var(--text-main); font-family: inherit; font-size: 0.86rem; outline: none;">
+              <!-- Auto reset button -->
+              <button type="button" id="clearCustomFxRateBtn" class="btn btn-secondary btn-sm" style="padding: 9px 12px; font-size: 0.76rem;" title="Reset to auto live market rate">Reset Auto</button>
+            <!-- End input container -->
+            </div>
+          <!-- End customFxRateGroup -->
+          </div>
+        <!-- End form group -->
+        </div>
 
           <div class="form-group" id="customCurrencyGroup" style="display: none;">
             <label for="settingsCustomCurrency">Custom Currency Symbol / Code</label>

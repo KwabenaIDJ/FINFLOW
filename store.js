@@ -112,31 +112,107 @@
     } catch (e) {}
   }
 
+  // Default real-world exchange rates: How many Ghanaian Cedis (GH₵) equal 1 unit of foreign currency
   const DEFAULT_GHS_RATES = {
+    // Ghanaian Cedi base currency symbol
     'GH₵': 1.0,
-    '$': 15.50,
-    '€': 12.60,
-    '£': 14.80,
-    '¥': 2.15,
-    '₹': 0.19,
-    'C$': 11.30,
-    'A$': 10.30,
-    'Fr': 17.50,
-    'kr': 1.45,
-    'zł': 3.90,
-    'R$': 2.80,
-    '₽': 0.17,
-    'R': 0.85,
-    'د.إ': 4.22,
-    'ر.س': 4.13,
-    '₪': 4.20,
-    '₱': 0.27,
-    'Rp': 0.0010,
-    'RM': 3.30,
-    '฿': 0.43,
-    '₫': 0.00061,
-    '₦': 0.010,
-    'KSh': 0.12
+    // Ghanaian Cedi ISO code
+    'GHS': 1.0,
+    // US Dollar symbol (Accurate market & Bank of Ghana interbank benchmark: ~11.50 GHS per USD)
+    '$': 11.50,
+    // US Dollar ISO code
+    'USD': 11.50,
+    // Euro symbol (~13.26 GHS per EUR)
+    '€': 13.26,
+    // Euro ISO code
+    'EUR': 13.26,
+    // British Pound symbol (~15.50 GHS per GBP)
+    '£': 15.50,
+    // British Pound ISO code
+    'GBP': 15.50,
+    // Chinese Yuan / Japanese Yen symbol
+    '¥': 1.70,
+    // Chinese Yuan ISO code
+    'CNY': 1.70,
+    // Japanese Yen ISO code
+    'JPY': 0.075,
+    // Indian Rupee symbol
+    '₹': 0.12,
+    // Indian Rupee ISO code
+    'INR': 0.12,
+    // Canadian Dollar symbol
+    'C$': 8.26,
+    // Canadian Dollar ISO code
+    'CAD': 8.26,
+    // Australian Dollar symbol
+    'A$': 8.19,
+    // Australian Dollar ISO code
+    'AUD': 8.19,
+    // Swiss Franc symbol
+    'Fr': 14.05,
+    // Swiss Franc ISO code
+    'CHF': 14.05,
+    // Scandinavian Krona symbol
+    'kr': 1.18,
+    // Swedish Krona ISO code
+    'SEK': 1.18,
+    // Polish Zloty symbol
+    'zł': 3.06,
+    // Polish Zloty ISO code
+    'PLN': 3.06,
+    // Brazilian Real symbol
+    'R$': 2.23,
+    // Brazilian Real ISO code
+    'BRL': 2.23,
+    // Russian Ruble symbol
+    '₽': 0.14,
+    // Russian Ruble ISO code
+    'RUB': 0.14,
+    // South African Rand symbol
+    'R': 0.71,
+    // South African Rand ISO code
+    'ZAR': 0.71,
+    // UAE Dirham symbol
+    'د.إ': 3.11,
+    // UAE Dirham ISO code
+    'AED': 3.11,
+    // Saudi Riyal symbol
+    'ر.س': 3.05,
+    // Saudi Riyal ISO code
+    'SAR': 3.05,
+    // Israeli Shekel symbol
+    '₪': 3.77,
+    // Israeli Shekel ISO code
+    'ILS': 3.77,
+    // Philippine Peso symbol
+    '₱': 0.18,
+    // Philippine Peso ISO code
+    'PHP': 0.18,
+    // Indonesian Rupiah symbol
+    'Rp': 0.0006,
+    // Indonesian Rupiah ISO code
+    'IDR': 0.0006,
+    // Malaysian Ringgit symbol
+    'RM': 2.82,
+    // Malaysian Ringgit ISO code
+    'MYR': 2.82,
+    // Thai Baht symbol
+    '฿': 0.35,
+    // Thai Baht ISO code
+    'THB': 0.35,
+    // Vietnamese Dong symbol
+    '₫': 0.0004,
+    // Vietnamese Dong ISO code
+    'VND': 0.0004,
+    // Nigerian Naira symbol
+    '₦': 0.0085,
+    // Nigerian Naira ISO code
+    'NGN': 0.0085,
+    // Kenyan Shilling symbol
+    'KSh': 0.089,
+    // Kenyan Shilling ISO code
+    'KES': 0.089
+  // End DEFAULT_GHS_RATES
   };
 
   /**
@@ -216,7 +292,10 @@
       routines: [],     // Daily routines with scheduled reminder times array
       settings: {
         userName: 'User',        // Initial user profile display name
-        currency: 'GH₵',          // Initial currency symbol
+        // Initial currency symbol
+        currency: 'GH₵',
+        // Optional custom exchange rate override against inflation
+        customFxRate: 0,
         monthlySavingsGoal: 0,   // Monthly savings target
         paystackKey: '',         // Empty Paystack secret key placeholder
         geminiApiKey: '',        // Optional Gemini AI API key override
@@ -639,7 +718,10 @@
         ],
         settings: {
           userName: 'Demo Account',
+          // Active demo currency
           currency: 'GH₵',
+          // Optional custom exchange rate override against inflation
+          customFxRate: 0,
           monthlySavingsGoal: 1500,
           paystackKey: 'pk_test_demo12345',
           isPremium: false,
