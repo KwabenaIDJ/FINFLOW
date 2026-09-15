@@ -213,6 +213,7 @@
       todos: [],        // Clean tasks checklist
       debts: [],        // Debts and money lent tracking array
       customers: [],    // Client and customer directory array for CRM and follow-ups
+      routines: [],     // Daily routines with scheduled reminder times array
       settings: {
         userName: 'User',        // Initial user profile display name
         currency: 'GH₵',          // Initial currency symbol
@@ -311,6 +312,12 @@
             // Initialize empty customers directory array
             this.data.customers = [];
           // End customers check
+          }
+          // Ensure routines array exists in loaded workspace data
+          if (!this.data.routines) {
+            // Initialize empty routines collection array
+            this.data.routines = [];
+          // End routines check
           }
           // Validate subscription duration
           this.checkPremiumExpiry();
@@ -875,6 +882,8 @@
           accounts: (this.getAccounts && typeof this.getAccounts === 'function') ? this.getAccounts() : [],
           // Sync business trial switches used count to Supabase
           business_switches_used: Number(settings.businessSwitchesUsed) || 0,
+          // Sync daily routines array to Supabase
+          routines: (this.getRoutines && typeof this.getRoutines === 'function') ? this.getRoutines() : [],
           updated_at: new Date().toISOString()
         };
 
@@ -898,6 +907,8 @@
               accounts: profilePayload.accounts,
               // Update trial switches count
               business_switches_used: profilePayload.business_switches_used,
+              // Update routines in fallback update
+              routines: profilePayload.routines,
               // Update timestamp
               updated_at: profilePayload.updated_at
             // Filter by current user ID
@@ -1085,6 +1096,12 @@
           if (profile.free_pdf_exports_used !== undefined && profile.free_pdf_exports_used !== null) {
             // Assign free export count to local settings
             this.data.settings.freePdfExportsUsed = profile.free_pdf_exports_used;
+          }
+          // Verify if cloud profile contains synced daily routines array
+          if (profile.routines && Array.isArray(profile.routines) && profile.routines.length > 0) {
+            // Pull cloud routines to local store
+            this.data.routines = profile.routines;
+          // End cloud routines check
           }
         }
 
@@ -1844,6 +1861,184 @@
       this.pushState();
       if (!this.data.todos) this.data.todos = [];
       this.data.todos = this.data.todos.filter(t => t.id !== todoId);
+      this.save();
+    },
+
+    // --- Daily Routines & Scheduled Reminders API ---
+
+    /**
+     * Retrieves all daily routines, automatically resetting completedToday status if a new calendar day has started.
+     */
+    getRoutines() {
+      // Ensure routines array exists in data container
+      if (!this.data.routines) {
+        // Initialize routines array if not present
+        this.data.routines = [];
+      // End routines initialization
+      }
+      // If user has no routines recorded yet, initialize sensible default starter habits
+      if (this.data.routines.length === 0) {
+        // Populate three initial default financial routines
+        this.data.routines = [
+          // Routine 1: Morning Budget Review
+          {
+            id: 'routine_default_1',
+            title: '🌅 Morning Budget & Spending Check',
+            time: '08:00',
+            category: 'Budget Review',
+            enabled: true,
+            completedToday: false,
+            lastCompletedDate: null,
+            createdAt: new Date().toISOString()
+          },
+          // Routine 2: Midday Lunch & Transport Log
+          {
+            id: 'routine_default_2',
+            title: '🍽️ Log Lunch & Daily Transportation',
+            time: '13:30',
+            category: 'Expense Logging',
+            enabled: true,
+            completedToday: false,
+            lastCompletedDate: null,
+            createdAt: new Date().toISOString()
+          },
+          // Routine 3: Evening Ledger Check-in
+          {
+            id: 'routine_default_3',
+            title: '🌆 Evening Ledger Entry & Receipt Scan',
+            time: '20:00',
+            category: 'Ledger Check-in',
+            enabled: true,
+            completedToday: false,
+            lastCompletedDate: null,
+            createdAt: new Date().toISOString()
+          }
+        ];
+        // Silently persist defaults to storage
+        this.saveLocally(false);
+      // End default check
+      }
+      // Get current local date string in YYYY-MM-DD format
+      const todayDate = new Date().toISOString().split('T')[0];
+      // Track whether any routine completion status was automatically reset for the new day
+      let resetOccurred = false;
+      // Iterate through routines to verify daily completion validity
+      this.data.routines.forEach(routine => {
+        // If routine was marked completed on a prior calendar day
+        if (routine.completedToday && routine.lastCompletedDate !== todayDate) {
+          // Reset today's completion flag for fresh daily check
+          routine.completedToday = false;
+          // Mark flag that state changed
+          resetOccurred = true;
+        // End routine completion check
+        }
+      });
+      // If any completion status was refreshed for the new day
+      if (resetOccurred) {
+        // Silently persist refreshed state to local storage
+        this.saveLocally(false);
+      // End reset check
+      }
+      // Return shallow clone of routines array sorted by time ascending
+      return [...this.data.routines].sort((a, b) => (a.time || '').localeCompare(b.time || ''));
+    },
+
+    /**
+     * Adds a new daily routine with scheduled reminder time.
+     */
+    addRoutine({ title, time, category = 'General' }) {
+      // Push current state snapshot for undo support
+      this.pushState();
+      // Ensure routines array exists
+      if (!this.data.routines) this.data.routines = [];
+      // Construct new routine object
+      const newRoutine = {
+        // Unique routine identifier
+        id: 'routine_' + Date.now() + '_' + Math.random().toString(36).substr(2, 7),
+        // Title or habit description
+        title: title.trim(),
+        // 24-hour time string in HH:MM format
+        time: time.trim(),
+        // Routine category tag
+        category: category.trim() || 'General',
+        // Whether routine reminder alerts are enabled
+        enabled: true,
+        // Daily completion flag for today
+        completedToday: false,
+        // Timestamp string of last completed date
+        lastCompletedDate: null,
+        // ISO timestamp of creation
+        createdAt: new Date().toISOString()
+      };
+      // Append new routine to data list
+      this.data.routines.push(newRoutine);
+      // Save data changes locally and sync to cloud
+      this.save();
+      // Return created routine object
+      return newRoutine;
+    },
+
+    /**
+     * Toggles reminder alert notifications on or off for a specific routine.
+     */
+    toggleRoutine(routineId) {
+      // Push state snapshot for undo support
+      this.pushState();
+      // Ensure routines array exists
+      if (!this.data.routines) this.data.routines = [];
+      // Find matching routine
+      const routine = this.data.routines.find(r => r.id === routineId);
+      // If routine exists
+      if (routine) {
+        // Invert enabled status
+        routine.enabled = !routine.enabled;
+        // Save state changes
+        this.save();
+      // End routine check
+      }
+    },
+
+    /**
+     * Toggles completed status for today for a specific routine.
+     */
+    toggleRoutineCompleted(routineId) {
+      // Push state snapshot for undo support
+      this.pushState();
+      // Ensure routines array exists
+      if (!this.data.routines) this.data.routines = [];
+      // Find matching routine
+      const routine = this.data.routines.find(r => r.id === routineId);
+      // If routine exists
+      if (routine) {
+        // Toggle completed status
+        routine.completedToday = !routine.completedToday;
+        // If marked completed, record today's date
+        if (routine.completedToday) {
+          // Set last completed date to current local date
+          routine.lastCompletedDate = new Date().toISOString().split('T')[0];
+        // If unmarked
+        } else {
+          // Clear last completed date
+          routine.lastCompletedDate = null;
+        // End date assignment
+        }
+        // Save updated state
+        this.save();
+      // End routine check
+      }
+    },
+
+    /**
+     * Deletes a routine by its unique ID.
+     */
+    deleteRoutine(routineId) {
+      // Push state snapshot for undo support
+      this.pushState();
+      // Ensure routines array exists
+      if (!this.data.routines) this.data.routines = [];
+      // Filter out targeted routine
+      this.data.routines = this.data.routines.filter(r => r.id !== routineId);
+      // Save updated state
       this.save();
     },
 

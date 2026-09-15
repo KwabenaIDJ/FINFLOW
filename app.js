@@ -388,8 +388,38 @@
     elements.settingsAvatarPreview = document.getElementById('settingsAvatarPreview');
     
     // Todos Panel
+    // Store reference to to-do creation form
     elements.addTodoForm = document.getElementById('addTodoForm');
+    // Store reference to to-do text input field
     elements.newTodoText = document.getElementById('newTodoText');
+
+    // Daily Routines Panel Elements
+    // Store reference to add routine form element
+    elements.addRoutineForm = document.getElementById('addRoutineForm');
+    // Store reference to routine title text input element
+    elements.routineTitleInput = document.getElementById('routineTitleInput');
+    // Store reference to routine time input picker element
+    elements.routineTimeInput = document.getElementById('routineTimeInput');
+    // Store reference to routine category select dropdown
+    elements.routineCategorySelect = document.getElementById('routineCategorySelect');
+    // Store reference to routine notes text input element
+    elements.routineNotesInput = document.getElementById('routineNotesInput');
+    // Store reference to routine scheduled list UL container element
+    elements.routinesList = document.getElementById('routinesList');
+    // Store reference to today's routines quick-view list container in dashboard
+    elements.dashboardRoutinesList = document.getElementById('dashboardRoutinesList');
+    // Store reference to routines progress bar fill div element
+    elements.routineProgressBar = document.getElementById('routineProgressBar');
+    // Store reference to routines progress stats label element
+    elements.routineProgressStats = document.getElementById('routineProgressStats');
+    // Store reference to browser notifications permission request button
+    elements.enableRoutineNotificationBtn = document.getElementById('enableRoutineNotificationBtn');
+    // Store reference to chime sound audio test trigger button
+    elements.testRoutineChimeBtn = document.getElementById('testRoutineChimeBtn');
+    // Store reference to notification permission status pill badge
+    elements.routineNotificationStatusBadge = document.getElementById('routineNotificationStatusBadge');
+    // Store reference to in-app floating alarm reminder banner toast container
+    elements.routineAlarmBanner = document.getElementById('routineAlarmBanner');
 
     // Modals
     elements.addTxModal = document.getElementById('addTxModal');
@@ -1384,6 +1414,719 @@
       }
     }
   }
+
+  /**
+   * Generates and plays a pleasant modern two-tone chime via Web Audio API.
+   * Safe to trigger on any modern browser without external audio files or network requests.
+   */
+  function playRoutineChime() {
+    // Attempt Web Audio context instantiation with webkit fallback
+    try {
+      // Create new AudioContext or use existing webkitAudioContext
+      const AudioContextClass = window.AudioContext || window.webkitAudioContext;
+      // If Web Audio API is not supported in current environment, exit gracefully
+      if (!AudioContextClass) return;
+      // Instantiate new audio context instance
+      const audioCtx = new AudioContextClass();
+      // Resume audio context if suspended by browser autoplay policy
+      if (audioCtx.state === 'suspended') {
+        // Asynchronously resume audio playback
+        audioCtx.resume();
+      // End suspended check
+      }
+      // Define chime note frequencies (C5: 523.25Hz, G5: 783.99Hz)
+      const notes = [523.25, 783.99];
+      // Iterate through notes to construct harmonious ascending sequence
+      notes.forEach((freq, idx) => {
+        // Create oscillator node for pitch generation
+        const osc = audioCtx.createOscillator();
+        // Create gain node for envelope volume control
+        const gain = audioCtx.createGain();
+        // Set pleasant sine wave type for mellow bell tone
+        osc.type = 'sine';
+        // Assign note frequency
+        osc.frequency.setValueAtTime(freq, audioCtx.currentTime);
+        // Calculate start time offset for multi-tone sequence
+        const startTime = audioCtx.currentTime + (idx * 0.16);
+        // Calculate tone duration
+        const duration = 0.45;
+        // Start gain at zero
+        gain.gain.setValueAtTime(0, startTime);
+        // Quick ramp up for gentle attack
+        gain.gain.linearRampToValueAtTime(0.25, startTime + 0.04);
+        // Exponential decay ramp down for chime ringing trail
+        gain.gain.exponentialRampToValueAtTime(0.0001, startTime + duration);
+        // Connect oscillator to volume gain node
+        osc.connect(gain);
+        // Connect volume gain node to master destination speaker output
+        gain.connect(audioCtx.destination);
+        // Schedule oscillator start
+        osc.start(startTime);
+        // Schedule oscillator stop
+        osc.stop(startTime + duration);
+      // End notes iteration
+      });
+    // Handle any Web Audio exceptions
+    } catch (e) {
+      // Log chime warning without breaking caller
+      console.warn('Web Audio chime playback failed:', e);
+    // End try catch
+    }
+  // End playRoutineChime
+  }
+
+  /**
+   * Checks browser notification permission status and updates UI badge.
+   */
+  function updateRoutineNotificationBadge() {
+    // Check if status badge element is rendered
+    const badge = document.getElementById('routineNotificationStatusBadge');
+    // Exit if badge element is missing
+    if (!badge) return;
+    // Check if HTML5 Notification API exists in browser
+    if (!('Notification' in window)) {
+      // Set badge text to unsupported
+      badge.textContent = 'Not Supported';
+      // Set badge color to neutral
+      badge.style.background = 'rgba(148, 163, 184, 0.2)';
+      // Set text color to muted
+      badge.style.color = '#94a3b8';
+      // Exit function
+      return;
+    // End API check
+    }
+    // Read current permission status
+    const perm = Notification.permission;
+    // Check if permission is granted
+    if (perm === 'granted') {
+      // Set badge text to active
+      badge.textContent = 'Active (Granted)';
+      // Set badge background to emerald
+      badge.style.background = 'rgba(16, 185, 129, 0.2)';
+      // Set text color to emerald
+      badge.style.color = '#10b981';
+    // Check if permission is denied
+    } else if (perm === 'denied') {
+      // Set badge text to blocked
+      badge.textContent = 'Blocked';
+      // Set badge background to red
+      badge.style.background = 'rgba(239, 68, 68, 0.2)';
+      // Set text color to red
+      badge.style.color = '#ef4444';
+    // Else permission is default/prompt
+    } else {
+      // Set badge text to not enabled
+      badge.textContent = 'Not Enabled';
+      // Set badge background to amber
+      badge.style.background = 'rgba(245, 158, 11, 0.2)';
+      // Set text color to amber
+      badge.style.color = '#f59e0b';
+    // End status checks
+    }
+  // End updateRoutineNotificationBadge
+  }
+
+  /**
+   * Prompts user for browser notification permission.
+   */
+  async function requestRoutineNotificationPermission() {
+    // Check if Notification API is available in browser
+    if (!('Notification' in window)) {
+      // Alert user that browser lacks notification API
+      alert('Browser notifications are not supported on this device/browser. FinFlow in-app chime reminders will still alert you when the app is open!');
+      // Update badge
+      updateRoutineNotificationBadge();
+      // Exit function
+      return;
+    // End API check
+    }
+    // Check if already granted
+    if (Notification.permission === 'granted') {
+      // Play chime confirmation
+      playRoutineChime();
+      // Show confirmation alert
+      alert('Notifications are already enabled! Finflow will send reminders when routine alarms are due.');
+      // Update badge
+      updateRoutineNotificationBadge();
+      // Exit function
+      return;
+    // End granted check
+    }
+    // Request permission from user
+    try {
+      // Prompt user for notification access
+      const permission = await Notification.requestPermission();
+      // Update status badge immediately
+      updateRoutineNotificationBadge();
+      // Check if permission was granted by user
+      if (permission === 'granted') {
+        // Play audio chime test
+        playRoutineChime();
+        // Show test notification
+        new Notification('Finflow Daily Routines Active ⏰', {
+          // Body text
+          body: 'Notifications enabled! Finflow will remind you when your daily financial habits are due.',
+          // Icon path
+          icon: 'logo.png'
+        // End Notification constructor
+        });
+      // If permission was denied
+      } else if (permission === 'denied') {
+        // Alert user of blocked permission
+        alert('Notification permission was denied. You can re-enable it in your browser address bar site settings.');
+      // End permission check
+      }
+    // Catch request errors
+    } catch (err) {
+      // Log permission error
+      console.warn('Error requesting notification permission:', err);
+    // End try catch
+    }
+  // End requestRoutineNotificationPermission
+  }
+
+  /**
+   * Displays an interactive in-app floating alarm reminder banner and triggers browser notification + chime.
+   */
+  function triggerRoutineReminder(routine) {
+    // Play pleasant audio chime
+    playRoutineChime();
+
+    // Trigger HTML5 desktop/mobile browser notification if permitted
+    if ('Notification' in window && Notification.permission === 'granted') {
+      // Wrap notification construction in try-catch block
+      try {
+        // Instantiate browser notification
+        const notification = new Notification(`⏰ Routine Reminder: ${routine.title}`, {
+          // Notification body description
+          body: `It is ${routine.time}! Category: ${routine.category || 'General'}${routine.notes ? ' • ' + routine.notes : ''}`,
+          // App icon
+          icon: 'logo.png',
+          // Prevent silent vibration
+          silent: false,
+          // Re-notify user
+          renotify: true,
+          // Unique notification tag
+          tag: `finflow-routine-${routine.id}`
+        // End notification options
+        });
+        // Attach click listener to notification to focus window and open routines panel
+        notification.onclick = () => {
+          // Focus dashboard window
+          window.focus();
+          // Switch to routines tab
+          switchTab('routines');
+          // Close notification
+          notification.close();
+        // End onclick handler
+        };
+      // Catch notification creation errors
+      } catch (err) {
+        // Log notification error
+        console.warn('Browser notification trigger failed:', err);
+      // End try catch
+      }
+    // End Notification check
+    }
+
+    // Display interactive floating in-app banner
+    const banner = document.getElementById('routineAlarmBanner');
+    // If banner element exists
+    if (banner) {
+      // Escape routine properties for safe rendering
+      const safeTitle = escapeHTML(routine.title);
+      // Escape category
+      const safeCategory = escapeHTML(routine.category || 'General');
+      // Escape notes
+      const safeNotes = escapeHTML(routine.notes || '');
+      // Construct banner inner HTML with action buttons
+      banner.innerHTML = `
+        <div style="display: flex; align-items: flex-start; justify-content: space-between; gap: 12px;">
+          <div style="display: flex; align-items: flex-start; gap: 12px; flex: 1;">
+            <div style="width: 40px; height: 40px; border-radius: 10px; background: rgba(59, 130, 246, 0.2); display: flex; align-items: center; justify-content: center; font-size: 1.3rem; flex-shrink: 0;">⏰</div>
+            <div style="flex: 1;">
+              <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 3px;">
+                <strong style="font-size: 0.95rem; color: #fff;">${safeTitle}</strong>
+                <span style="background: rgba(255,255,255,0.15); padding: 2px 8px; border-radius: 12px; font-size: 0.72rem; color: #93c5fd; font-weight: 700;">${routine.time}</span>
+              </div>
+              <p style="font-size: 0.8rem; color: #cbd5e1; margin: 0; line-height: 1.4;">${safeNotes || 'Time to complete your scheduled financial habit!'}</p>
+            </div>
+          </div>
+          <button id="dismissRoutineBannerBtn" style="background: transparent; border: none; color: #94a3b8; cursor: pointer; font-size: 1.1rem; padding: 2px 6px; border-radius: 4px;" title="Dismiss">&times;</button>
+        </div>
+        <div style="display: flex; gap: 8px; margin-top: 10px; justify-content: flex-end;">
+          <button id="completeRoutineBannerBtn" style="background: #10b981; color: #fff; border: none; padding: 6px 14px; border-radius: 6px; font-size: 0.78rem; font-weight: 600; cursor: pointer;">✓ Mark Done</button>
+          <button id="viewRoutinesBannerBtn" style="background: rgba(255,255,255,0.15); color: #fff; border: none; padding: 6px 12px; border-radius: 6px; font-size: 0.78rem; font-weight: 500; cursor: pointer;">View Routines</button>
+        </div>
+      `;
+      // Show floating alarm banner
+      banner.style.display = 'block';
+
+      // Dismiss button handler
+      const dismissBtn = banner.querySelector('#dismissRoutineBannerBtn');
+      // If dismiss button exists
+      if (dismissBtn) {
+        // Attach click listener
+        dismissBtn.onclick = () => {
+          // Hide banner
+          banner.style.display = 'none';
+        // End onclick
+        };
+      // End dismissBtn check
+      }
+
+      // Mark done button handler
+      const markDoneBtn = banner.querySelector('#completeRoutineBannerBtn');
+      // If mark done button exists
+      if (markDoneBtn) {
+        // Attach click listener
+        markDoneBtn.onclick = () => {
+          // Toggle completed state in store
+          window.AppStore.toggleRoutineCompleted(routine.id);
+          // Re-render routines UI
+          renderRoutines();
+          // Hide banner
+          banner.style.display = 'none';
+        // End onclick
+        };
+      // End markDoneBtn check
+      }
+
+      // View routines button handler
+      const viewBtn = banner.querySelector('#viewRoutinesBannerBtn');
+      // If view button exists
+      if (viewBtn) {
+        // Attach click listener
+        viewBtn.onclick = () => {
+          // Switch to routines tab
+          switchTab('routines');
+          // Hide banner
+          banner.style.display = 'none';
+        // End onclick
+        };
+      // End viewBtn check
+      }
+
+      // Automatically auto-dismiss banner after 25 seconds if ignored
+      setTimeout(() => {
+        // Check if banner is still displayed
+        if (banner.style.display !== 'none') {
+          // Hide banner smoothly
+          banner.style.display = 'none';
+        // End check
+        }
+      // Set 25 second timeout
+      }, 25000);
+    // End banner check
+    }
+  // End triggerRoutineReminder
+  }
+
+  // Global set tracking routine IDs alerted during the current minute to prevent duplicate alerts
+  let lastCheckedMinuteStr = '';
+  // Cache of alerted routine IDs for current minute
+  const alertedThisMinute = new Set();
+
+  /**
+   * Heartbeat checker: runs once per minute to check if any active routines match current time (HH:MM).
+   */
+  function checkDueRoutines() {
+    // Fetch store instance
+    const store = window.AppStore;
+    // Exit if store is unavailable
+    if (!store || typeof store.getRoutines !== 'function') return;
+
+    // Get current date object
+    const now = new Date();
+    // Format current hours with leading zero
+    const hours = String(now.getHours()).padStart(2, '0');
+    // Format current minutes with leading zero
+    const minutes = String(now.getMinutes()).padStart(2, '0');
+    // Construct current HH:MM string
+    const currentClockTime = `${hours}:${minutes}`;
+
+    // Reset minute tracking cache when clock advances to new minute
+    if (lastCheckedMinuteStr !== currentClockTime) {
+      // Update cached minute string
+      lastCheckedMinuteStr = currentClockTime;
+      // Clear alerted IDs set
+      alertedThisMinute.clear();
+    // End minute reset check
+    }
+
+    // Get all user routines
+    const routines = store.getRoutines();
+    // Filter for routines due at this exact minute that are active and not completed today
+    routines.forEach(routine => {
+      // Check if routine has active reminders, matches current time, and hasn't already fired this minute
+      if (routine.active !== false && routine.time === currentClockTime && !alertedThisMinute.has(routine.id)) {
+        // Mark routine as alerted for this minute
+        alertedThisMinute.add(routine.id);
+        // Trigger reminder alarm
+        triggerRoutineReminder(routine);
+      // End matching check
+      }
+    // End routines iteration
+    });
+  // End checkDueRoutines
+  }
+
+  /**
+   * Redraws Daily Routines panel checklist, progress stats, and dashboard widget in UI.
+   */
+  function renderRoutines() {
+    // Reference application data store
+    const store = window.AppStore;
+    // Exit if store is missing
+    if (!store || typeof store.getRoutines !== 'function') return;
+
+    // Retrieve active routines array from store
+    const routines = store.getRoutines();
+
+    // Update browser notification status badge
+    updateRoutineNotificationBadge();
+
+    // 1. Calculate completion statistics for today
+    const totalCount = routines.length;
+    // Count routines completed today
+    const completedCount = routines.filter(r => r.completedToday).length;
+    // Calculate completion percentage
+    const percent = totalCount > 0 ? Math.round((completedCount / totalCount) * 100) : 0;
+
+    // Update routine progress bar fill element
+    const progressBar = document.getElementById('routineProgressBar');
+    // If progress bar element exists
+    if (progressBar) {
+      // Update CSS width percentage
+      progressBar.style.width = `${percent}%`;
+    // End progressBar check
+    }
+
+    // Update routine progress stats label
+    const progressStats = document.getElementById('routineProgressStats');
+    // If progress stats element exists
+    if (progressStats) {
+      // Format text representation
+      progressStats.textContent = `${completedCount} of ${totalCount} habits completed today (${percent}%)`;
+    // End progressStats check
+    }
+
+    // 2. Render Scheduled Routines in #routinesList
+    const listElement = document.getElementById('routinesList');
+    // If routines list container exists in DOM
+    if (listElement) {
+      // Determine active filter from filter buttons
+      let activeFilter = 'all';
+      // Query currently active filter button
+      const activeFilterBtn = document.querySelector('.btn-routine-filter.active');
+      // If active filter button found
+      if (activeFilterBtn) {
+        // Read data-filter attribute
+        activeFilter = activeFilterBtn.getAttribute('data-filter') || 'all';
+      // End activeFilterBtn check
+      }
+
+      // Filter routines based on selected filter tab
+      const filteredRoutines = routines.filter(routine => {
+        // If filter is pending, only include incomplete habits
+        if (activeFilter === 'pending') return !routine.completedToday;
+        // If filter is completed, only include completed habits
+        if (activeFilter === 'completed') return routine.completedToday;
+        // Else return all
+        return true;
+      // End filter callback
+      });
+
+      // Clear existing list items
+      listElement.innerHTML = '';
+
+      // Check if filtered list is empty
+      if (filteredRoutines.length === 0) {
+        // Create empty state list item
+        const emptyLi = document.createElement('li');
+        // Apply card styling class
+        emptyLi.className = 'card';
+        // Set inline empty state styles
+        emptyLi.style.cssText = 'padding: 32px 20px; text-align: center; color: var(--text-muted); font-size: 0.88rem; border: 1.5px dashed var(--color-border); background: transparent; border-radius: var(--border-radius-md);';
+        // Set empty state helper message
+        emptyLi.innerHTML = `
+          <div style="font-size: 1.8rem; margin-bottom: 8px;">⏰</div>
+          <div style="font-weight: 600; color: var(--text-main); margin-bottom: 4px;">No daily routines found</div>
+          <div>Add your first routine above or pick a quick preset to build disciplined money habits!</div>
+        `;
+        // Append empty card to list
+        listElement.appendChild(emptyLi);
+      // If routines exist
+      } else {
+        // Sort routines chronologically by scheduled time (HH:MM)
+        const sortedRoutines = [...filteredRoutines].sort((a, b) => (a.time || '').localeCompare(b.time || ''));
+
+        // Iterate through sorted routines and generate cards
+        sortedRoutines.forEach(routine => {
+          // Create list item container
+          const li = document.createElement('li');
+          // Apply routine-card base class with conditional completed and paused classes
+          li.className = `routine-card ${routine.completedToday ? 'completed' : ''} ${routine.active === false ? 'paused' : ''}`;
+
+          // Escape routine properties
+          const safeTitle = escapeHTML(routine.title);
+          // Escape category
+          const safeCategory = escapeHTML(routine.category || 'General');
+          // Escape notes
+          const safeNotes = escapeHTML(routine.notes || '');
+          // Check if active
+          const isActive = routine.active !== false;
+
+          // Build routine card inner HTML
+          li.innerHTML = `
+            <div style="display: flex; align-items: center; gap: 14px; flex: 1;">
+              <input type="checkbox" class="routine-toggle-chk" data-id="${routine.id}" ${routine.completedToday ? 'checked' : ''} style="width: 20px; height: 20px; cursor: pointer; accent-color: var(--color-primary); flex-shrink: 0;" title="Mark habit done for today">
+              <div style="flex: 1; min-width: 0;">
+                <div style="display: flex; align-items: center; gap: 8px; flex-wrap: wrap; margin-bottom: 4px;">
+                  <span class="routine-time-badge">${routine.time}</span>
+                  <span class="routine-category-pill">${safeCategory}</span>
+                  ${!isActive ? '<span style="font-size: 0.7rem; color: var(--text-muted); background: rgba(148, 163, 184, 0.15); padding: 2px 6px; border-radius: 4px; font-weight: 600;">Reminders Paused</span>' : ''}
+                </div>
+                <div style="font-size: 0.92rem; font-weight: 600; color: var(--text-main); ${routine.completedToday ? 'text-decoration: line-through; color: var(--text-muted);' : ''}; word-break: break-word;">${safeTitle}</div>
+                ${safeNotes ? `<div style="font-size: 0.78rem; color: var(--text-muted); margin-top: 3px; font-style: italic;">${safeNotes}</div>` : ''}
+              </div>
+            </div>
+            <div style="display: flex; align-items: center; gap: 8px; flex-shrink: 0;">
+              <button type="button" class="btn-toggle-routine-active" data-id="${routine.id}" style="background: transparent; border: 1px solid var(--color-border); color: var(--text-muted); padding: 5px 10px; border-radius: 6px; font-size: 0.75rem; cursor: pointer; display: flex; align-items: center; gap: 4px;" title="${isActive ? 'Pause reminder notifications' : 'Activate reminder notifications'}">
+                ${isActive ? '🔔 On' : '🔕 Paused'}
+              </button>
+              <button type="button" class="btn-delete-routine" data-id="${routine.id}" style="background: transparent; border: none; cursor: pointer; display: flex; align-items: center; justify-content: center; padding: 6px; border-radius: 4px; color: var(--color-danger); transition: all 0.2s ease;" title="Delete routine">
+                <svg style="width: 15px; height: 15px; fill: none; stroke: currentColor; stroke-width: 2.2;"><use href="#icon-trash"></use></svg>
+              </button>
+            </div>
+          `;
+
+          // Checkbox toggle event listener
+          const chk = li.querySelector('.routine-toggle-chk');
+          // If checkbox found
+          if (chk) {
+            // Attach change event listener
+            chk.addEventListener('change', () => {
+              // Toggle completion status in store
+              store.toggleRoutineCompleted(routine.id);
+              // Re-render routines view
+              renderRoutines();
+            // End change listener
+            });
+          // End chk check
+          }
+
+          // Active reminder toggle button listener
+          const toggleActiveBtn = li.querySelector('.btn-toggle-routine-active');
+          // If toggle button found
+          if (toggleActiveBtn) {
+            // Attach click listener
+            toggleActiveBtn.addEventListener('click', () => {
+              // Toggle active reminder flag in store
+              store.toggleRoutine(routine.id);
+              // Re-render routines view
+              renderRoutines();
+              // Reschedule mobile alarms
+              scheduleRoutineReminders();
+            // End click listener
+            });
+          // End toggleActiveBtn check
+          }
+
+          // Delete routine button listener
+          const deleteBtn = li.querySelector('.btn-delete-routine');
+          // If delete button found
+          if (deleteBtn) {
+            // Add hover styling
+            deleteBtn.addEventListener('mouseenter', () => deleteBtn.style.background = 'rgba(239, 68, 68, 0.1)');
+            // Remove hover styling on mouse leave
+            deleteBtn.addEventListener('mouseleave', () => deleteBtn.style.background = 'transparent');
+            // Attach click listener
+            deleteBtn.addEventListener('click', () => {
+              // Ask user for confirmation
+              if (confirm(`Are you sure you want to delete the daily routine "${routine.title}"?`)) {
+                // Remove routine from store
+                store.deleteRoutine(routine.id);
+                // Re-render routines view
+                renderRoutines();
+                // Reschedule mobile alarms
+                scheduleRoutineReminders();
+              // End confirmation check
+              }
+            // End click listener
+            });
+          // End deleteBtn check
+          }
+
+          // Append routine card to list
+          listElement.appendChild(li);
+        // End sortedRoutines iteration
+        });
+      // End empty check
+      }
+    // End listElement check
+    }
+
+    // 3. Render Today's Routines Quick Widget on Dashboard (#dashboardRoutinesList)
+    const dashboardWidgetList = document.getElementById('dashboardRoutinesList');
+    // If dashboard routines list container exists
+    if (dashboardWidgetList) {
+      // Clear existing quick items
+      dashboardWidgetList.innerHTML = '';
+
+      // Check if user has no routines configured
+      if (routines.length === 0) {
+        // Create empty helper message
+        dashboardWidgetList.innerHTML = `
+          <div style="padding: 16px; text-align: center; color: var(--text-muted); font-size: 0.82rem;">
+            No daily routines set. <a href="#" onclick="window.switchTab('routines'); return false;" style="color: var(--color-primary); font-weight: 600;">Add routines</a> to receive timed reminders!
+          </div>
+        `;
+      // If routines exist
+      } else {
+        // Sort routines chronologically
+        const sortedDashboardRoutines = [...routines].sort((a, b) => (a.time || '').localeCompare(b.time || ''));
+
+        // Iterate through routines
+        sortedDashboardRoutines.forEach(routine => {
+          // Create widget row item div
+          const row = document.createElement('div');
+          // Set flex container styling
+          row.style.cssText = 'display: flex; align-items: center; justify-content: space-between; padding: 10px 14px; border-radius: var(--border-radius-sm); background: rgba(255, 255, 255, 0.02); border: 1px solid var(--color-border); margin-bottom: 8px; font-size: 0.84rem;';
+
+          // Escape title
+          const safeTitle = escapeHTML(routine.title);
+
+          // Construct row inner HTML
+          row.innerHTML = `
+            <div style="display: flex; align-items: center; gap: 10px; flex: 1; min-width: 0;">
+              <input type="checkbox" class="dash-routine-chk" data-id="${routine.id}" ${routine.completedToday ? 'checked' : ''} style="width: 16px; height: 16px; cursor: pointer; accent-color: var(--color-primary); flex-shrink: 0;">
+              <span class="routine-time-badge" style="font-size: 0.72rem; padding: 2px 8px;">${routine.time}</span>
+              <span style="font-weight: 500; color: var(--text-main); ${routine.completedToday ? 'text-decoration: line-through; color: var(--text-muted);' : ''}; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">${safeTitle}</span>
+            </div>
+            <span style="font-size: 0.72rem; color: ${routine.completedToday ? '#10b981' : 'var(--text-muted)'}; font-weight: 600; flex-shrink: 0;">${routine.completedToday ? 'Done' : 'Pending'}</span>
+          `;
+
+          // Quick checkbox handler
+          const dashChk = row.querySelector('.dash-routine-chk');
+          // If checkbox exists
+          if (dashChk) {
+            // Attach change listener
+            dashChk.addEventListener('change', () => {
+              // Toggle completion status in store
+              store.toggleRoutineCompleted(routine.id);
+              // Re-render routines and dashboard
+              renderRoutines();
+            // End change listener
+            });
+          // End dashChk check
+          }
+
+          // Append row to dashboard widget list
+          dashboardWidgetList.appendChild(row);
+        // End sortedDashboardRoutines iteration
+        });
+      // End empty check
+      }
+    // End dashboardWidgetList check
+    }
+  // End renderRoutines
+  }
+
+  /**
+   * Schedules repeating mobile notifications for active daily routines via Capacitor LocalNotifications.
+   */
+  async function scheduleRoutineReminders() {
+    // Reference Capacitor global object
+    const capacitor = window.Capacitor;
+    // Check if Capacitor LocalNotifications plugin is available on mobile device
+    if (capacitor && capacitor.Plugins && capacitor.Plugins.LocalNotifications) {
+      // Destructure LocalNotifications plugin
+      const { LocalNotifications } = capacitor.Plugins;
+      // Wrap native scheduling in try-catch block
+      try {
+        // Check current notification permission status
+        const permStatus = await LocalNotifications.checkPermissions();
+        // Exit if permission is not granted
+        if (permStatus.display !== 'granted') return;
+
+        // Fetch active routines
+        const store = window.AppStore;
+        // Filter for active routines
+        const activeRoutines = (store && store.getRoutines ? store.getRoutines() : []).filter(r => r.active !== false);
+
+        // Cancel previously scheduled routine notifications (IDs 200 - 299)
+        const cancelList = [];
+        // Loop up to 100 possible routine slots
+        for (let i = 0; i < 100; i++) {
+          // Push notification ID to cancellation list
+          cancelList.push({ id: 200 + i });
+        // End cancel loop
+        }
+        // Asynchronously cancel scheduled notifications
+        await LocalNotifications.cancel({ notifications: cancelList });
+
+        // Iterate active routines and schedule daily alarms
+        const notificationsToSchedule = [];
+        // Map active routines to notification payloads
+        activeRoutines.slice(0, 50).forEach((routine, idx) => {
+          // Split time string into hour and minute integers
+          const [hStr, mStr] = (routine.time || '08:00').split(':');
+          // Parse hour
+          const hour = parseInt(hStr, 10) || 8;
+          // Parse minute
+          const minute = parseInt(mStr, 10) || 0;
+
+          // Push configured local notification object
+          notificationsToSchedule.push({
+            // Notification title
+            title: `⏰ Finflow Routine: ${routine.title}`,
+            // Notification body message
+            body: `Time for your scheduled financial habit! ${routine.notes || ''}`,
+            // Unique notification ID
+            id: 200 + idx,
+            // Repeating schedule
+            schedule: {
+              // Daily trigger schedule
+              on: {
+                // Scheduled hour
+                hour: hour,
+                // Scheduled minute
+                minute: minute
+              // End on configuration
+              },
+              // Enable daily repeats
+              repeats: true
+            // End schedule
+            }
+          // End notification object
+          });
+        // End activeRoutines iteration
+        });
+
+        // If there are routine notifications to schedule
+        if (notificationsToSchedule.length > 0) {
+          // Schedule alarms on device
+          await LocalNotifications.schedule({ notifications: notificationsToSchedule });
+        // End schedule check
+        }
+      // Catch native scheduling exceptions
+      } catch (err) {
+        // Log scheduling error warning
+        console.warn('Capacitor routine notifications scheduling failed:', err);
+      // End try catch
+      }
+    // End Capacitor check
+    }
+  // End scheduleRoutineReminders
+  }
+
+  // Expose playRoutineChime globally for button tests
+  window.playRoutineChime = playRoutineChime;
+  // Expose renderRoutines globally
+  window.renderRoutines = renderRoutines;
+  // Expose requestRoutineNotificationPermission globally
+  window.requestRoutineNotificationPermission = requestRoutineNotificationPermission;
 
   /**
    * 6. Redraws Diagnostics panel (Financial Health Grade & insights).
@@ -4618,6 +5361,8 @@
     renderSavingsGoals();
     renderSettings();
     renderTodos();
+    // Render daily financial habits routines checklist, progress bar, and dashboard widget
+    renderRoutines();
     // Render debts and money lent tracker cards and summary metrics
     renderDebts();
     // Render customer CRM directory cards and follow-up metrics
@@ -7043,6 +7788,134 @@ Ask me specific financial questions like:
       });
     });
 
+    // --- Daily Routines Event Handlers ---
+    // Handle Add Routine form submission
+    if (elements.addRoutineForm) {
+      // Attach submit event listener to add routine form
+      elements.addRoutineForm.addEventListener('submit', (e) => {
+        // Prevent default browser form submission
+        e.preventDefault();
+        // Read trimmed routine title
+        const title = elements.routineTitleInput ? elements.routineTitleInput.value.trim() : '';
+        // Read scheduled time string
+        const time = elements.routineTimeInput ? elements.routineTimeInput.value : '';
+        // Read selected category
+        const category = elements.routineCategorySelect ? elements.routineCategorySelect.value : 'General';
+        // Read optional notes
+        const notes = elements.routineNotesInput ? elements.routineNotesInput.value.trim() : '';
+
+        // Validate title and time presence
+        if (!title || !time) {
+          // Alert user of missing fields
+          alert('Please provide both a routine title and a scheduled reminder time.');
+          // Exit handler
+          return;
+        // End validation check
+        }
+
+        // Add new routine to store
+        window.AppStore.addRoutine({
+          // Routine title
+          title: title,
+          // Scheduled reminder time (HH:MM)
+          time: time,
+          // Routine category
+          category: category,
+          // Optional notes description
+          notes: notes,
+          // Reminder notifications enabled by default
+          active: true
+        // End routine object
+        });
+
+        // Reset form input values
+        elements.addRoutineForm.reset();
+        // Re-render routines list and stats
+        renderRoutines();
+        // Schedule mobile alarms
+        scheduleRoutineReminders();
+
+        // If browser notification permission is not yet decided, prompt user
+        if ('Notification' in window && Notification.permission === 'default') {
+          // Ask for browser notification permission
+          requestRoutineNotificationPermission();
+        // End permission prompt check
+        }
+      // End submit listener
+      });
+    // End addRoutineForm check
+    }
+
+    // Quick Routine Preset buttons handler
+    document.querySelectorAll('.btn-routine-preset').forEach(btn => {
+      // Attach click listener to each preset pill button
+      btn.addEventListener('click', (e) => {
+        // Read preset data attributes
+        const title = e.currentTarget.getAttribute('data-title');
+        // Read preset time
+        const time = e.currentTarget.getAttribute('data-time');
+        // Read preset category
+        const category = e.currentTarget.getAttribute('data-category') || 'General';
+        // Read preset note
+        const note = e.currentTarget.getAttribute('data-note') || '';
+
+        // Pre-fill routine form fields
+        if (elements.routineTitleInput) elements.routineTitleInput.value = title;
+        // Fill time
+        if (elements.routineTimeInput) elements.routineTimeInput.value = time;
+        // Fill category
+        if (elements.routineCategorySelect) elements.routineCategorySelect.value = category;
+        // Fill notes
+        if (elements.routineNotesInput) elements.routineNotesInput.value = note;
+
+        // Scroll to form and focus title
+        if (elements.routineTitleInput) {
+          // Focus input
+          elements.routineTitleInput.focus();
+        // End focus check
+        }
+      // End preset click
+      });
+    // End preset iteration
+    });
+
+    // Routine filter buttons click binding
+    document.querySelectorAll('.btn-routine-filter').forEach(btn => {
+      // Attach click listener
+      btn.addEventListener('click', (e) => {
+        // Remove active class from all filter buttons
+        document.querySelectorAll('.btn-routine-filter').forEach(b => b.classList.remove('active'));
+        // Add active class to clicked button
+        e.currentTarget.classList.add('active');
+        // Re-render routines with active filter
+        renderRoutines();
+      // End filter click
+      });
+    // End filter iteration
+    });
+
+    // Browser Notification enable button handler
+    if (elements.enableRoutineNotificationBtn) {
+      // Attach click listener
+      elements.enableRoutineNotificationBtn.addEventListener('click', () => {
+        // Request notification permission
+        requestRoutineNotificationPermission();
+      // End click listener
+      });
+    // End enableRoutineNotificationBtn check
+    }
+
+    // Sound chime test button handler
+    if (elements.testRoutineChimeBtn) {
+      // Attach click listener
+      elements.testRoutineChimeBtn.addEventListener('click', () => {
+        // Play melodic chime audio
+        playRoutineChime();
+      // End click listener
+      });
+    // End testRoutineChimeBtn check
+    }
+
     // Listen to changes in App Store and update view automatically
     window.addEventListener('store-updated', syncUI);
   }
@@ -7815,6 +8688,8 @@ Ask me specific financial questions like:
       });
 
       initLocalNotifications();    // Setup local notifications reminders
+      // Schedule mobile notifications for daily routines on startup
+      scheduleRoutineReminders();
 
       // Fetch fresh FX rates in the background to update conversions in real-time
       fetchLiveExchangeRates().then(() => {
@@ -7832,6 +8707,11 @@ Ask me specific financial questions like:
         }, 1000);
       }
     }
+
+    // Run initial routine due check on load
+    checkDueRoutines();
+    // Start recurring minute timer to check for routine alarm times
+    setInterval(checkDueRoutines, 30000);
   });
 
   // Auto-sync from Supabase Cloud when user switches back to the browser tab or focuses app
@@ -7874,10 +8754,16 @@ Ask me specific financial questions like:
   document.addEventListener('visibilitychange', () => {
     if (document.visibilityState === 'visible') {
       triggerCloudSyncCheck();
+      // Check for due routines when user returns to the tab
+      checkDueRoutines();
     }
   });
 
-  window.addEventListener('focus', triggerCloudSyncCheck);
+  window.addEventListener('focus', () => {
+    triggerCloudSyncCheck();
+    // Check for due routines on window focus
+    checkDueRoutines();
+  });
 
   // Automatic background cloud sync every 4 seconds for real-time multi-device sync
   setInterval(() => {

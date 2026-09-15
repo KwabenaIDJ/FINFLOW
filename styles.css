@@ -2441,3 +2441,123 @@ header {
   flex-shrink: 0;
 /* End customer avatar */
 }
+
+/* Daily Routine Item Card */
+.routine-card {
+  /* Relative layout */
+  position: relative;
+  /* Rounded border corners */
+  border-radius: var(--border-radius-md);
+  /* Card background theme */
+  background: var(--bg-secondary);
+  /* Card perimeter border */
+  border: 1px solid var(--color-border);
+  /* Padding inside card */
+  padding: 16px 18px;
+  /* Flex layout */
+  display: flex;
+  /* Center items vertically */
+  align-items: center;
+  /* Space between routine info and action buttons */
+  justify-content: space-between;
+  /* Content wrap for responsive mobile view */
+  flex-wrap: wrap;
+  /* Element spacing gap */
+  gap: 12px;
+  /* Transition animation for hover state */
+  transition: all var(--transition-fast);
+/* End routine card */
+}
+
+/* Routine Card Completed State */
+.routine-card.completed {
+  /* Subtle green accent border */
+  border-color: rgba(16, 185, 129, 0.4);
+  /* Soft green tinted background */
+  background: linear-gradient(135deg, rgba(16, 185, 129, 0.06), var(--bg-secondary));
+/* End routine card completed */
+}
+
+/* Routine Card Disabled / Paused State */
+.routine-card.paused {
+  /* Reduce opacity when alerts paused */
+  opacity: 0.65;
+/* End routine card paused */
+}
+
+/* Routine Time Badge */
+.routine-time-badge {
+  /* Bold font weight */
+  font-weight: 800;
+  /* Monospace font for aligned numbers */
+  font-family: monospace, inherit;
+  /* Text font size */
+  font-size: 0.92rem;
+  /* Primary theme accent color */
+  color: var(--color-primary);
+  /* Primary glow background */
+  background: var(--color-primary-glow);
+  /* Border padding */
+  padding: 4px 10px;
+  /* Pill rounded corners */
+  border-radius: 6px;
+  /* Inline flex alignment */
+  display: inline-flex;
+  /* Center items */
+  align-items: center;
+  /* Element gap */
+  gap: 6px;
+  /* Prevent shrinking */
+  flex-shrink: 0;
+/* End routine time badge */
+}
+
+/* Routine Category Tag Pill */
+.routine-category-pill {
+  /* Small uppercase badge */
+  font-size: 0.68rem;
+  /* Extra bold font weight */
+  font-weight: 700;
+  /* Text uppercase transform */
+  text-transform: uppercase;
+  /* Muted text color */
+  color: var(--text-muted);
+  /* Card border outline */
+  border: 1px solid var(--color-border);
+  /* Pill background */
+  background: var(--bg-primary);
+  /* Tag padding */
+  padding: 2px 8px;
+  /* Rounded corners */
+  border-radius: 10px;
+/* End routine category pill */
+}
+
+/* Floating In-App Routine Alarm Toast Banner */
+.routine-alarm-banner {
+  /* Fixed viewport positioning */
+  position: fixed;
+  /* Top spacing */
+  top: 24px;
+  /* Right viewport anchor */
+  right: 24px;
+  /* High z-index to stay above modals */
+  z-index: 10000;
+  /* Responsive maximum width */
+  max-width: 420px;
+  /* Full width on small mobile screens */
+  width: calc(100% - 48px);
+  /* Card background */
+  background: var(--bg-primary);
+  /* Primary gradient highlight border */
+  border: 2px solid var(--color-primary);
+  /* Large shadow for prominent alert visibility */
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.4), 0 0 20px var(--color-primary-glow);
+  /* Rounded container corners */
+  border-radius: var(--border-radius-lg);
+  /* Inner container padding */
+  padding: 18px 20px;
+  /* Slide in animation */
+  animation: slideInDown 0.3s ease-out;
+/* End routine alarm banner */
+}

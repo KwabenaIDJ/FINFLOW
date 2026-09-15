@@ -256,6 +256,14 @@
       <path d="M21 19H3"></path>
     <!-- End icon-swap symbol -->
     </symbol>
+    <!-- Daily Routine Clock / Alarm Icon -->
+    <symbol id="icon-clock" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+      <!-- Clock dial circle outline -->
+      <circle cx="12" cy="12" r="10"></circle>
+      <!-- Clock hour and minute hands -->
+      <polyline points="12 6 12 12 16 14"></polyline>
+    <!-- End icon-clock symbol -->
+    </symbol>
   </svg>
 
   <!-- ==================== SIDEBAR ==================== -->
@@ -350,6 +358,14 @@
       <a class="nav-item" data-target="todos" onclick="window.switchTab('todos'); closeMobileSidebar();">
         <svg><use href="#icon-todo"></use></svg>
         <span id="navLabelTodos">Tasks Checklist</span>
+      </a>
+      <!-- Daily Routines and timed habit reminders navigation item -->
+      <a class="nav-item" data-target="routines" onclick="window.switchTab('routines'); closeMobileSidebar();">
+        <!-- Alarm clock SVG icon -->
+        <svg><use href="#icon-clock"></use></svg>
+        <!-- Nav label for Daily Routines -->
+        <span id="navLabelRoutines">Daily Routines</span>
+      <!-- End routines nav item -->
       </a>
       <a class="nav-item" data-target="guide" onclick="window.switchTab('guide'); closeMobileSidebar();">
         <svg><use href="#icon-book"></use></svg>
@@ -728,6 +744,35 @@
         </div>
       </div>
 
+      <!-- TODAY'S ROUTINES QUICK WIDGET -->
+      <!-- Glanceable habit checklist card on main dashboard -->
+      <section class="card" style="margin-bottom: 24px; padding: 20px;">
+        <!-- Widget header with title and link to routines tab -->
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 14px; flex-wrap: wrap; gap: 8px;">
+          <!-- Widget title with clock icon -->
+          <div style="display: flex; align-items: center; gap: 8px;">
+            <!-- Icon span -->
+            <span style="font-size: 1.2rem;">⏰</span>
+            <!-- Heading text -->
+            <h2 class="chart-title" style="margin: 0; font-size: 1.05rem;">Today's Daily Routines</h2>
+          <!-- End widget title div -->
+          </div>
+          <!-- Manage All Routines link button -->
+          <button type="button" class="btn btn-secondary btn-sm" onclick="window.switchTab('routines')" style="font-size: 0.78rem; padding: 5px 12px; font-family: inherit;">
+            <!-- Button label -->
+            <span>Manage All Routines →</span>
+          <!-- End button -->
+          </button>
+        <!-- End widget header -->
+        </div>
+        <!-- Quick routines preview container -->
+        <div id="dashboardRoutinesWidget" style="display: flex; flex-direction: column; gap: 10px;">
+          <!-- Dynamically populated in JS -->
+        <!-- End dashboardRoutinesWidget div -->
+        </div>
+      <!-- End today's routines widget section -->
+      </section>
+
       <!-- RECENT TRANSACTIONS BOARD -->
       <div class="dashboard-bottom">
         <section class="card" style="grid-column: 1 / -1;">
@@ -1084,6 +1129,167 @@
           <!-- Dynamically populated in JS -->
         </ul>
       </div>
+    </div>
+
+    <!-- ==================== PANEL: DAILY ROUTINES & REMINDERS ==================== -->
+    <!-- View panel container for scheduled daily habits and timed financial reminders -->
+    <div class="view-panel" id="routines-panel">
+      <!-- Header title container for routines view -->
+      <div class="header-title" style="margin-bottom: 20px;">
+        <!-- Routines section main heading -->
+        <h2 id="routinesTitle">Daily Financial Routines & Reminders</h2>
+        <!-- Routines section descriptive subtitle -->
+        <p id="routinesSub">Set daily financial habits with scheduled reminder times. FinFlow rings a chime and notifies you when it's time.</p>
+      <!-- End header-title div -->
+      </div>
+
+      <!-- Permission & Sound Test Banner Card -->
+      <div id="routineNotificationBanner" class="card" style="margin-bottom: 20px; padding: 14px 18px; display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 12px; background: var(--bg-secondary); border-left: 4px solid var(--color-primary);">
+        <!-- Info block with icon and status text -->
+        <div style="display: flex; align-items: center; gap: 12px;">
+          <!-- Bell reminder emoji icon -->
+          <span style="font-size: 1.5rem;">🔔</span>
+          <!-- Text column container -->
+          <div>
+            <!-- Status heading title -->
+            <strong id="routineNotificationStatusTitle" style="color: var(--text-main); font-size: 0.9rem;">Browser Reminder Alerts: Inactive</strong>
+            <!-- Status description hint -->
+            <p id="routineNotificationStatusSub" style="font-size: 0.76rem; color: var(--text-muted); margin-top: 2px;">Enable notifications so FinFlow alerts you even when the dashboard tab is in the background.</p>
+          <!-- End text column container -->
+          </div>
+        <!-- End info block -->
+        </div>
+        <!-- Action button controls container -->
+        <div style="display: flex; gap: 8px; align-items: center; flex-wrap: wrap;">
+          <!-- Button to test the Web Audio notification chime -->
+          <button type="button" class="btn btn-secondary btn-sm" id="testRoutineChimeBtn" style="font-size: 0.78rem; padding: 6px 12px; font-family: inherit;">🔊 Test Sound Chime</button>
+          <!-- Button to request browser notification permission -->
+          <button type="button" class="btn btn-primary btn-sm" id="enableRoutineNotificationBtn" style="font-size: 0.78rem; padding: 6px 14px; font-family: inherit;">Enable Notifications</button>
+        <!-- End action button controls container -->
+        </div>
+      <!-- End routineNotificationBanner card -->
+      </div>
+
+      <!-- Today's Routine Habit Completion Progress Card -->
+      <div class="card" style="margin-bottom: 22px; padding: 18px 20px;">
+        <!-- Header row with title and percentage badge -->
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; flex-wrap: wrap; gap: 8px;">
+          <!-- Habit progress card heading -->
+          <h3 style="font-size: 0.95rem; font-weight: 700; margin: 0;">Today's Habit Progress</h3>
+          <!-- Dynamic progress count badge -->
+          <span id="routineProgressBadge" style="font-size: 0.8rem; font-weight: 700; color: var(--color-primary); background: var(--color-primary-glow); padding: 4px 10px; border-radius: 12px;">0 of 0 Completed (0%)</span>
+        <!-- End header row -->
+        </div>
+        <!-- Progress bar background track -->
+        <div style="width: 100%; height: 8px; background: var(--bg-primary); border-radius: 4px; overflow: hidden; border: 1px solid var(--color-border);">
+          <!-- Dynamic filled progress bar meter -->
+          <div id="routineProgressBar" style="width: 0%; height: 100%; background: linear-gradient(90deg, var(--color-primary), #10b981); transition: width var(--transition-normal);"></div>
+        <!-- End progress bar background track -->
+        </div>
+      <!-- End habit progress card -->
+      </div>
+
+      <!-- Schedule New Routine Card -->
+      <div class="card" style="margin-bottom: 24px; padding: 20px;">
+        <!-- Form title -->
+        <h3 style="font-size: 0.95rem; font-weight: 700; margin-bottom: 12px;">Schedule a New Routine</h3>
+        
+        <!-- One-click Quick Presets container -->
+        <div style="margin-bottom: 16px;">
+          <!-- Presets label -->
+          <span style="font-size: 0.75rem; color: var(--text-muted); font-weight: 600; display: block; margin-bottom: 6px;">⚡ Quick Habit Presets (Click to Auto-fill):</span>
+          <!-- Presets buttons flex wrapper -->
+          <div style="display: flex; flex-wrap: wrap; gap: 8px;">
+            <!-- Preset 1: Morning Budget Check -->
+            <button type="button" class="btn btn-secondary btn-sm btn-routine-preset" data-title="🌅 Morning Budget & Spending Check" data-time="08:00" data-cat="Budget Review" style="font-size: 0.75rem; padding: 5px 10px; font-family: inherit;">🌅 08:00 AM — Morning Budget</button>
+            <!-- Preset 2: Lunch & Transport Log -->
+            <button type="button" class="btn btn-secondary btn-sm btn-routine-preset" data-title="🍽️ Log Lunch & Daily Transportation" data-time="13:30" data-cat="Expense Logging" style="font-size: 0.75rem; padding: 5px 10px; font-family: inherit;">🍽️ 01:30 PM — Lunch & Transport</button>
+            <!-- Preset 3: Evening Ledger Check-in -->
+            <button type="button" class="btn btn-secondary btn-sm btn-routine-preset" data-title="🌆 Evening Ledger Entry & Receipt Scan" data-time="20:00" data-cat="Ledger Check-in" style="font-size: 0.75rem; padding: 5px 10px; font-family: inherit;">🌆 08:00 PM — Evening Ledger</button>
+            <!-- Preset 4: Savings & Debts Check -->
+            <button type="button" class="btn btn-secondary btn-sm btn-routine-preset" data-title="💳 Weekly Savings & Bills Review" data-time="19:00" data-cat="Savings & Bills" style="font-size: 0.75rem; padding: 5px 10px; font-family: inherit;">💳 07:00 PM — Savings & Bills</button>
+          <!-- End presets buttons flex wrapper -->
+          </div>
+        <!-- End quick presets container -->
+        </div>
+
+        <!-- Add Routine Form container -->
+        <form id="addRoutineForm" style="display: grid; grid-template-columns: 2fr 1.2fr 1.2fr auto; gap: 12px; align-items: flex-end;">
+          <!-- Routine Title input group -->
+          <div class="form-group" style="margin-bottom: 0;">
+            <!-- Routine Title label -->
+            <label for="newRoutineTitle" style="font-size: 0.8rem; font-weight: 600; margin-bottom: 4px; display: block;">Routine Title / Habit</label>
+            <!-- Routine Title text input -->
+            <input type="text" id="newRoutineTitle" placeholder="e.g. Daily coffee & food expense log" required style="width: 100%; padding: 10px 14px; border-radius: var(--border-radius-sm); border: 1px solid var(--color-border); background: var(--bg-primary); color: var(--text-main); font-family: inherit; font-size: 0.86rem; outline: none;">
+          <!-- End routine title group -->
+          </div>
+          <!-- Reminder Time picker input group -->
+          <div class="form-group" style="margin-bottom: 0;">
+            <!-- Reminder Time label -->
+            <label for="newRoutineTime" style="font-size: 0.8rem; font-weight: 600; margin-bottom: 4px; display: block;">Reminder Time</label>
+            <!-- Reminder Time input -->
+            <input type="time" id="newRoutineTime" required style="width: 100%; padding: 9px 12px; border-radius: var(--border-radius-sm); border: 1px solid var(--color-border); background: var(--bg-primary); color: var(--text-main); font-family: inherit; font-size: 0.86rem; outline: none;">
+          <!-- End reminder time group -->
+          </div>
+          <!-- Category selector group -->
+          <div class="form-group" style="margin-bottom: 0;">
+            <!-- Category dropdown label -->
+            <label for="newRoutineCategory" style="font-size: 0.8rem; font-weight: 600; margin-bottom: 4px; display: block;">Category</label>
+            <!-- Category dropdown select -->
+            <select id="newRoutineCategory" style="width: 100%; padding: 9px 12px; border-radius: var(--border-radius-sm); border: 1px solid var(--color-border); background: var(--bg-primary); color: var(--text-main); font-family: inherit; font-size: 0.86rem; outline: none;">
+              <!-- Option 1: Expense Logging -->
+              <option value="Expense Logging">Expense Logging</option>
+              <!-- Option 2: Budget Review -->
+              <option value="Budget Review">Budget Review</option>
+              <!-- Option 3: Savings Check -->
+              <option value="Savings Check">Savings Check</option>
+              <!-- Option 4: Bills & Debts -->
+              <option value="Bills & Debts">Bills & Debts</option>
+              <!-- Option 5: General Habit -->
+              <option value="General">General Habit</option>
+            <!-- End category select -->
+            </select>
+          <!-- End category selector group -->
+          </div>
+          <!-- Submit Button to add routine -->
+          <button type="submit" class="btn btn-primary" style="padding: 10px 18px; font-weight: 700; font-family: inherit; display: flex; align-items: center; gap: 6px; white-space: nowrap; height: 40px;">
+            <!-- Plus SVG icon -->
+            <svg style="width: 15px; height: 15px; fill: none; stroke: currentColor; stroke-width: 2.5;"><use href="#icon-plus"></use></svg>
+            <!-- Button text -->
+            <span>Add Routine</span>
+          <!-- End submit button -->
+          </button>
+        <!-- End add routine form -->
+        </form>
+      <!-- End schedule new routine card -->
+      </div>
+
+      <!-- Scheduled Routines List Card -->
+      <div class="card" style="padding: 20px;">
+        <!-- Header row with filter buttons -->
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; flex-wrap: wrap; gap: 10px;">
+          <!-- List title heading -->
+          <h3 style="font-size: 0.95rem; font-weight: 700; margin: 0;">Your Scheduled Habits</h3>
+          <!-- Filter buttons container -->
+          <div style="display: flex; gap: 8px;">
+            <!-- Filter button: All routines -->
+            <button type="button" class="btn btn-secondary btn-sm btn-routine-filter active" data-filter="all" style="font-size: 0.76rem; padding: 5px 10px; font-family: inherit;">All</button>
+            <!-- Filter button: Pending routines -->
+            <button type="button" class="btn btn-secondary btn-sm btn-routine-filter" data-filter="pending" style="font-size: 0.76rem; padding: 5px 10px; font-family: inherit;">Pending Today</button>
+            <!-- Filter button: Completed routines -->
+            <button type="button" class="btn btn-secondary btn-sm btn-routine-filter" data-filter="completed" style="font-size: 0.76rem; padding: 5px 10px; font-family: inherit;">Completed</button>
+          <!-- End filter buttons container -->
+          </div>
+        <!-- End header row -->
+        </div>
+        <!-- Dynamic routines list container -->
+        <div id="routinesList" style="display: flex; flex-direction: column; gap: 12px;">
+          <!-- Dynamically populated in app.js -->
+        <!-- End routinesList div -->
+        </div>
+      <!-- End scheduled routines list card -->
+      </div>
+    <!-- End routines-panel div -->
     </div>
 
     <!-- ==================== PANEL: FINANCIAL GUIDE ==================== -->
@@ -3371,6 +3577,10 @@
       <button id="tourNextBtn" class="btn btn-primary btn-sm" style="font-size: 0.75rem; padding: 6px 14px; background: var(--color-primary); color: #fff;">Next</button>
     </div>
   </div>
+
+  <!-- FLOATING IN-APP ROUTINE REMINDER ALARM TOAST BANNER -->
+  <!-- Container for interactive in-app routine notification alarms -->
+  <div id="routineAlarmBanner" class="routine-alarm-banner" style="display: none;"></div>
 
   <!-- ==================== CHART JS, PAYSTACK SDK & SCRIPTS ==================== -->
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
