@@ -1151,10 +1151,10 @@
           <span style="font-size: 1.5rem;">🔔</span>
           <!-- Text column container -->
           <div>
-            <!-- Status heading title -->
-            <strong id="routineNotificationStatusTitle" style="color: var(--text-main); font-size: 0.9rem;">Browser Reminder Alerts: Inactive</strong>
-            <!-- Status description hint -->
-            <p id="routineNotificationStatusSub" style="font-size: 0.76rem; color: var(--text-muted); margin-top: 2px;">Enable notifications so FinFlow alerts you even when the dashboard tab is in the background.</p>
+            <!-- Routine notification status heading element -->
+            <strong id="routineNotificationStatusTitle" style="color: var(--text-main); font-size: 0.9rem;">Reminder Alerts: Inactive</strong>
+            <!-- Descriptive subtitle explaining habits reminders -->
+            <p id="routineNotificationStatusSub" style="font-size: 0.76rem; color: var(--text-muted); margin-top: 2px;">Enable notifications so FinFlow alerts you when daily habits are due.</p>
           <!-- End text column container -->
           </div>
         <!-- End info block -->
@@ -1194,49 +1194,49 @@
         <!-- Form title heading for routine scheduling -->
         <h3 style="font-size: 0.95rem; font-weight: 700; margin-bottom: 16px;">Schedule a New Routine</h3>
 
-        <!-- Add Routine Form container -->
-        <form id="addRoutineForm" style="display: grid; grid-template-columns: 2fr 1.2fr 1.2fr auto; gap: 12px; align-items: flex-end;">
-          <!-- Routine Title input group -->
-          <div class="form-group" style="margin-bottom: 0;">
-            <!-- Routine Title label -->
+        <!-- Add Routine Form container with responsive grid class -->
+        <form id="addRoutineForm" class="routine-form-grid">
+          <!-- Routine Title input group spanning full width on mobile -->
+          <div class="form-group routine-input-title" style="margin-bottom: 0;">
+            <!-- Routine Title label text -->
             <label for="newRoutineTitle" style="font-size: 0.8rem; font-weight: 600; margin-bottom: 4px; display: block;">Routine Title / Habit</label>
-            <!-- Routine Title text input -->
-            <input type="text" id="newRoutineTitle" name="routineTitle" placeholder="e.g. Daily coffee & food expense log" required style="width: 100%; padding: 10px 14px; border-radius: var(--border-radius-sm); border: 1px solid var(--color-border); background: var(--bg-primary); color: var(--text-main); font-family: inherit; font-size: 0.86rem; outline: none;">
+            <!-- Routine Title text input field -->
+            <input type="text" id="newRoutineTitle" name="routineTitle" placeholder="e.g. Daily coffee & food expense log" required style="width: 100%; padding: 10px 14px; border-radius: var(--border-radius-sm); border: 1px solid var(--color-border); background: var(--bg-primary); color: var(--text-main); font-family: inherit; font-size: 0.86rem; outline: none; box-sizing: border-box;">
           <!-- End routine title group -->
           </div>
           <!-- Reminder Time picker input group -->
-          <div class="form-group" style="margin-bottom: 0;">
-            <!-- Reminder Time label -->
+          <div class="form-group routine-input-time" style="margin-bottom: 0;">
+            <!-- Reminder Time label text -->
             <label for="newRoutineTime" style="font-size: 0.8rem; font-weight: 600; margin-bottom: 4px; display: block;">Reminder Time</label>
-            <!-- Reminder Time input -->
-            <input type="time" id="newRoutineTime" name="routineTime" required style="width: 100%; padding: 9px 12px; border-radius: var(--border-radius-sm); border: 1px solid var(--color-border); background: var(--bg-primary); color: var(--text-main); font-family: inherit; font-size: 0.86rem; outline: none;">
+            <!-- Reminder Time input field -->
+            <input type="time" id="newRoutineTime" name="routineTime" required style="width: 100%; padding: 9px 12px; border-radius: var(--border-radius-sm); border: 1px solid var(--color-border); background: var(--bg-primary); color: var(--text-main); font-family: inherit; font-size: 0.86rem; outline: none; box-sizing: border-box;">
           <!-- End reminder time group -->
           </div>
-          <!-- Category selector group -->
-          <div class="form-group" style="margin-bottom: 0;">
-            <!-- Category dropdown label -->
+          <!-- Category selector dropdown group -->
+          <div class="form-group routine-input-category" style="margin-bottom: 0;">
+            <!-- Category dropdown label text -->
             <label for="newRoutineCategory" style="font-size: 0.8rem; font-weight: 600; margin-bottom: 4px; display: block;">Category</label>
-            <!-- Category dropdown select -->
-            <select id="newRoutineCategory" style="width: 100%; padding: 9px 12px; border-radius: var(--border-radius-sm); border: 1px solid var(--color-border); background: var(--bg-primary); color: var(--text-main); font-family: inherit; font-size: 0.86rem; outline: none;">
-              <!-- Option 1: Expense Logging -->
+            <!-- Category dropdown selection element -->
+            <select id="newRoutineCategory" style="width: 100%; padding: 9px 12px; border-radius: var(--border-radius-sm); border: 1px solid var(--color-border); background: var(--bg-primary); color: var(--text-main); font-family: inherit; font-size: 0.86rem; outline: none; box-sizing: border-box;">
+              <!-- Option 1: Expense Logging category -->
               <option value="Expense Logging">Expense Logging</option>
-              <!-- Option 2: Budget Review -->
+              <!-- Option 2: Budget Review category -->
               <option value="Budget Review">Budget Review</option>
-              <!-- Option 3: Savings Check -->
+              <!-- Option 3: Savings Check category -->
               <option value="Savings Check">Savings Check</option>
-              <!-- Option 4: Bills & Debts -->
+              <!-- Option 4: Bills & Debts category -->
               <option value="Bills & Debts">Bills & Debts</option>
-              <!-- Option 5: General Habit -->
+              <!-- Option 5: General Habit category -->
               <option value="General">General Habit</option>
-            <!-- End category select -->
+            <!-- End category select element -->
             </select>
           <!-- End category selector group -->
           </div>
-          <!-- Submit Button to add routine -->
-          <button type="submit" class="btn btn-primary" style="padding: 10px 18px; font-weight: 700; font-family: inherit; display: flex; align-items: center; gap: 6px; white-space: nowrap; height: 40px;">
-            <!-- Plus SVG icon -->
+          <!-- Submit Button to add new routine -->
+          <button type="submit" class="btn btn-primary routine-submit-btn" style="padding: 10px 18px; font-weight: 700; font-family: inherit; display: flex; align-items: center; justify-content: center; gap: 6px; white-space: nowrap; height: 42px;">
+            <!-- Plus SVG icon graphic -->
             <svg style="width: 15px; height: 15px; fill: none; stroke: currentColor; stroke-width: 2.5;"><use href="#icon-plus"></use></svg>
-            <!-- Button text -->
+            <!-- Add Routine button text -->
             <span>Add Routine</span>
           <!-- End submit button -->
           </button>

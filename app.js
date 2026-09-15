@@ -1476,83 +1476,233 @@
   }
 
   /**
-   * Checks browser notification permission status and updates UI badge.
+   * Checks notification permission status on mobile and browser, updating the UI banner accordingly.
    */
-  function updateRoutineNotificationBadge() {
-    // Check if status badge element is rendered
-    const badge = document.getElementById('routineNotificationStatusBadge');
-    // Exit if badge element is missing
-    if (!badge) return;
-    // Check if HTML5 Notification API exists in browser
+  async function updateRoutineNotificationBadge() {
+    // Reference notification title element in UI banner
+    const titleEl = document.getElementById('routineNotificationStatusTitle');
+    // Reference notification subtitle element in UI banner
+    const subEl = document.getElementById('routineNotificationStatusSub');
+    // Reference enable notification button element
+    const btnEl = document.getElementById('enableRoutineNotificationBtn');
+    // Reference Capacitor global object if available
+    const capacitor = window.Capacitor;
+
+    // Check if running on mobile device with Capacitor LocalNotifications plugin
+    if (capacitor && capacitor.Plugins && capacitor.Plugins.LocalNotifications) {
+      // Access Capacitor LocalNotifications plugin
+      const { LocalNotifications } = capacitor.Plugins;
+      // Wrap native permission query in try block
+      try {
+        // Query current mobile notification permission status
+        const permStatus = await LocalNotifications.checkPermissions();
+        // Check if display permission is already granted
+        if (permStatus.display === 'granted') {
+          // If title element exists, set active status text
+          if (titleEl) titleEl.textContent = 'Mobile Reminder Alerts: Active 🔔';
+          // If subtitle element exists, update explanatory description
+          if (subEl) subEl.textContent = 'FinFlow will send scheduled reminders directly to your device when habits are due.';
+          // If button element exists, update its visual state
+          if (btnEl) {
+            // Update button label to indicate active status
+            btnEl.textContent = '✓ Alerts Active';
+            // Disable button since permission is already active
+            btnEl.disabled = true;
+            // Reduce button opacity to indicate disabled active state
+            btnEl.style.opacity = '0.75';
+            // Set default cursor for disabled button
+            btnEl.style.cursor = 'default';
+          // End button element check
+          }
+          // Exit function early for granted mobile permission
+          return;
+        // Handle ungranted mobile permission
+        } else {
+          // Set inactive mobile title
+          if (titleEl) titleEl.textContent = 'Mobile Reminder Alerts: Inactive';
+          // Update prompt subtitle
+          if (subEl) subEl.textContent = 'Enable notifications so FinFlow alerts you even when your phone screen is locked.';
+          // Reset button to enable state
+          if (btnEl) {
+            // Reset button label
+            btnEl.textContent = 'Enable Notifications';
+            // Enable button click
+            btnEl.disabled = false;
+            // Restore full button opacity
+            btnEl.style.opacity = '1';
+            // Restore pointer cursor
+            btnEl.style.cursor = 'pointer';
+          // End button element check
+          }
+          // Exit function early
+          return;
+        // End permStatus display check
+        }
+      // Handle Capacitor permission query exceptions
+      } catch (err) {
+        // Log warning to developer console
+        console.warn('Error reading Capacitor notification permissions:', err);
+      // End try catch block
+      }
+    // End Capacitor check
+    }
+
+    // Check if HTML5 browser Notification API is available
     if (!('Notification' in window)) {
-      // Set badge text to unsupported
-      badge.textContent = 'Not Supported';
-      // Set badge color to neutral
-      badge.style.background = 'rgba(148, 163, 184, 0.2)';
-      // Set text color to muted
-      badge.style.color = '#94a3b8';
+      // Set title indicating in-app chime reminders are active
+      if (titleEl) titleEl.textContent = 'In-App Sound Reminders: Active 🔔';
+      // Set subtitle explaining in-app chime behavior
+      if (subEl) subEl.textContent = 'FinFlow will play an audio chime and display a banner alert whenever the dashboard is open.';
+      // Update button state for in-app mode
+      if (btnEl) {
+        // Change button label
+        btnEl.textContent = 'In-App Audio Active';
+        // Disable button
+        btnEl.disabled = true;
+        // Reduce opacity
+        btnEl.style.opacity = '0.75';
+        // Set default cursor
+        btnEl.style.cursor = 'default';
+      // End button element check
+      }
       // Exit function
       return;
-    // End API check
+    // End Notification in window check
     }
-    // Read current permission status
+
+    // Read current browser notification permission
     const perm = Notification.permission;
-    // Check if permission is granted
+    // Check if browser permission is granted
     if (perm === 'granted') {
-      // Set badge text to active
-      badge.textContent = 'Active (Granted)';
-      // Set badge background to emerald
-      badge.style.background = 'rgba(16, 185, 129, 0.2)';
-      // Set text color to emerald
-      badge.style.color = '#10b981';
-    // Check if permission is denied
+      // Set active title
+      if (titleEl) titleEl.textContent = 'Reminder Alerts: Active 🔔';
+      // Set active subtitle
+      if (subEl) subEl.textContent = 'FinFlow will alert you even when the dashboard tab is running in the background.';
+      // If button exists
+      if (btnEl) {
+        // Set active button text
+        btnEl.textContent = '✓ Alerts Active';
+        // Disable button
+        btnEl.disabled = true;
+        // Reduce opacity
+        btnEl.style.opacity = '0.75';
+        // Default cursor
+        btnEl.style.cursor = 'default';
+      // End button check
+      }
+    // Check if browser permission was denied
     } else if (perm === 'denied') {
-      // Set badge text to blocked
-      badge.textContent = 'Blocked';
-      // Set badge background to red
-      badge.style.background = 'rgba(239, 68, 68, 0.2)';
-      // Set text color to red
-      badge.style.color = '#ef4444';
-    // Else permission is default/prompt
+      // Set blocked title
+      if (titleEl) titleEl.textContent = 'Reminder Alerts: Blocked';
+      // Set blocked subtitle
+      if (subEl) subEl.textContent = 'Notifications are blocked in your browser settings. You can re-enable them in site permissions.';
+      // If button exists
+      if (btnEl) {
+        // Set blocked button text
+        btnEl.textContent = 'Permission Blocked';
+        // Disable button
+        btnEl.disabled = true;
+        // Reduce opacity
+        btnEl.style.opacity = '0.75';
+        // Default cursor
+        btnEl.style.cursor = 'default';
+      // End button check
+      }
+    // Otherwise permission is default or prompt
     } else {
-      // Set badge text to not enabled
-      badge.textContent = 'Not Enabled';
-      // Set badge background to amber
-      badge.style.background = 'rgba(245, 158, 11, 0.2)';
-      // Set text color to amber
-      badge.style.color = '#f59e0b';
-    // End status checks
+      // Set inactive title
+      if (titleEl) titleEl.textContent = 'Reminder Alerts: Inactive';
+      // Set prompt subtitle
+      if (subEl) subEl.textContent = 'Enable notifications so FinFlow alerts you when scheduled routines are due.';
+      // If button exists
+      if (btnEl) {
+        // Set enable button text
+        btnEl.textContent = 'Enable Notifications';
+        // Enable button
+        btnEl.disabled = false;
+        // Full opacity
+        btnEl.style.opacity = '1';
+        // Pointer cursor
+        btnEl.style.cursor = 'pointer';
+      // End button check
+      }
+    // End permission conditions
     }
   // End updateRoutineNotificationBadge
   }
 
   /**
-   * Prompts user for browser notification permission.
+   * Prompts user for notification permission on mobile device or desktop browser.
    */
   async function requestRoutineNotificationPermission() {
-    // Check if Notification API is available in browser
+    // Reference Capacitor global object
+    const capacitor = window.Capacitor;
+    // Check if running in mobile environment with Capacitor LocalNotifications
+    if (capacitor && capacitor.Plugins && capacitor.Plugins.LocalNotifications) {
+      // Destructure LocalNotifications plugin
+      const { LocalNotifications } = capacitor.Plugins;
+      // Wrap native request in try-catch
+      try {
+        // Prompt user with native Android permission modal
+        const permStatus = await LocalNotifications.requestPermissions();
+        // Check if user accepted permission
+        if (permStatus.display === 'granted') {
+          // Play audio confirmation chime
+          playRoutineChime();
+          // Schedule routine reminders on device
+          await scheduleRoutineReminders();
+          // Alert user that native mobile reminders are activated
+          alert('Mobile notifications enabled! FinFlow will alert you at your scheduled routine times.');
+          // Update status badge banner
+          updateRoutineNotificationBadge();
+          // Exit function
+          return;
+        // User denied permission
+        } else {
+          // Alert user that permission is needed
+          alert('Notification permission was not granted. You can enable alerts in your device Settings > Apps > FinFlow.');
+          // Update status badge banner
+          updateRoutineNotificationBadge();
+          // Exit function
+          return;
+        // End permission status check
+        }
+      // Handle native request errors
+      } catch (err) {
+        // Log native error
+        console.warn('Native mobile notification request failed:', err);
+      // End try catch block
+      }
+    // End Capacitor check
+    }
+
+    // Check if HTML5 Notification API is available in browser
     if (!('Notification' in window)) {
-      // Alert user that browser lacks notification API
-      alert('Browser notifications are not supported on this device/browser. FinFlow in-app chime reminders will still alert you when the app is open!');
-      // Update badge
+      // Play audio chime to show that in-app audio works
+      playRoutineChime();
+      // Friendly alert informing user that in-app chime reminders are ready
+      alert('FinFlow In-App Reminders are Active! When FinFlow is open, it will play an audible chime and banner alert at your routine times.');
+      // Update UI banner
       updateRoutineNotificationBadge();
       // Exit function
       return;
-    // End API check
+    // End Notification in window check
     }
-    // Check if already granted
+
+    // Check if browser permission is already granted
     if (Notification.permission === 'granted') {
       // Play chime confirmation
       playRoutineChime();
       // Show confirmation alert
-      alert('Notifications are already enabled! Finflow will send reminders when routine alarms are due.');
-      // Update badge
+      alert('Notifications are already enabled! FinFlow will send reminders when routine alarms are due.');
+      // Update banner
       updateRoutineNotificationBadge();
       // Exit function
       return;
     // End granted check
     }
-    // Request permission from user
+
+    // Request browser notification permission
     try {
       // Prompt user for notification access
       const permission = await Notification.requestPermission();
@@ -1563,10 +1713,10 @@
         // Play audio chime test
         playRoutineChime();
         // Show test notification
-        new Notification('Finflow Daily Routines Active ⏰', {
-          // Body text
-          body: 'Notifications enabled! Finflow will remind you when your daily financial habits are due.',
-          // Icon path
+        new Notification('FinFlow Daily Routines Active ⏰', {
+          // Notification body text
+          body: 'Notifications enabled! FinFlow will remind you when your daily financial habits are due.',
+          // App icon path
           icon: 'logo.png'
         // End Notification constructor
         });
@@ -1580,7 +1730,7 @@
     } catch (err) {
       // Log permission error
       console.warn('Error requesting notification permission:', err);
-    // End try catch
+    // End try catch block
     }
   // End requestRoutineNotificationPermission
   }

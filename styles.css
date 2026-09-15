@@ -2442,6 +2442,78 @@ header {
 /* End customer avatar */
 }
 
+/* Routine Scheduling Form Grid Container */
+.routine-form-grid {
+  /* Grid display layout */
+  display: grid;
+  /* 4 columns on desktop: title takes 2fr, time takes 1.2fr, category takes 1.2fr, button takes auto */
+  grid-template-columns: 2fr 1.2fr 1.2fr auto;
+  /* Spacing gap between form inputs */
+  gap: 12px;
+  /* Align inputs and button to bottom edge */
+  align-items: flex-end;
+  /* Span full available width */
+  width: 100%;
+/* End routine-form-grid */
+}
+
+/* Routine Form Mobile Responsive Breakpoint */
+@media (max-width: 768px) {
+  /* Routine form layout on mobile and small tablet screens */
+  .routine-form-grid {
+    /* Two column grid on mobile screens */
+    grid-template-columns: 1fr 1fr;
+    /* Consistent spacing gap between form elements */
+    gap: 12px;
+    /* Stretch items to fill column width */
+    align-items: stretch;
+  /* End responsive routine-form-grid */
+  }
+
+  /* Routine title input group spans full width */
+  .routine-form-grid .routine-input-title {
+    /* Span across all 2 columns */
+    grid-column: 1 / -1;
+    /* Full width of container */
+    width: 100%;
+  /* End routine-input-title */
+  }
+
+  /* Reminder time input group occupies first column */
+  .routine-form-grid .routine-input-time {
+    /* Span first column */
+    grid-column: 1 / 2;
+    /* Full width of column */
+    width: 100%;
+  /* End routine-input-time */
+  }
+
+  /* Category dropdown input group occupies second column */
+  .routine-form-grid .routine-input-category {
+    /* Span second column */
+    grid-column: 2 / 3;
+    /* Full width of column */
+    width: 100%;
+  /* End routine-input-category */
+  }
+
+  /* Add Routine submit button spans full width */
+  .routine-form-grid .routine-submit-btn {
+    /* Span across all 2 columns */
+    grid-column: 1 / -1;
+    /* Full width of container */
+    width: 100%;
+    /* Mobile-optimized tap target height */
+    height: 44px;
+    /* Center align button text and icon */
+    justify-content: center;
+    /* Subtle top separation margin */
+    margin-top: 4px;
+  /* End routine-submit-btn */
+  }
+/* End routine form mobile responsive query */
+}
+
 /* Daily Routine Item Card */
 .routine-card {
   /* Relative layout */
