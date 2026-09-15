@@ -1852,7 +1852,7 @@
         emptyLi.innerHTML = `
           <div style="font-size: 1.8rem; margin-bottom: 8px;">⏰</div>
           <div style="font-weight: 600; color: var(--text-main); margin-bottom: 4px;">No daily routines found</div>
-          <div>Add your first routine above or pick a quick preset to build disciplined money habits!</div>
+          <div>Add your first routine above to build disciplined money habits!</div>
         `;
         // Append empty card to list
         listElement.appendChild(emptyLi);
@@ -1942,12 +1942,18 @@
             // Remove hover styling on mouse leave
             deleteBtn.addEventListener('mouseleave', () => deleteBtn.style.background = 'transparent');
             // Attach click listener
-            deleteBtn.addEventListener('click', () => {
+            deleteBtn.addEventListener('click', (e) => {
+              // Prevent default click behavior
+              e.preventDefault();
+              // Prevent event bubbling to parent containers
+              e.stopPropagation();
               // Ask user for confirmation
               if (confirm(`Are you sure you want to delete the daily routine "${routine.title}"?`)) {
-                // Remove routine from store
-                store.deleteRoutine(routine.id);
-                // Re-render routines view
+                // Remove routine from store using routine ID or matching title
+                store.deleteRoutine(routine.id || deleteBtn.getAttribute('data-id'));
+                // Immediately remove the list item element from the DOM for instant visual feedback
+                li.remove();
+                // Re-render routines view to update stats and empty states
                 renderRoutines();
                 // Reschedule mobile alarms
                 scheduleRoutineReminders();

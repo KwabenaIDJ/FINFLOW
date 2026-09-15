@@ -913,8 +913,20 @@
               updated_at: profilePayload.updated_at
             // Filter by current user ID
             }).eq('id', userId);
-          // End try-catch
-          } catch(e) {}
+          // Catch and handle schema constraint failure
+          } catch(e) {
+            // Attempt fallback update omitting routines in case column does not exist
+            try {
+              // Create fallback payload without routines
+              const fallbackWithoutRoutines = { ...profilePayload };
+              // Remove routines key
+              delete fallbackWithoutRoutines.routines;
+              // Upsert basic profile
+              await client.from('profiles').upsert(fallbackWithoutRoutines);
+            // Ignore secondary fallback errors
+            } catch(e2) {}
+          // End inner catch
+          }
         // End error check
         }
 
@@ -1097,11 +1109,17 @@
             // Assign free export count to local settings
             this.data.settings.freePdfExportsUsed = profile.free_pdf_exports_used;
           }
-          // Verify if cloud profile contains synced daily routines array
-          if (profile.routines && Array.isArray(profile.routines) && profile.routines.length > 0) {
-            // Pull cloud routines to local store
-            this.data.routines = profile.routines;
-          // End cloud routines check
+          // Calculate elapsed time since this device locally edited routines
+          const elapsedRoutines = Date.now() - (this._lastLocalRoutinesUpdate || 0);
+          // Protect local routines from being overwritten by stale cloud state for 10 seconds
+          if (elapsedRoutines > 10000) {
+            // Verify if cloud profile contains synced daily routines array
+            if (profile.routines !== undefined && Array.isArray(profile.routines)) {
+              // Pull cloud routines to local store (including empty array when routines are deleted)
+              this.data.routines = profile.routines;
+            // End cloud routines check
+            }
+          // End elapsedRoutines check
           }
         }
 
@@ -1921,6 +1939,8 @@
     addRoutine({ title, time, category = 'General' }) {
       // Push current state snapshot for undo support
       this.pushState();
+      // Record timestamp of local routines update to prevent stale cloud sync overwrite
+      this._lastLocalRoutinesUpdate = Date.now();
       // Ensure routines array exists
       if (!this.data.routines) this.data.routines = [];
       // Construct new routine object
@@ -1958,6 +1978,8 @@
     toggleRoutine(routineId) {
       // Push state snapshot for undo support
       this.pushState();
+      // Record timestamp of local routines update to prevent stale cloud sync overwrite
+      this._lastLocalRoutinesUpdate = Date.now();
       // Ensure routines array exists
       if (!this.data.routines) this.data.routines = [];
       // Find matching routine
@@ -1982,6 +2004,8 @@
     toggleRoutineCompleted(routineId) {
       // Push state snapshot for undo support
       this.pushState();
+      // Record timestamp of local routines update to prevent stale cloud sync overwrite
+      this._lastLocalRoutinesUpdate = Date.now();
       // Ensure routines array exists
       if (!this.data.routines) this.data.routines = [];
       // Find matching routine
@@ -2012,10 +2036,26 @@
     deleteRoutine(routineId) {
       // Push state snapshot for undo support
       this.pushState();
+      // Record timestamp of local routines update to prevent stale cloud sync overwrite
+      this._lastLocalRoutinesUpdate = Date.now();
       // Ensure routines array exists
       if (!this.data.routines) this.data.routines = [];
-      // Filter out targeted routine
-      this.data.routines = this.data.routines.filter(r => r.id !== routineId);
+      // Normalize target routine identifier string
+      const targetId = String(routineId || '').trim();
+      // Filter out targeted routine by strict ID, string ID, or fallback title match
+      this.data.routines = this.data.routines.filter(r => {
+        // Discard invalid routine entries
+        if (!r) return false;
+        // Check strict ID match
+        if (r.id === routineId) return false;
+        // Check stringified ID match
+        if (targetId && String(r.id) === targetId) return false;
+        // Check title match fallback
+        if (targetId && r.title && r.title.trim() === targetId) return false;
+        // Preserve routine in array
+        return true;
+      // End filter callback
+      });
       // Save updated state
       this.save();
     },
