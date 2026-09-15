@@ -1159,27 +1159,50 @@
     const store = window.AppStore;
     const settings = store.getSettings();
     
-    // Set setting inputs value matches
-    elements.settingsUserName.value = settings.userName;
-    if (elements.settingsSavingsGoal) {
+    // Set setting display name input value only if user is not actively typing in it
+    if (elements.settingsUserName && document.activeElement !== elements.settingsUserName) {
+      // Populate user name from active settings
+      elements.settingsUserName.value = settings.userName;
+    // End activeElement guard for settingsUserName
+    }
+    // Set savings goal input value only if user is not actively focused on it
+    if (elements.settingsSavingsGoal && document.activeElement !== elements.settingsSavingsGoal) {
+      // Convert and set rounded savings goal amount
       elements.settingsSavingsGoal.value = Math.round(convertCurrencyAmount(settings.monthlySavingsGoal || 0, settings.currency, 'GH₵'));
+    // End activeElement guard for settingsSavingsGoal
     }
-    if (elements.settingsGeminiApiKey) {
+    // Set Gemini API key input value only if user is not actively typing in it
+    if (elements.settingsGeminiApiKey && document.activeElement !== elements.settingsGeminiApiKey) {
+      // Populate Gemini API key
       elements.settingsGeminiApiKey.value = settings.geminiApiKey || '';
+    // End activeElement guard for settingsGeminiApiKey
     }
+    // Record current active currency in dataset cache
     elements.settingsCurrency.dataset.lastVal = settings.currency || 'GH₵';
 
-    // Check if currency configuration maps to pre-defined dropdown symbols
-    const hasCurrencyOption = Array.from(elements.settingsCurrency.options).some(opt => opt.value === settings.currency);
-    if (hasCurrencyOption) {
-      elements.settingsCurrency.value = settings.currency;
-      elements.settingsCustomCurrencyGroup.style.display = 'none';
-      elements.settingsCustomCurrency.value = '';
-    } else {
-      // Toggle custom currency text display option
-      elements.settingsCurrency.value = 'custom';
-      elements.settingsCustomCurrencyGroup.style.display = 'flex';
-      elements.settingsCustomCurrency.value = settings.currency;
+    // Guard currency dropdown and custom input from being clobbered if user is actively interacting with them
+    if (document.activeElement !== elements.settingsCurrency && document.activeElement !== elements.settingsCustomCurrency) {
+      // Check if currency configuration maps to pre-defined dropdown symbols
+      const hasCurrencyOption = Array.from(elements.settingsCurrency.options).some(opt => opt.value === settings.currency);
+      // If currency matches an existing option
+      if (hasCurrencyOption) {
+        // Set dropdown value
+        elements.settingsCurrency.value = settings.currency;
+        // Hide custom currency input group
+        elements.settingsCustomCurrencyGroup.style.display = 'none';
+        // Clear custom currency input
+        elements.settingsCustomCurrency.value = '';
+      // If currency is a custom symbol or code
+      } else {
+        // Toggle custom currency text display option
+        elements.settingsCurrency.value = 'custom';
+        // Display custom currency input group
+        elements.settingsCustomCurrencyGroup.style.display = 'flex';
+        // Populate custom currency input value
+        elements.settingsCustomCurrency.value = settings.currency;
+      // End custom currency check
+      }
+    // End activeElement guard for currency
     }
 
     // Update circular profile avatars text contents or backgrounds
@@ -6109,71 +6132,191 @@ Ask me specific financial questions like:
 
     // 10. Settings Currency selection dropdown update listener
     const refreshFxCalibration = () => {
+      // Retrieve active currency value from dropdown
       let activeCurr = elements.settingsCurrency.value;
+      // If custom option selected, pull value from custom input
       if (activeCurr === 'custom' && elements.settingsCustomCurrency) {
+        // Read custom input value trimmed
         activeCurr = elements.settingsCustomCurrency.value.trim();
+      // End custom check
       }
       
       // Dynamic conversion of monthlySavingsGoal input value if field exists
       const oldCurr = elements.settingsCurrency.dataset.lastVal || 'GH₵';
+      // Check if savings goal input element exists
       if (elements.settingsSavingsGoal) {
+        // Parse current savings goal numeric value
         const currentVal = parseFloat(elements.settingsSavingsGoal.value) || 0;
+        // If currency changed and values are valid
         if (oldCurr !== activeCurr && activeCurr && !isNaN(currentVal)) {
+          // Calculate converted savings goal amount
           const converted = convertCurrencyAmount(currentVal, activeCurr, oldCurr);
+          // Update savings goal input value
           elements.settingsSavingsGoal.value = Math.round(converted);
+          // Cache current currency in dataset
           elements.settingsCurrency.dataset.lastVal = activeCurr;
+        // End conversion check
         }
+      // If savings goal element is missing
       } else {
+        // Update dataset cache directly
         elements.settingsCurrency.dataset.lastVal = activeCurr;
+      // End savings goal check
       }
     };
 
+    // Preferred currency dropdown change listener
     elements.settingsCurrency.addEventListener('change', (e) => {
-      if (e.target.value === 'custom') {
+      // Read newly selected currency value
+      const selectedVal = e.target.value;
+      // Check if user selected custom currency option
+      if (selectedVal === 'custom') {
+        // Show custom currency input group
         elements.settingsCustomCurrencyGroup.style.display = 'flex';
+        // Focus the custom currency text input
         elements.settingsCustomCurrency.focus();
+      // If user selected a standard predefined currency
       } else {
+        // Hide custom currency input group
         elements.settingsCustomCurrencyGroup.style.display = 'none';
+        // Instantly persist selected currency to AppStore and cloud
+        if (selectedVal && window.AppStore) {
+          // Update store settings with new currency
+          window.AppStore.updateSettings({ currency: selectedVal });
+          // Synchronize entire UI so KPI balances, tables, and headers reflect new currency immediately
+          if (typeof syncUI === 'function') syncUI();
+        // End AppStore check
+        }
+      // End custom check
       }
+      // Recalculate savings goal conversion
       refreshFxCalibration();
     });
 
+    // Check if custom currency input element exists
     if (elements.settingsCustomCurrency) {
-      elements.settingsCustomCurrency.addEventListener('blur', refreshFxCalibration);
+      // Custom currency change listener
+      elements.settingsCustomCurrency.addEventListener('change', () => {
+        // Read trimmed custom currency string
+        const val = elements.settingsCustomCurrency.value.trim();
+        // Check if value is valid and dropdown is set to custom
+        if (val && window.AppStore && elements.settingsCurrency.value === 'custom') {
+          // Update store settings with custom currency
+          window.AppStore.updateSettings({ currency: val });
+          // Redraw UI to reflect custom currency
+          if (typeof syncUI === 'function') syncUI();
+        // End custom validation
+        }
+      });
+      // Custom currency blur listener
+      elements.settingsCustomCurrency.addEventListener('blur', () => {
+        // Read trimmed custom currency string
+        const val = elements.settingsCustomCurrency.value.trim();
+        // Check if value is valid and dropdown is set to custom
+        if (val && window.AppStore && elements.settingsCurrency.value === 'custom') {
+          // Update store settings with custom currency
+          window.AppStore.updateSettings({ currency: val });
+          // Redraw UI to reflect custom currency
+          if (typeof syncUI === 'function') syncUI();
+        // End custom validation
+        }
+        // Recalculate savings goal conversion
+        refreshFxCalibration();
+      });
+    }
+
+    // Check if profile display name input exists
+    if (elements.settingsUserName) {
+      // Auto-save user display name when user finishes typing and leaves the field
+      elements.settingsUserName.addEventListener('blur', () => {
+        // Read trimmed new name
+        const newName = elements.settingsUserName.value.trim();
+        // Verify valid non-empty string and AppStore availability
+        if (newName && window.AppStore) {
+          // Retrieve current settings
+          const currentSettings = window.AppStore.getSettings();
+          // If name has actually changed from current store value
+          if (currentSettings.userName !== newName) {
+            // Update store settings with new display name
+            window.AppStore.updateSettings({ userName: newName });
+            // Refresh UI to update avatars, greetings, and sidebars immediately
+            if (typeof syncUI === 'function') syncUI();
+          // End name change check
+          }
+        // End newName check
+        }
+      });
+      // Also allow pressing Enter inside display name input to immediately save
+      elements.settingsUserName.addEventListener('keydown', (e) => {
+        // Check for Enter key press
+        if (e.key === 'Enter') {
+          // Blur input to trigger blur save handler
+          elements.settingsUserName.blur();
+        // End Enter key check
+        }
+      });
     }
 
     // 11. Submit settings profile edits
     elements.settingsForm.addEventListener('submit', (e) => {
+      // Prevent default browser form submission
       e.preventDefault();
+      // Read display name input value
       const userName = elements.settingsUserName.value;
+      // Read preferred currency selection
       let currency = elements.settingsCurrency.value;
       
+      // If custom currency chosen, validate and read custom symbol
       if (currency === 'custom') {
+        // Read trimmed custom input
         currency = elements.settingsCustomCurrency.value.trim();
+        // Validate custom currency is non-empty
         if (!currency) {
+          // Alert user to enter custom currency
           alert('Please enter a custom currency symbol or code.');
+          // Abort form submission
           return;
+        // End custom currency check
         }
+      // End custom currency check
       }
       
+      // Read paystack public key value
       const paystackKey = elements.settingsPaystackKey ? elements.settingsPaystackKey.value.trim() : '';
+      // Read Gemini API key value
       const geminiApiKey = elements.settingsGeminiApiKey ? elements.settingsGeminiApiKey.value.trim() : '';
 
+      // Validate user display name is non-empty
       if (!userName.trim()) {
+        // Alert user of required name
         alert('Name cannot be empty.');
+        // Abort submission
         return;
+      // End userName empty check
       }
 
+      // Retrieve current settings
       const settings = window.AppStore.getSettings();
+      // Read current monthly savings goal
       let monthlySavingsGoal = settings ? (settings.monthlySavingsGoal || 0) : 0;
+      // Check if savings goal element exists
       if (elements.settingsSavingsGoal) {
+        // Parse float savings goal value
         const monthlySavingsGoalRaw = parseFloat(elements.settingsSavingsGoal.value);
+        // If parsed value is valid positive number
         if (!isNaN(monthlySavingsGoalRaw) && monthlySavingsGoalRaw >= 0) {
+          // Convert savings goal to active currency
           monthlySavingsGoal = convertCurrencyAmount(monthlySavingsGoalRaw, 'GH₵', currency);
+        // End valid number check
         }
+      // End savings goal check
       }
 
-      window.AppStore.updateSettings({ userName, currency, monthlySavingsGoal, paystackKey });
+      // Update store settings with new profile configuration
+      window.AppStore.updateSettings({ userName, currency, monthlySavingsGoal, paystackKey, geminiApiKey });
+      // Redraw all UI views to reflect updated profile immediately
+      if (typeof syncUI === 'function') syncUI();
+      // Show success alert
       alert('Settings updated successfully!');
     });
 
@@ -7698,6 +7841,18 @@ Ask me specific financial questions like:
       // Abort background cloud sync to prevent overwriting fresh local image
       return;
     // End isSelectingAvatar guard check
+    }
+    // Check if user is currently typing or interacting with settings inputs to avoid input clobbering
+    if (document.activeElement && (
+      document.activeElement === elements.settingsUserName ||
+      document.activeElement === elements.settingsCurrency ||
+      document.activeElement === elements.settingsCustomCurrency ||
+      document.activeElement === elements.settingsSavingsGoal ||
+      document.activeElement === elements.settingsGeminiApiKey
+    )) {
+      // Abort background sync while user is editing settings
+      return;
+    // End activeElement guard check
     }
     // Verify that AppStore is available and user session is active
     if (window.AppStore && window.AppStore.isLoggedIn()) {

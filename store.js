@@ -66,12 +66,20 @@
           if (payload && payload.new && payload.new.id === userId) {
             // Calculate elapsed time since this specific device last modified the avatar
             const elapsed = Date.now() - (window.AppStore?._lastLocalAvatarUpdate || 0);
+            // Calculate elapsed time since this device locally edited the profile name or currency
+            const elapsedProfile = Date.now() - (window.AppStore?._lastLocalProfileUpdate || 0);
             // If another device initiated the change (not locally updated in the last 6 seconds)
             if (elapsed > 6000 && window.AppStore) {
               // Retrieve existing settings object from the store
               const currentSettings = window.AppStore.getSettings();
               // Immediately update profile picture from incoming cloud payload (clearing if empty)
               currentSettings.profilePic = payload.new.profile_pic || '';
+            // End avatar update block
+            }
+            // If another device initiated profile edits (not locally updated in the last 6 seconds)
+            if (elapsedProfile > 6000 && window.AppStore) {
+              // Retrieve existing settings object from the store
+              const currentSettings = window.AppStore.getSettings();
               // Update display name if provided in cloud payload
               if (payload.new.user_name) currentSettings.userName = payload.new.user_name;
               // Update currency symbol if provided in cloud payload
@@ -84,8 +92,10 @@
             }
           // End payload user verification
           }
-          // Perform full cloud fetch to ensure ledger state consistency
-          if (window.AppStore && typeof window.AppStore.syncFromCloud === 'function') {
+          // Check elapsed time to ensure local updates are not clobbered by in-flight cloud syncs
+          const elapsedLocalSync = Date.now() - (window.AppStore?._lastLocalProfileUpdate || 0);
+          // Perform full cloud fetch only if not recently updated locally
+          if (elapsedLocalSync > 6000 && window.AppStore && typeof window.AppStore.syncFromCloud === 'function') {
             // Await full cloud fetch promise
             window.AppStore.syncFromCloud().then(() => {
               // Refresh user interface
@@ -1034,9 +1044,18 @@
         // Fetch Profile from Supabase database
         const { data: profile } = await client.from('profiles').select('*').eq('id', userId).single();
         if (profile) {
-          this.data.settings.userName = profile.user_name || this.data.settings.userName;
-          this.data.settings.currency = profile.currency || this.data.settings.currency;
-          this.data.settings.monthlySavingsGoal = profile.monthly_savings_goal || this.data.settings.monthlySavingsGoal;
+          // Calculate elapsed time since this device locally edited profile settings
+          const elapsedProfile = Date.now() - (this._lastLocalProfileUpdate || 0);
+          // Only overwrite local profile name and currency if this device hasn't edited them in the last 6 seconds
+          if (elapsedProfile > 6000) {
+            // Update user name from cloud profile or preserve current
+            this.data.settings.userName = profile.user_name || this.data.settings.userName;
+            // Update currency from cloud profile or preserve current
+            this.data.settings.currency = profile.currency || this.data.settings.currency;
+            // Update monthly savings goal from cloud profile or preserve current
+            this.data.settings.monthlySavingsGoal = profile.monthly_savings_goal || this.data.settings.monthlySavingsGoal;
+          // End elapsedProfile check
+          }
           
           // Preserve paid Premium status so cloud sync never downgrades a paid member to standard
           const isPaidLocally = this.data.settings.isPremium === true || localStorage.getItem('FINFLOW_PREMIUM_ACTIVE') === 'true';
@@ -1690,6 +1709,8 @@
      * Updates the user profile settings (name, currency, savings goal).
      */
     updateSettings(newSettings) {
+      // Record timestamp of local profile update to protect from stale cloud polling overwrites
+      this._lastLocalProfileUpdate = Date.now();
       // Check if incoming payload contains a profile picture property
       if (newSettings && newSettings.profilePic !== undefined) {
         // Record current epoch timestamp to protect fresh avatar from stale cloud fetches
@@ -1700,6 +1721,36 @@
       this.pushState();
       // Merge current setting parameters with the incoming properties
       this.data.settings = { ...this.data.settings, ...newSettings };
+      // Check if user display name was updated in incoming parameters
+      if (newSettings && newSettings.userName) {
+        // Retrieve current active user session key
+        const currentUser = localStorage.getItem(SESSION_KEY);
+        // Check if user session exists in local storage
+        if (currentUser) {
+          // Safe try-catch block for registry modifications
+          try {
+            // Parse users registry from local storage
+            const registry = JSON.parse(localStorage.getItem(USERS_REGISTRY_KEY) || '{}');
+            // Check if active user has accounts registered
+            if (registry[currentUser] && Array.isArray(registry[currentUser].accounts)) {
+              // Find personal profile account descriptor
+              const personalAcc = registry[currentUser].accounts.find(a => a.id === 'personal' || a.type === 'personal');
+              // If personal account entry exists
+              if (personalAcc) {
+                // Update personal account name to reflect new user display name
+                personalAcc.name = `${newSettings.userName.trim()} (Personal)`;
+                // Persist updated registry back to local storage
+                localStorage.setItem(USERS_REGISTRY_KEY, JSON.stringify(registry));
+              // End personalAcc check
+              }
+            // End accounts check
+            }
+          // Catch registry parse or storage errors safely
+          } catch (e) {}
+        // End currentUser check
+        }
+      // End userName check
+      }
       // Save settings changes
       this.save();
     },
