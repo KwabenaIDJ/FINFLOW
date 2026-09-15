@@ -397,13 +397,13 @@
     // Store reference to add routine form element
     elements.addRoutineForm = document.getElementById('addRoutineForm');
     // Store reference to routine title text input element
-    elements.routineTitleInput = document.getElementById('routineTitleInput');
+    elements.routineTitleInput = document.getElementById('newRoutineTitle') || document.getElementById('routineTitleInput');
     // Store reference to routine time input picker element
-    elements.routineTimeInput = document.getElementById('routineTimeInput');
+    elements.routineTimeInput = document.getElementById('newRoutineTime') || document.getElementById('routineTimeInput');
     // Store reference to routine category select dropdown
-    elements.routineCategorySelect = document.getElementById('routineCategorySelect');
+    elements.routineCategorySelect = document.getElementById('newRoutineCategory') || document.getElementById('routineCategorySelect');
     // Store reference to routine notes text input element
-    elements.routineNotesInput = document.getElementById('routineNotesInput');
+    elements.routineNotesInput = document.getElementById('newRoutineNotes') || document.getElementById('routineNotesInput');
     // Store reference to routine scheduled list UL container element
     elements.routinesList = document.getElementById('routinesList');
     // Store reference to today's routines quick-view list container in dashboard
@@ -1896,7 +1896,7 @@
                 ${isActive ? '🔔 On' : '🔕 Paused'}
               </button>
               <button type="button" class="btn-delete-routine" data-id="${routine.id}" style="background: transparent; border: none; cursor: pointer; display: flex; align-items: center; justify-content: center; padding: 6px; border-radius: 4px; color: var(--color-danger); transition: all 0.2s ease;" title="Delete routine">
-                <svg style="width: 15px; height: 15px; fill: none; stroke: currentColor; stroke-width: 2.2;"><use href="#icon-trash"></use></svg>
+                <svg style="width: 16px; height: 16px; fill: none; stroke: var(--color-danger); stroke-width: 2.2; pointer-events: none;"><use href="#icon-trash"></use></svg>
               </button>
             </div>
           `;
@@ -7795,25 +7795,36 @@ Ask me specific financial questions like:
       elements.addRoutineForm.addEventListener('submit', (e) => {
         // Prevent default browser form submission
         e.preventDefault();
-        // Read trimmed routine title
-        const title = elements.routineTitleInput ? elements.routineTitleInput.value.trim() : '';
-        // Read scheduled time string
-        const time = elements.routineTimeInput ? elements.routineTimeInput.value : '';
-        // Read selected category
-        const category = elements.routineCategorySelect ? elements.routineCategorySelect.value : 'General';
-        // Read optional notes
-        const notes = elements.routineNotesInput ? elements.routineNotesInput.value.trim() : '';
+        // Resolve form container element reference
+        const form = e.currentTarget || elements.addRoutineForm;
+        // Resolve routine title input element safely
+        const titleEl = elements.routineTitleInput || document.getElementById('newRoutineTitle') || document.getElementById('routineTitleInput') || (form ? form.querySelector('input[type="text"]') : null);
+        // Resolve routine time input element safely
+        const timeEl = elements.routineTimeInput || document.getElementById('newRoutineTime') || document.getElementById('routineTimeInput') || (form ? form.querySelector('input[type="time"]') : null);
+        // Resolve category select dropdown element safely
+        const catEl = elements.routineCategorySelect || document.getElementById('newRoutineCategory') || document.getElementById('routineCategorySelect') || (form ? form.querySelector('select') : null);
+        // Resolve routine notes input element safely
+        const notesEl = elements.routineNotesInput || document.getElementById('newRoutineNotes') || document.getElementById('routineNotesInput') || (form ? form.querySelector('#newRoutineNotes, #routineNotesInput') : null);
 
-        // Validate title and time presence
+        // Read trimmed routine title string
+        const title = titleEl ? titleEl.value.trim() : '';
+        // Read scheduled reminder time string
+        const time = timeEl ? timeEl.value.trim() : '';
+        // Read selected routine category string
+        const category = catEl ? catEl.value : 'General';
+        // Read optional routine notes string
+        const notes = notesEl ? notesEl.value.trim() : '';
+
+        // Validate title and reminder time presence
         if (!title || !time) {
           // Alert user of missing fields
           alert('Please provide both a routine title and a scheduled reminder time.');
-          // Exit handler
+          // Exit submit handler early
           return;
         // End validation check
         }
 
-        // Add new routine to store
+        // Add new routine to application data store
         window.AppStore.addRoutine({
           // Routine title
           title: title,
@@ -7828,20 +7839,24 @@ Ask me specific financial questions like:
         // End routine object
         });
 
-        // Reset form input values
-        elements.addRoutineForm.reset();
-        // Re-render routines list and stats
+        // Reset add routine form input fields
+        form.reset();
+        // If title input exists, clear its value explicitly
+        if (titleEl) titleEl.value = '';
+        // If time input exists, clear its value explicitly
+        if (timeEl) timeEl.value = '';
+        // Re-render routines list checklist and stats
         renderRoutines();
-        // Schedule mobile alarms
+        // Schedule mobile and local notifications
         scheduleRoutineReminders();
 
         // If browser notification permission is not yet decided, prompt user
         if ('Notification' in window && Notification.permission === 'default') {
-          // Ask for browser notification permission
+          // Request browser notification permission
           requestRoutineNotificationPermission();
         // End permission prompt check
         }
-      // End submit listener
+      // End submit event listener
       });
     // End addRoutineForm check
     }
@@ -7851,30 +7866,39 @@ Ask me specific financial questions like:
       // Attach click listener to each preset pill button
       btn.addEventListener('click', (e) => {
         // Read preset data attributes
-        const title = e.currentTarget.getAttribute('data-title');
-        // Read preset time
-        const time = e.currentTarget.getAttribute('data-time');
-        // Read preset category
-        const category = e.currentTarget.getAttribute('data-category') || 'General';
-        // Read preset note
+        const title = e.currentTarget.getAttribute('data-title') || '';
+        // Read preset time attribute
+        const time = e.currentTarget.getAttribute('data-time') || '';
+        // Read preset category attribute
+        const category = e.currentTarget.getAttribute('data-cat') || e.currentTarget.getAttribute('data-category') || 'General';
+        // Read preset note attribute
         const note = e.currentTarget.getAttribute('data-note') || '';
 
-        // Pre-fill routine form fields
-        if (elements.routineTitleInput) elements.routineTitleInput.value = title;
-        // Fill time
-        if (elements.routineTimeInput) elements.routineTimeInput.value = time;
-        // Fill category
-        if (elements.routineCategorySelect) elements.routineCategorySelect.value = category;
-        // Fill notes
-        if (elements.routineNotesInput) elements.routineNotesInput.value = note;
+        // Resolve routine title input element safely
+        const titleEl = elements.routineTitleInput || document.getElementById('newRoutineTitle') || document.getElementById('routineTitleInput');
+        // Resolve routine time input element safely
+        const timeEl = elements.routineTimeInput || document.getElementById('newRoutineTime') || document.getElementById('routineTimeInput');
+        // Resolve category select dropdown element safely
+        const catEl = elements.routineCategorySelect || document.getElementById('newRoutineCategory') || document.getElementById('routineCategorySelect');
+        // Resolve routine notes input element safely
+        const notesEl = elements.routineNotesInput || document.getElementById('newRoutineNotes') || document.getElementById('routineNotesInput');
 
-        // Scroll to form and focus title
-        if (elements.routineTitleInput) {
-          // Focus input
-          elements.routineTitleInput.focus();
+        // Pre-fill routine title field
+        if (titleEl) titleEl.value = title;
+        // Pre-fill routine time picker
+        if (timeEl) timeEl.value = time;
+        // Pre-fill routine category dropdown
+        if (catEl) catEl.value = category;
+        // Pre-fill routine notes input
+        if (notesEl) notesEl.value = note;
+
+        // Focus title field for immediate user customization
+        if (titleEl) {
+          // Set focus on routine title
+          titleEl.focus();
         // End focus check
         }
-      // End preset click
+      // End preset click handler
       });
     // End preset iteration
     });

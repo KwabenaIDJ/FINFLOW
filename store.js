@@ -1872,51 +1872,23 @@
     getRoutines() {
       // Ensure routines array exists in data container
       if (!this.data.routines) {
-        // Initialize routines array if not present
+        // Initialize routines array as clean empty array if not present
         this.data.routines = [];
       // End routines initialization
       }
-      // If user has no routines recorded yet, initialize sensible default starter habits
-      if (this.data.routines.length === 0) {
-        // Populate three initial default financial routines
-        this.data.routines = [
-          // Routine 1: Morning Budget Review
-          {
-            id: 'routine_default_1',
-            title: '🌅 Morning Budget & Spending Check',
-            time: '08:00',
-            category: 'Budget Review',
-            enabled: true,
-            completedToday: false,
-            lastCompletedDate: null,
-            createdAt: new Date().toISOString()
-          },
-          // Routine 2: Midday Lunch & Transport Log
-          {
-            id: 'routine_default_2',
-            title: '🍽️ Log Lunch & Daily Transportation',
-            time: '13:30',
-            category: 'Expense Logging',
-            enabled: true,
-            completedToday: false,
-            lastCompletedDate: null,
-            createdAt: new Date().toISOString()
-          },
-          // Routine 3: Evening Ledger Check-in
-          {
-            id: 'routine_default_3',
-            title: '🌆 Evening Ledger Entry & Receipt Scan',
-            time: '20:00',
-            category: 'Ledger Check-in',
-            enabled: true,
-            completedToday: false,
-            lastCompletedDate: null,
-            createdAt: new Date().toISOString()
-          }
-        ];
-        // Silently persist defaults to storage
-        this.saveLocally(false);
-      // End default check
+      // Purge pre-scheduled default habits from storage so habits list is empty unless created by user
+      if (this.data.routines && this.data.routines.length > 0) {
+        // Check if any legacy default starter routines exist in user routines array
+        const hasDefaults = this.data.routines.some(r => r && r.id && (r.id.startsWith('routine_default_') || r.id === 'routine_1' || r.id === 'routine_2' || r.id === 'routine_3'));
+        // If legacy default habits were detected
+        if (hasDefaults) {
+          // Filter out default starter habits so routines remain clean and empty
+          this.data.routines = this.data.routines.filter(r => !r || !r.id || (!r.id.startsWith('routine_default_') && r.id !== 'routine_1' && r.id !== 'routine_2' && r.id !== 'routine_3'));
+          // Persist cleaned habits state to local storage
+          this.saveLocally(false);
+        // End hasDefaults check
+        }
+      // End routines cleanup check
       }
       // Get current local date string in YYYY-MM-DD format
       const todayDate = new Date().toISOString().split('T')[0];
@@ -1963,6 +1935,8 @@
         category: category.trim() || 'General',
         // Whether routine reminder alerts are enabled
         enabled: true,
+        // Also support active alias
+        active: true,
         // Daily completion flag for today
         completedToday: false,
         // Timestamp string of last completed date
@@ -1990,8 +1964,12 @@
       const routine = this.data.routines.find(r => r.id === routineId);
       // If routine exists
       if (routine) {
+        // Compute new status boolean
+        const newStatus = !(routine.enabled !== false && routine.active !== false);
         // Invert enabled status
-        routine.enabled = !routine.enabled;
+        routine.enabled = newStatus;
+        // Invert active status
+        routine.active = newStatus;
         // Save state changes
         this.save();
       // End routine check
