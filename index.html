@@ -1257,8 +1257,16 @@
                 <option value="Health & Personal">Health & Personal</option>
                 <!-- Option 8: General Habit -->
                 <option value="General">General Habit</option>
+                <!-- Option 9: Other / Custom user specified category -->
+                <option value="Other">Other (Specify Custom Category)...</option>
               <!-- End select -->
               </select>
+              <!-- Custom category text input group displayed when Other is chosen -->
+              <div id="newRoutineCustomCategoryGroup" style="display: none; margin-top: 6px;">
+                <!-- Custom category text input field -->
+                <input type="text" id="newRoutineCustomCategory" name="routineCustomCategory" placeholder="Type custom category (e.g. Fitness, Coding, Taxes)..." style="width: 100%; padding: 8px 12px; border-radius: var(--border-radius-sm); border: 1.5px solid var(--color-primary); background: var(--bg-primary); color: var(--text-main); font-family: inherit; font-size: 0.84rem; outline: none; box-sizing: border-box;">
+              <!-- End custom category group -->
+              </div>
             <!-- End category group -->
             </div>
           <!-- End top row -->

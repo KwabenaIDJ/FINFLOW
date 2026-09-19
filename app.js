@@ -9129,6 +9129,8 @@ Ask me specific financial questions like:
         const catEl = elements.routineCategorySelect || document.getElementById('newRoutineCategory') || document.getElementById('routineCategorySelect') || (form ? form.querySelector('select') : null);
         // Resolve routine notes input element safely
         const notesEl = elements.routineNotesInput || document.getElementById('newRoutineNotes') || document.getElementById('routineNotesInput') || (form ? form.querySelector('#newRoutineNotes, #routineNotesInput') : null);
+        // Resolve custom category input element safely
+        const customCatEl = document.getElementById('newRoutineCustomCategory') || (form ? form.querySelector('#newRoutineCustomCategory') : null);
 
         // Read trimmed routine title string
         const title = titleEl ? titleEl.value.trim() : '';
@@ -9136,8 +9138,18 @@ Ask me specific financial questions like:
         const time = timeEl ? timeEl.value.trim() : '';
         // Read optional scheduled end time string
         const endTime = endTimeEl ? endTimeEl.value.trim() : '';
-        // Read selected routine category string
-        const category = catEl ? catEl.value : 'General';
+        // Read selected routine category dropdown string
+        const rawCategory = catEl ? catEl.value : 'General';
+        // Compute final category string based on whether Other was chosen
+        let category = rawCategory;
+        // If Other was selected by user
+        if (rawCategory === 'Other') {
+          // Read user specified custom category name
+          const customCatVal = customCatEl ? customCatEl.value.trim() : '';
+          // Use custom category if provided, otherwise fallback to Other
+          category = customCatVal || 'Other';
+        // End Other check
+        }
         // Read optional routine notes string
         const notes = notesEl ? notesEl.value.trim() : '';
 
@@ -9184,6 +9196,16 @@ Ask me specific financial questions like:
         if (timeEl) timeEl.value = '';
         // If end time input exists, clear its value explicitly
         if (endTimeEl) endTimeEl.value = '';
+        // If custom category input exists, clear its value explicitly
+        if (customCatEl) customCatEl.value = '';
+        // Hide custom category group container
+        const customCatGroup = document.getElementById('newRoutineCustomCategoryGroup');
+        // If custom category group container found
+        if (customCatGroup) {
+          // Hide group container
+          customCatGroup.style.display = 'none';
+        // End customCatGroup check
+        }
         // Reset day selector chips back to everyday preset
         selectRoutineDaysPreset('everyday');
         // Re-render routines list checklist and stats
@@ -9202,6 +9224,35 @@ Ask me specific financial questions like:
       // End submit event listener
       });
     // End addRoutineForm check
+    }
+
+    // Category select change handler to toggle custom category input field
+    const catSelectEl = elements.routineCategorySelect || document.getElementById('newRoutineCategory');
+    // If category select element exists
+    if (catSelectEl) {
+      // Attach change event listener
+      catSelectEl.addEventListener('change', (e) => {
+        // Resolve custom category group element
+        const customGroup = document.getElementById('newRoutineCustomCategoryGroup');
+        // Resolve custom category input element
+        const customInput = document.getElementById('newRoutineCustomCategory');
+        // If Other option is selected
+        if (e.target.value === 'Other') {
+          // Display custom category input group
+          if (customGroup) customGroup.style.display = 'block';
+          // Automatically set focus on custom category input
+          if (customInput) customInput.focus();
+        // If predefined category is selected
+        } else {
+          // Hide custom category input group
+          if (customGroup) customGroup.style.display = 'none';
+          // Clear custom category input text
+          if (customInput) customInput.value = '';
+        // End option condition
+        }
+      // End change listener
+      });
+    // End catSelectEl check
     }
 
     // Attach change listener to day chips to toggle active class visually
