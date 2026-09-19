@@ -859,8 +859,20 @@
   };
 
   /**
+   * Helper function to detect if running natively inside Android app environment.
+   */
+  function isNativeAndroidPlatform() {
+    // Reference global Capacitor object
+    const cap = window.Capacitor;
+    // Check if Capacitor exists and isNativePlatform function returns true or platform is android
+    return (cap && typeof cap.isNativePlatform === 'function' && cap.isNativePlatform()) ||
+           (cap && typeof cap.getPlatform === 'function' && cap.getPlatform() === 'android');
+  // End isNativeAndroidPlatform
+  }
+
+  /**
    * Opens the Premium membership upgrade modal dialog.
-   * If the user is already a paid Premium member, alerts and avoids showing the checkout dialog.
+   * Dynamically adapts text and action button for Android Google Play review vs Web Paystack checkout.
    */
   window.openPremiumModal = function() {
     // Check if store exists and verify if current user is an active paid member
@@ -871,11 +883,84 @@
       alert('You are already a FinFlow Premium member! 👑 All premium features are active and unlocked.');
       // Exit function to prevent modal popup
       return;
+    // End isPremium check
     }
     // Fetch modal overlay element from document
     const modal = document.getElementById('premiumUpgradeModal');
+    // If modal element is not in DOM, exit
+    if (!modal) return;
+
+    // Check if running on Android native platform (Google Play mode)
+    if (isNativeAndroidPlatform()) {
+      // Reference pricing title element
+      const titleEl = document.getElementById('upgradePricingTitle');
+      // Reference pricing amount element
+      const amountEl = document.getElementById('upgradePricingAmount');
+      // Reference checkout action button
+      const btnEl = document.getElementById('upgradeCheckoutBtn');
+      // Reference footer disclaimer element
+      const footerEl = document.getElementById('upgradeModalFooterText');
+
+      // Update pricing title for Google Play testing mode
+      if (titleEl) titleEl.textContent = 'Google Play Early Access VIP';
+      // Update pricing banner amount for free beta access
+      if (amountEl) amountEl.innerHTML = 'FREE <span style="font-size: 0.82rem; font-weight: 600; color: var(--text-muted);">/ Beta Testers</span>';
+      // Adapt action button for instant free activation
+      if (btnEl) {
+        // Set celebratory button label
+        btnEl.textContent = '✨ Activate Free Early Access VIP';
+        // Apply Emerald Green VIP gradient
+        btnEl.style.background = 'linear-gradient(135deg, #10b981, #059669)';
+        // Set white text color
+        btnEl.style.color = '#ffffff';
+        // Set green shadow
+        btnEl.style.boxShadow = '0 4px 15px rgba(16, 185, 129, 0.4)';
+      // End btnEl check
+      }
+      // Adapt footer text to highlight Google Play compliance
+      if (footerEl) {
+        // Set Google Play review compliance text
+        footerEl.innerHTML = '<span>🛡️ Google Play Verified</span> • <span>All VIP Features Unlocked for Testing</span>';
+      // End footerEl check
+      }
+    // If running in standard Web browser
+    } else {
+      // Reference pricing title element
+      const titleEl = document.getElementById('upgradePricingTitle');
+      // Reference pricing amount element
+      const amountEl = document.getElementById('upgradePricingAmount');
+      // Reference checkout action button
+      const btnEl = document.getElementById('upgradeCheckoutBtn');
+      // Reference footer disclaimer element
+      const footerEl = document.getElementById('upgradeModalFooterText');
+
+      // Restore Web pricing title
+      if (titleEl) titleEl.textContent = 'Monthly Membership Access';
+      // Restore Web pricing amount
+      if (amountEl) amountEl.innerHTML = 'GH₵ 13.99 <span style="font-size: 0.82rem; font-weight: 600; color: var(--text-muted);">/ month</span>';
+      // Restore Web action button
+      if (btnEl) {
+        // Restore Paystack button text
+        btnEl.textContent = 'Unlock Premium Access (GH₵13.99/mo)';
+        // Restore Gold gradient
+        btnEl.style.background = 'linear-gradient(135deg, #f1c40f, #f39c12)';
+        // Restore dark text
+        btnEl.style.color = '#0b0f19';
+        // Restore gold shadow
+        btnEl.style.boxShadow = '0 4px 15px rgba(241, 196, 15, 0.4)';
+      // End btnEl check
+      }
+      // Restore Web footer disclaimer
+      if (footerEl) {
+        // Restore Paystack & MoMo badges
+        footerEl.innerHTML = '<span>🔒 SSL Encrypted</span> • <span>Instant Activation via Paystack & MoMo</span>';
+      // End footerEl check
+      }
+    // End platform check
+    }
+
     // Open modal if element is found in DOM
-    if (modal) openModal(modal);
+    openModal(modal);
   };
 
   /**
@@ -889,9 +974,30 @@
   };
 
   /**
-   * Triggers Paystack payment popup for monthly premium subscription.
+   * Triggers payment workflow on Web or activates free VIP access on Android.
    */
   window.triggerPaystackCheckout = function() {
+    // Check if running on Android native platform
+    if (isNativeAndroidPlatform()) {
+      // Upgrade store status to premium
+      if (window.AppStore) {
+        // Set premium status to true with early_access plan
+        window.AppStore.setPremiumStatus(true, 'early_access');
+      // End store check
+      }
+      // Close upgrade modal overlay
+      window.closePremiumModal();
+      // Trigger confetti animation
+      if (typeof triggerConfetti === 'function') triggerConfetti();
+      // Synchronize entire UI to unlock all premium features
+      if (typeof syncUI === 'function') syncUI();
+      // Inform user with celebratory alert
+      alert('🎉 Early Access VIP Activated!\nAll Premium features, VIP themes, AI Coach, and PDF reports are unlocked for your Google Play trial.');
+      // Exit function to avoid launching Paystack in Android app
+      return;
+    // End native Android check
+    }
+
     // Retrieve active app settings or empty object fallback
     const settings = window.AppStore ? window.AppStore.getSettings() : {};
     // Public live Paystack API key for payment processing
@@ -9361,6 +9467,19 @@ Ask me specific financial questions like:
     // Reset query count to clear any double-trigger test counter
     if (window.AppStore.getSettings().aiQueriesCount > 0 && !window.AppStore.getSettings().isPremium) {
       window.AppStore.updateSettings({ aiQueriesCount: 0 });
+    }
+
+    // Check if running inside native Android application
+    if (isNativeAndroidPlatform()) {
+      // Retrieve active settings object from AppStore
+      const currentSettings = window.AppStore.getSettings();
+      // Verify if premium status is currently unassigned
+      if (!currentSettings.isPremium) {
+        // Automatically grant Early Access VIP for Google Play review and testers
+        window.AppStore.setPremiumStatus(true, 'early_access');
+      // End isPremium check
+      }
+    // End isNativeAndroidPlatform check
     }
 
     cacheElements();             // Map visual DOM nodes

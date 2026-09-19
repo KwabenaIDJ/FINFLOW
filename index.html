@@ -1860,9 +1860,13 @@
         <!-- End form group -->
         </div>
 
+          <!-- Custom currency input container (hidden when standard currency is selected) -->
           <div class="form-group" id="customCurrencyGroup" style="display: none;">
+            <!-- Custom currency label -->
             <label for="settingsCustomCurrency">Custom Currency Symbol / Code</label>
+            <!-- Custom currency text input field -->
             <input type="text" id="settingsCustomCurrency" maxlength="8" placeholder="e.g. ₦, KSh, GH₵, or USD">
+          <!-- End custom currency container -->
           </div>
 
 
@@ -3147,10 +3151,15 @@
         <button class="modal-close-btn" onclick="window.closePremiumModal()" aria-label="Close dialog"><svg><use href="#icon-close"></use></svg></button>
       </div>
       
+      <!-- Modal inner body container -->
       <div style="padding-top: 10px; text-align: center;">
-        <div style="background: linear-gradient(135deg, rgba(241, 196, 15, 0.15), rgba(243, 156, 18, 0.2)); border: 2px solid #f1c40f; border-radius: var(--border-radius-md); padding: 12px; margin-bottom: 12px;">
-          <div style="font-size: 0.74rem; color: #f1c40f; text-transform: uppercase; font-weight: 800; letter-spacing: 0.5px; margin-bottom: 2px;">Monthly Membership Access</div>
-          <div style="font-size: 1.6rem; font-weight: 900; color: #f1c40f;">GH₵ 13.99 <span style="font-size: 0.82rem; font-weight: 600; color: var(--text-muted);">/ month</span></div>
+        <!-- Pricing & Plan banner container -->
+        <div id="upgradePricingBanner" style="background: linear-gradient(135deg, rgba(241, 196, 15, 0.15), rgba(243, 156, 18, 0.2)); border: 2px solid #f1c40f; border-radius: var(--border-radius-md); padding: 12px; margin-bottom: 12px;">
+          <!-- Membership tier sub-title -->
+          <div id="upgradePricingTitle" style="font-size: 0.74rem; color: #f1c40f; text-transform: uppercase; font-weight: 800; letter-spacing: 0.5px; margin-bottom: 2px;">Monthly Membership Access</div>
+          <!-- Pricing display element -->
+          <div id="upgradePricingAmount" style="font-size: 1.6rem; font-weight: 900; color: #f1c40f;">GH₵ 13.99 <span style="font-size: 0.82rem; font-weight: 600; color: var(--text-muted);">/ month</span></div>
+        <!-- End pricing banner -->
         </div>
 
         <!-- FEATURES COMPARISON LIST -->
@@ -3188,12 +3197,18 @@
           </ul>
         </div>
 
+        <!-- Primary action button to initiate checkout or activate Android testing VIP access -->
         <button class="btn btn-primary" id="upgradeCheckoutBtn" onclick="window.triggerPaystackCheckout()" style="width: 100%; padding: 12px; font-size: 0.95rem; font-weight: 800; background: linear-gradient(135deg, #f1c40f, #f39c12); color: #0b0f19; border: none; border-radius: var(--border-radius-sm); cursor: pointer; box-shadow: 0 4px 15px rgba(241, 196, 15, 0.4);">
+          <!-- Button label text -->
           Unlock Premium Access (GH₵13.99/mo)
+        <!-- End button -->
         </button>
 
-        <div style="margin-top: 8px; font-size: 0.72rem; color: var(--text-muted); display: flex; align-items: center; justify-content: center; gap: 6px;">
+        <!-- Footer platform badges and security disclaimer -->
+        <div id="upgradeModalFooterText" style="margin-top: 8px; font-size: 0.72rem; color: var(--text-muted); display: flex; align-items: center; justify-content: center; gap: 6px;">
+          <!-- Security badge -->
           <span>🔒 SSL Encrypted</span> • <span>Instant Activation via Paystack & MoMo</span>
+        <!-- End footer text -->
         </div>
 
         <button type="button" class="btn btn-secondary modal-close-action" onclick="window.closePremiumModal()" style="margin-top: 8px; width: 100%; border: none; background: transparent; color: var(--text-muted); font-size: 0.82rem; cursor: pointer;">
