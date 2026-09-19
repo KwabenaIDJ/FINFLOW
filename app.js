@@ -2335,12 +2335,30 @@
     // End minute reset check
     }
 
+    // Format current day of week 3-letter abbreviation
+    const dayAbbreviations = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+    // Get current 3-letter day code for today
+    const currentDay = dayAbbreviations[now.getDay()];
+
+    // Update timetable live clock display text if element exists
+    const clockEl = document.getElementById('timetableLiveClockText');
+    // If clock element exists
+    if (clockEl) {
+      // Update clock display text
+      clockEl.textContent = currentClockTime;
+    // End clockEl check
+    }
+
     // Get all user routines
     const routines = store.getRoutines();
     // Filter for routines due at this exact minute that are active and not completed today
     routines.forEach(routine => {
-      // Check if routine has active reminders, matches current time, and hasn't already fired this minute
-      if (routine.active !== false && routine.time === currentClockTime && !alertedThisMinute.has(routine.id)) {
+      // Retrieve scheduled days array or fallback to everyday
+      const rDays = Array.isArray(routine.days) && routine.days.length > 0 ? routine.days : ['everyday'];
+      // Check if routine is scheduled to trigger on today's day of week
+      const isDueToday = rDays.includes('everyday') || rDays.includes(currentDay);
+      // Check if routine has active reminders, matches current time, is due today, and hasn't already fired this minute
+      if (routine.active !== false && routine.time === currentClockTime && isDueToday && !alertedThisMinute.has(routine.id)) {
         // Mark routine as alerted for this minute
         alertedThisMinute.add(routine.id);
         // Trigger reminder alarm
@@ -2458,14 +2476,22 @@
           // Check if active
           const isActive = routine.active !== false;
 
+          // Extract routine days array or fallback to everyday
+          const rDays = Array.isArray(routine.days) && routine.days.length > 0 ? routine.days : ['everyday'];
+          // Compute human-readable day badge string
+          const daysLabel = rDays.includes('everyday') || rDays.length === 7 ? 'Everyday' : rDays.join(', ');
+          // Formatted time range display string
+          const formattedTime = routine.endTime ? `${routine.time} - ${routine.endTime}` : routine.time;
+
           // Build routine card inner HTML
           li.innerHTML = `
             <div style="display: flex; align-items: center; gap: 14px; flex: 1;">
               <input type="checkbox" class="routine-toggle-chk" data-id="${routine.id}" ${routine.completedToday ? 'checked' : ''} style="width: 20px; height: 20px; cursor: pointer; accent-color: var(--color-primary); flex-shrink: 0;" title="Mark habit done for today">
               <div style="flex: 1; min-width: 0;">
                 <div style="display: flex; align-items: center; gap: 8px; flex-wrap: wrap; margin-bottom: 4px;">
-                  <span class="routine-time-badge">${routine.time}</span>
+                  <span class="routine-time-badge">${formattedTime}</span>
                   <span class="routine-category-pill">${safeCategory}</span>
+                  <span style="font-size: 0.68rem; color: var(--text-muted); background: var(--bg-primary); border: 1px solid var(--color-border); padding: 1px 7px; border-radius: 10px; font-weight: 600;">🗓️ ${daysLabel}</span>
                   ${!isActive ? '<span style="font-size: 0.7rem; color: var(--text-muted); background: rgba(148, 163, 184, 0.15); padding: 2px 6px; border-radius: 4px; font-weight: 600;">Reminders Paused</span>' : ''}
                 </div>
                 <div style="font-size: 0.92rem; font-weight: 600; color: var(--text-main); ${routine.completedToday ? 'text-decoration: line-through; color: var(--text-muted);' : ''}; word-break: break-word;">${safeTitle}</div>
@@ -2617,7 +2643,461 @@
       }
     // End dashboardWidgetList check
     }
+    // Also re-render timetable schedule if container exists
+    renderTimetable();
   // End renderRoutines
+  }
+
+  // Active Routines view mode state ('checklist' or 'timetable')
+  let activeRoutineView = 'checklist';
+  // Active selected day filter for timetable view ('today', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun', 'all')
+  let activeTimetableDay = 'today';
+
+  /**
+   * Switches view between Checklist View and Timetable View.
+   */
+  function switchRoutineView(viewMode) {
+    // Save selected view mode
+    activeRoutineView = viewMode === 'timetable' ? 'timetable' : 'checklist';
+    // Find checklist container element
+    const chkContainer = document.getElementById('routineChecklistContainer');
+    // Find timetable container element
+    const timeContainer = document.getElementById('routineTimetableContainer');
+    // Find checklist toggle button
+    const chkBtn = document.getElementById('routineViewChecklistBtn');
+    // Find timetable toggle button
+    const timeBtn = document.getElementById('routineViewTimetableBtn');
+
+    // If switching to timetable view mode
+    if (activeRoutineView === 'timetable') {
+      // Hide checklist view container
+      if (chkContainer) chkContainer.style.display = 'none';
+      // Display timetable schedule container
+      if (timeContainer) timeContainer.style.display = 'block';
+      // Update checklist toggle button styling
+      if (chkBtn) chkBtn.classList.remove('active');
+      // Update timetable toggle button styling
+      if (timeBtn) timeBtn.classList.add('active');
+      // Render fresh timetable cards
+      renderTimetable();
+    // Else show checklist view mode
+    } else {
+      // Display checklist view container
+      if (chkContainer) chkContainer.style.display = 'block';
+      // Hide timetable schedule container
+      if (timeContainer) timeContainer.style.display = 'none';
+      // Activate checklist button styling
+      if (chkBtn) chkBtn.classList.add('active');
+      // Deactivate timetable button styling
+      if (timeBtn) timeBtn.classList.remove('active');
+      // Render fresh checklist routines
+      renderRoutines();
+    // End view condition
+    }
+  // End switchRoutineView
+  }
+
+  /**
+   * Switches the active day filter in Timetable view.
+   */
+  function switchTimetableDay(dayKey) {
+    // Update active timetable day state
+    activeTimetableDay = dayKey;
+    // Iterate over all timetable day tab buttons
+    document.querySelectorAll('.timetable-day-tab').forEach(tab => {
+      // Check if tab matches clicked day key
+      if (tab.getAttribute('data-day') === dayKey) {
+        // Mark button active
+        tab.classList.add('active');
+      // Otherwise deactivate button
+      } else {
+        // Remove active class
+        tab.classList.remove('active');
+      // End tab match check
+      }
+    // End tab loop
+    });
+    // Re-render timetable schedule for selected day
+    renderTimetable();
+  // End switchTimetableDay
+  }
+
+  /**
+   * Helper to set routine day selection checkboxes via preset buttons.
+   */
+  function selectRoutineDaysPreset(preset) {
+    // Query all day chip checkbox inputs
+    const chipInputs = document.querySelectorAll('#routineDayChipsContainer input[type="checkbox"]');
+    // Iterate over chip checkboxes
+    chipInputs.forEach(chk => {
+      // Read day value
+      const dayVal = chk.value;
+      // Resolve parent chip label element
+      const parentLabel = chk.closest('.day-chip');
+      // Compute whether checkbox should be checked
+      let shouldCheck = true;
+      // If weekdays preset
+      if (preset === 'weekdays') {
+        // Select only Monday through Friday
+        shouldCheck = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri'].includes(dayVal);
+      // If weekends preset
+      } else if (preset === 'weekends') {
+        // Select only Saturday and Sunday
+        shouldCheck = ['Sat', 'Sun'].includes(dayVal);
+      // End preset evaluation
+      }
+      // Apply checked state
+      chk.checked = shouldCheck;
+      // If parent label element exists
+      if (parentLabel) {
+        // If checked
+        if (shouldCheck) {
+          // Add active class
+          parentLabel.classList.add('active');
+        // If not checked
+        } else {
+          // Remove active class
+          parentLabel.classList.remove('active');
+        // End active check
+        }
+      // End parentLabel check
+      }
+    // End chipInputs iteration
+    });
+  // End selectRoutineDaysPreset
+  }
+
+  /**
+   * Renders the chronological visual Timetable schedule for the selected day.
+   */
+  function renderTimetable() {
+    // Reference application data store
+    const store = window.AppStore;
+    // Exit if store is missing
+    if (!store || typeof store.getRoutines !== 'function') return;
+
+    // Get current date object
+    const now = new Date();
+    // Day abbreviations array
+    const dayCodes = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+    // Full day names array
+    const fullDayNames = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
+    // Today's day code
+    const todayCode = dayCodes[now.getDay()];
+    // Today's full name
+    const todayFullName = fullDayNames[now.getDay()];
+    // Format current clock time HH:MM
+    const currentClockTime = `${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}`;
+
+    // Update live clock text in timetable header
+    const clockTextEl = document.getElementById('timetableLiveClockText');
+    // If element exists
+    if (clockTextEl) {
+      // Set live clock
+      clockTextEl.textContent = currentClockTime;
+    // End clock check
+    }
+
+    // Determine target day code for filtering
+    const targetDay = activeTimetableDay === 'today' ? todayCode : activeTimetableDay;
+
+    // Update active day badge label
+    const dayLabelEl = document.getElementById('timetableActiveDayLabel');
+    // If label element exists
+    if (dayLabelEl) {
+      // If today selected
+      if (activeTimetableDay === 'today') {
+        // Set today label
+        dayLabelEl.textContent = `🌟 Today (${todayFullName})`;
+      // If all days selected
+      } else if (activeTimetableDay === 'all') {
+        // Set all days label
+        dayLabelEl.textContent = '🗓️ All Days (Full Schedule)';
+      // If specific day selected
+      } else {
+        // Resolve full day name
+        const fullDay = fullDayNames[dayCodes.indexOf(activeTimetableDay)] || activeTimetableDay;
+        // Set specific day label
+        dayLabelEl.textContent = `📅 ${fullDay}'s Schedule`;
+      // End label condition
+      }
+    // End dayLabelEl check
+    }
+
+    // Update timetable schedule card header title
+    const headerTitleEl = document.getElementById('timetableScheduleHeaderTitle');
+    // If header title exists
+    if (headerTitleEl) {
+      // If today
+      if (activeTimetableDay === 'today') {
+        // Set header title for today
+        headerTitleEl.textContent = `Today's Schedule (${todayFullName})`;
+      // If all days
+      } else if (activeTimetableDay === 'all') {
+        // Set header title for all days
+        headerTitleEl.textContent = 'Full Weekly Timetable Schedule';
+      // If specific day
+      } else {
+        // Resolve day name
+        const fullDay = fullDayNames[dayCodes.indexOf(activeTimetableDay)] || activeTimetableDay;
+        // Set title for specific day
+        headerTitleEl.textContent = `${fullDay}'s Chronological Timetable`;
+      // End header check
+      }
+    // End headerTitleEl check
+    }
+
+    // Retrieve all routines from store
+    const routines = store.getRoutines();
+
+    // Filter routines applicable to selected day
+    const dayRoutines = routines.filter(r => {
+      // If all days selected
+      if (targetDay === 'all') return true;
+      // Get routine days array
+      const rDays = Array.isArray(r.days) && r.days.length > 0 ? r.days : ['everyday'];
+      // Return true if routine repeats everyday or matches target day
+      return rDays.includes('everyday') || rDays.includes(targetDay);
+    // End filter
+    });
+
+    // Sort chronologically by start time HH:MM
+    dayRoutines.sort((a, b) => (a.time || '').localeCompare(b.time || ''));
+
+    // Update subtext count
+    const subtextEl = document.getElementById('timetableScheduleSubtext');
+    // If subtext element exists
+    if (subtextEl) {
+      // Set count text
+      subtextEl.textContent = `${dayRoutines.length} scheduled ${dayRoutines.length === 1 ? 'activity' : 'activities'}`;
+    // End subtext check
+    }
+
+    // Schedule list container element
+    const listEl = document.getElementById('timetableScheduleList');
+    // Exit if list element does not exist
+    if (!listEl) return;
+
+    // Clear previous schedule cards
+    listEl.innerHTML = '';
+
+    // If no routines scheduled for target day
+    if (dayRoutines.length === 0) {
+      // Create empty state container
+      const emptyDiv = document.createElement('div');
+      // Set empty state inline styles
+      emptyDiv.style.cssText = 'padding: 36px 20px; text-align: center; color: var(--text-muted); font-size: 0.88rem; border: 1.5px dashed var(--color-border); border-radius: var(--border-radius-md); background: transparent;';
+      // Set empty state HTML
+      emptyDiv.innerHTML = `
+        <div style="font-size: 2rem; margin-bottom: 8px;">🗓️</div>
+        <div style="font-weight: 700; color: var(--text-main); margin-bottom: 4px; font-size: 0.95rem;">No activities scheduled for ${activeTimetableDay === 'today' ? 'today' : targetDay}</div>
+        <p style="margin-bottom: 12px; font-size: 0.82rem;">Add a scheduled routine or timetable item using the form above!</p>
+        <button type="button" class="btn btn-secondary btn-sm" onclick="document.getElementById('addRoutineFormCard').scrollIntoView({ behavior: 'smooth' })">+ Schedule an Activity</button>
+      `;
+      // Append empty card
+      listEl.appendChild(emptyDiv);
+      // Exit early
+      return;
+    // End empty check
+    }
+
+    // Iterate through day routines and create timetable cards
+    dayRoutines.forEach(routine => {
+      // Start time string
+      const startTime = routine.time || '00:00';
+      // End time string
+      const endTime = routine.endTime || '';
+      // Safe escaped title
+      const safeTitle = escapeHTML(routine.title);
+      // Safe escaped category
+      const safeCategory = escapeHTML(routine.category || 'General');
+      // Safe escaped notes
+      const safeNotes = escapeHTML(routine.notes || '');
+      // Active reminder status
+      const isActive = routine.active !== false;
+      // Completed today status
+      const isCompleted = routine.completedToday;
+
+      // Check if this activity is ongoing right now
+      let isOngoing = false;
+      // Only calculate ongoing if looking at today
+      if ((activeTimetableDay === 'today' || targetDay === todayCode) && startTime) {
+        // If end time is provided
+        if (endTime) {
+          // Compare current time between start and end
+          isOngoing = currentClockTime >= startTime && currentClockTime <= endTime;
+        // If no end time, consider ongoing for a 30-minute window from start time
+        } else {
+          // Parse start hours and minutes
+          const [sh, sm] = startTime.split(':').map(Number);
+          // Calculate start minute of day
+          const startMin = (sh * 60) + sm;
+          // Parse current hours and minutes
+          const [ch, cm] = currentClockTime.split(':').map(Number);
+          // Calculate current minute of day
+          const currentMin = (ch * 60) + cm;
+          // Ongoing if within 30 minutes after start
+          isOngoing = currentMin >= startMin && currentMin < (startMin + 30);
+        // End endTime check
+        }
+      // End ongoing check
+      }
+
+      // Calculate duration text if end time exists
+      let durationText = '';
+      // If end time is provided and formatted as HH:MM
+      if (endTime && endTime.includes(':')) {
+        // Calculate duration in minutes
+        const [sh, sm] = startTime.split(':').map(Number);
+        // Parse end time hours and minutes
+        const [eh, em] = endTime.split(':').map(Number);
+        // Calculate total minutes difference
+        const totalMinutes = ((eh * 60) + em) - ((sh * 60) + sm);
+        // If positive duration
+        if (totalMinutes > 0) {
+          // Calculate whole hours
+          const hours = Math.floor(totalMinutes / 60);
+          // Calculate remaining minutes
+          const mins = totalMinutes % 60;
+          // Format duration text
+          if (hours > 0 && mins > 0) {
+            durationText = `(${hours}h ${mins}m)`;
+          } else if (hours > 0) {
+            durationText = `(${hours} hr)`;
+          } else {
+            durationText = `(${mins} min)`;
+          }
+        // End positive check
+        }
+      // End durationText calculation
+      }
+
+      // Format days chips text
+      const rDays = Array.isArray(routine.days) && routine.days.length > 0 ? routine.days : ['everyday'];
+      // Days summary text
+      const daysSummary = rDays.includes('everyday') || rDays.length === 7 ? 'Everyday' : rDays.join(', ');
+
+      // Create timetable card container
+      const card = document.createElement('div');
+      // Assign class names
+      card.className = `timetable-card ${isOngoing ? 'ongoing' : ''} ${isCompleted ? 'completed' : ''} ${!isActive ? 'paused' : ''}`;
+
+      // Build card inner HTML
+      card.innerHTML = `
+        <div style="display: flex; align-items: center; gap: 14px; flex: 1; min-width: 260px;">
+          <!-- Left Time Column -->
+          <div class="timetable-time-col">
+            <div style="display: flex; align-items: baseline; gap: 4px;">
+              <span class="timetable-start-time">${startTime}</span>
+              ${endTime ? `<span style="font-size: 0.82rem; color: var(--text-muted); font-weight: 600;">- ${endTime}</span>` : ''}
+            </div>
+            ${durationText ? `<span class="timetable-duration-text">${durationText}</span>` : '<span class="timetable-duration-text">Alarm set</span>'}
+          </div>
+
+          <!-- Divider Bar -->
+          <div style="width: 3px; height: 38px; border-radius: 2px; background: ${isCompleted ? '#10b981' : isOngoing ? 'var(--color-primary)' : 'var(--color-border)'}; flex-shrink: 0;"></div>
+
+          <!-- Center Content Column -->
+          <div style="flex: 1; min-width: 0;">
+            <div style="display: flex; align-items: center; gap: 8px; flex-wrap: wrap; margin-bottom: 4px;">
+              <span class="routine-category-pill">${safeCategory}</span>
+              <span style="font-size: 0.68rem; color: var(--text-muted); background: var(--bg-primary); border: 1px solid var(--color-border); padding: 1px 7px; border-radius: 10px; font-weight: 600;">🗓️ ${daysSummary}</span>
+              ${isOngoing ? '<span class="timetable-ongoing-pill"><span class="pulsing-dot"></span>Ongoing Now</span>' : ''}
+              ${isCompleted ? '<span style="font-size: 0.7rem; color: #10b981; font-weight: 700; background: rgba(16, 185, 129, 0.15); padding: 1px 6px; border-radius: 4px;">✓ Done Today</span>' : ''}
+              ${!isActive ? '<span style="font-size: 0.7rem; color: var(--text-muted); background: rgba(148, 163, 184, 0.15); padding: 1px 6px; border-radius: 4px;">🔕 Muted</span>' : ''}
+            </div>
+            <div style="font-size: 0.92rem; font-weight: 700; color: var(--text-main); ${isCompleted ? 'text-decoration: line-through; color: var(--text-muted);' : ''}; word-break: break-word;">${safeTitle}</div>
+            ${safeNotes ? `<div style="font-size: 0.78rem; color: var(--text-muted); margin-top: 3px; font-style: italic;">${safeNotes}</div>` : ''}
+          </div>
+        </div>
+
+        <!-- Right Action Controls -->
+        <div style="display: flex; align-items: center; gap: 8px; flex-shrink: 0;">
+          <!-- Quick Mark Done Button -->
+          <button type="button" class="btn-timetable-toggle-done" data-id="${routine.id}" style="background: ${isCompleted ? 'rgba(16, 185, 129, 0.2)' : 'var(--bg-primary)'}; border: 1px solid ${isCompleted ? '#10b981' : 'var(--color-border)'}; color: ${isCompleted ? '#10b981' : 'var(--text-main)'}; padding: 6px 12px; border-radius: 8px; font-size: 0.76rem; font-weight: 700; cursor: pointer; display: flex; align-items: center; gap: 5px; font-family: inherit; transition: all 0.2s ease;" title="${isCompleted ? 'Completed today' : 'Mark as done today'}">
+            ${isCompleted ? '✓ Done' : '○ Complete'}
+          </button>
+          <!-- Mute / Unmute Reminder Toggle -->
+          <button type="button" class="btn-timetable-toggle-mute" data-id="${routine.id}" style="background: transparent; border: 1px solid var(--color-border); color: var(--text-muted); padding: 6px 10px; border-radius: 8px; font-size: 0.75rem; cursor: pointer; display: flex; align-items: center; gap: 4px; font-family: inherit;" title="${isActive ? 'Mute alarm reminder' : 'Activate alarm reminder'}">
+            ${isActive ? '🔔' : '🔕'}
+          </button>
+          <!-- Delete button -->
+          <button type="button" class="btn-timetable-delete" data-id="${routine.id}" style="background: transparent; border: none; cursor: pointer; display: flex; align-items: center; justify-content: center; padding: 6px; border-radius: 6px; color: var(--color-danger); transition: all 0.2s ease;" title="Delete schedule item">
+            <svg style="width: 16px; height: 16px; fill: none; stroke: var(--color-danger); stroke-width: 2.2; pointer-events: none;"><use href="#icon-trash"></use></svg>
+          </button>
+        </div>
+      `;
+
+      // Attach complete toggle click listener
+      const completeBtn = card.querySelector('.btn-timetable-toggle-done');
+      // If complete button exists
+      if (completeBtn) {
+        // Click listener
+        completeBtn.addEventListener('click', () => {
+          // Toggle completed status
+          store.toggleRoutineCompleted(routine.id);
+          // Re-render timetable
+          renderTimetable();
+          // Re-render checklist
+          renderRoutines();
+        // End click listener
+        });
+      // End completeBtn check
+      }
+
+      // Attach mute/unmute reminder toggle listener
+      const muteBtn = card.querySelector('.btn-timetable-toggle-mute');
+      // If mute button exists
+      if (muteBtn) {
+        // Click listener
+        muteBtn.addEventListener('click', () => {
+          // Toggle active reminder flag
+          store.toggleRoutine(routine.id);
+          // Re-render timetable
+          renderTimetable();
+          // Re-render checklist
+          renderRoutines();
+          // Reschedule mobile alarms
+          scheduleRoutineReminders();
+        // End click listener
+        });
+      // End muteBtn check
+      }
+
+      // Attach delete click listener
+      const delBtn = card.querySelector('.btn-timetable-delete');
+      // If delete button exists
+      if (delBtn) {
+        // Click listener
+        delBtn.addEventListener('click', (e) => {
+          // Prevent default
+          e.preventDefault();
+          // Stop propagation
+          e.stopPropagation();
+          // Confirm deletion
+          if (confirm(`Delete "${routine.title}" from your routine schedule?`)) {
+            // Delete routine
+            store.deleteRoutine(routine.id);
+            // Remove element immediately
+            card.remove();
+            // Re-render timetable
+            renderTimetable();
+            // Re-render checklist
+            renderRoutines();
+            // Reschedule mobile alarms
+            scheduleRoutineReminders();
+          // End confirmation check
+          }
+        // End click listener
+        });
+      // End delBtn check
+      }
+
+      // Append card to timetable container
+      listEl.appendChild(card);
+    // End dayRoutines loop
+    });
+  // End renderTimetable
   }
 
   /**
@@ -2642,10 +3122,10 @@
         // Filter for active routines
         const activeRoutines = (store && store.getRoutines ? store.getRoutines() : []).filter(r => r.active !== false);
 
-        // Cancel previously scheduled routine notifications (IDs 200 - 299)
+        // Cancel previously scheduled routine notifications (IDs 200 - 499)
         const cancelList = [];
-        // Loop up to 100 possible routine slots
-        for (let i = 0; i < 100; i++) {
+        // Loop up to 300 possible routine slots
+        for (let i = 0; i < 300; i++) {
           // Push notification ID to cancellation list
           cancelList.push({ id: 200 + i });
         // End cancel loop
@@ -2653,41 +3133,90 @@
         // Asynchronously cancel scheduled notifications
         await LocalNotifications.cancel({ notifications: cancelList });
 
-        // Iterate active routines and schedule daily alarms
+        // Day code to weekday number mapping (1 = Sunday, 2 = Monday, ... 7 = Saturday)
+        const dayToWeekday = { 'Sun': 1, 'Mon': 2, 'Tue': 3, 'Wed': 4, 'Thu': 5, 'Fri': 6, 'Sat': 7 };
+        // Notification ID counter starting at 200
+        let notifIdCounter = 200;
+
+        // Iterate active routines and schedule alarms
         const notificationsToSchedule = [];
         // Map active routines to notification payloads
-        activeRoutines.slice(0, 50).forEach((routine, idx) => {
+        activeRoutines.forEach(routine => {
           // Split time string into hour and minute integers
           const [hStr, mStr] = (routine.time || '08:00').split(':');
-          // Parse hour
+          // Parse hour integer
           const hour = parseInt(hStr, 10) || 8;
-          // Parse minute
+          // Parse minute integer
           const minute = parseInt(mStr, 10) || 0;
+          // Days array for this routine
+          const rDays = Array.isArray(routine.days) && routine.days.length > 0 ? routine.days : ['everyday'];
 
-          // Push configured local notification object
-          notificationsToSchedule.push({
-            // Notification title
-            title: `⏰ Finflow Routine: ${routine.title}`,
-            // Notification body message
-            body: `Time for your scheduled financial habit! ${routine.notes || ''}`,
-            // Unique notification ID
-            id: 200 + idx,
-            // Repeating schedule
-            schedule: {
-              // Daily trigger schedule
-              on: {
-                // Scheduled hour
-                hour: hour,
-                // Scheduled minute
-                minute: minute
-              // End on configuration
-              },
-              // Enable daily repeats
-              repeats: true
-            // End schedule
-            }
-          // End notification object
-          });
+          // If routine repeats everyday or all 7 days
+          if (rDays.includes('everyday') || rDays.length === 7) {
+            // Push daily repeating notification
+            notificationsToSchedule.push({
+              // Notification title
+              title: `⏰ FinFlow Routine: ${routine.title}`,
+              // Notification body message
+              body: `Time for your scheduled financial habit! ${routine.notes || ''}`,
+              // Unique notification ID
+              id: notifIdCounter++,
+              // Repeating schedule
+              schedule: {
+                // Daily trigger schedule
+                on: {
+                  // Scheduled hour
+                  hour: hour,
+                  // Scheduled minute
+                  minute: minute
+                // End on configuration
+                },
+                // Enable daily repeats
+                repeats: true
+              // End schedule
+              }
+            // End notification object
+            });
+          // Else routine repeats on specific weekdays
+          } else {
+            // Iterate selected day codes
+            rDays.forEach(dayCode => {
+              // Get Capacitor weekday number
+              const weekdayNum = dayToWeekday[dayCode];
+              // If valid weekday and within quota
+              if (weekdayNum && notifIdCounter < 490) {
+                // Push weekday-specific repeating notification
+                notificationsToSchedule.push({
+                  // Notification title
+                  title: `⏰ FinFlow: ${routine.title}`,
+                  // Notification body message
+                  body: `Time for your scheduled ${dayCode} routine! ${routine.notes || ''}`,
+                  // Unique notification ID
+                  id: notifIdCounter++,
+                  // Repeating schedule
+                  schedule: {
+                    // Weekday trigger schedule
+                    on: {
+                      // Day of week
+                      weekday: weekdayNum,
+                      // Scheduled hour
+                      hour: hour,
+                      // Scheduled minute
+                      minute: minute
+                    // End on configuration
+                    },
+                    // Enable weekly repeats
+                    repeats: true
+                  // End schedule
+                  }
+                // End notification object
+                });
+              // End weekday check
+              }
+            // End dayCode loop
+            });
+          // End days condition
+          }
         // End activeRoutines iteration
         });
 
@@ -2712,6 +3241,14 @@
   window.playRoutineChime = playRoutineChime;
   // Expose renderRoutines globally
   window.renderRoutines = renderRoutines;
+  // Expose renderTimetable globally
+  window.renderTimetable = renderTimetable;
+  // Expose switchRoutineView globally
+  window.switchRoutineView = switchRoutineView;
+  // Expose switchTimetableDay globally
+  window.switchTimetableDay = switchTimetableDay;
+  // Expose selectRoutineDaysPreset globally
+  window.selectRoutineDaysPreset = selectRoutineDaysPreset;
   // Expose requestRoutineNotificationPermission globally
   window.requestRoutineNotificationPermission = requestRoutineNotificationPermission;
 
@@ -7034,6 +7571,15 @@ Ask me specific financial questions like:
     // End customers check
     }
 
+    // Refresh routines and timetable views whenever user navigates to the routines tab
+    if (targetTab === 'routines') {
+      // Re-render daily routines checklist cards and progress statistics
+      renderRoutines();
+      // Re-render weekly timetable chronological schedule cards
+      renderTimetable();
+    // End routines check
+    }
+
     // Automatically check for latest profile & ledger updates from cloud when navigating
     if (window.AppStore && typeof window.AppStore.syncFromCloud === 'function' && window.AppStore.isLoggedIn()) {
       window.AppStore.syncFromCloud().then(() => {
@@ -8577,6 +9123,8 @@ Ask me specific financial questions like:
         const titleEl = elements.routineTitleInput || document.getElementById('newRoutineTitle') || document.getElementById('routineTitleInput') || (form ? form.querySelector('input[type="text"]') : null);
         // Resolve routine time input element safely
         const timeEl = elements.routineTimeInput || document.getElementById('newRoutineTime') || document.getElementById('routineTimeInput') || (form ? form.querySelector('input[type="time"]') : null);
+        // Resolve optional routine end time input element safely
+        const endTimeEl = document.getElementById('newRoutineEndTime') || (form ? form.querySelector('input[name="routineEndTime"]') : null);
         // Resolve category select dropdown element safely
         const catEl = elements.routineCategorySelect || document.getElementById('newRoutineCategory') || document.getElementById('routineCategorySelect') || (form ? form.querySelector('select') : null);
         // Resolve routine notes input element safely
@@ -8584,28 +9132,41 @@ Ask me specific financial questions like:
 
         // Read trimmed routine title string
         const title = titleEl ? titleEl.value.trim() : '';
-        // Read scheduled reminder time string
+        // Read scheduled start or reminder time string
         const time = timeEl ? timeEl.value.trim() : '';
+        // Read optional scheduled end time string
+        const endTime = endTimeEl ? endTimeEl.value.trim() : '';
         // Read selected routine category string
         const category = catEl ? catEl.value : 'General';
         // Read optional routine notes string
         const notes = notesEl ? notesEl.value.trim() : '';
 
+        // Query all checked day checkboxes inside form or container
+        const checkedDayEls = form ? form.querySelectorAll('input[name="routineDay"]:checked') : document.querySelectorAll('#routineDayChipsContainer input[type="checkbox"]:checked');
+        // Extract array of checked day code strings
+        const selectedDays = Array.from(checkedDayEls).map(input => input.value);
+        // If some but not all days selected use array, otherwise default to everyday
+        const days = (selectedDays.length > 0 && selectedDays.length < 7) ? selectedDays : ['everyday'];
+
         // Validate title and reminder time presence
         if (!title || !time) {
           // Alert user of missing fields
-          alert('Please provide both a routine title and a scheduled reminder time.');
+          alert('Please provide both an activity title and a scheduled reminder time.');
           // Exit submit handler early
           return;
         // End validation check
         }
 
-        // Add new routine to application data store
+        // Add new routine or timetable entry to application data store
         window.AppStore.addRoutine({
           // Routine title
           title: title,
           // Scheduled reminder time (HH:MM)
           time: time,
+          // Optional end time (HH:MM)
+          endTime: endTime,
+          // Selected days of week array
+          days: days,
           // Routine category
           category: category,
           // Optional notes description
@@ -8621,8 +9182,14 @@ Ask me specific financial questions like:
         if (titleEl) titleEl.value = '';
         // If time input exists, clear its value explicitly
         if (timeEl) timeEl.value = '';
+        // If end time input exists, clear its value explicitly
+        if (endTimeEl) endTimeEl.value = '';
+        // Reset day selector chips back to everyday preset
+        selectRoutineDaysPreset('everyday');
         // Re-render routines list checklist and stats
         renderRoutines();
+        // Re-render timetable view
+        renderTimetable();
         // Schedule mobile and local notifications
         scheduleRoutineReminders();
 
@@ -8636,6 +9203,31 @@ Ask me specific financial questions like:
       });
     // End addRoutineForm check
     }
+
+    // Attach change listener to day chips to toggle active class visually
+    document.querySelectorAll('#routineDayChipsContainer .day-chip input[type="checkbox"]').forEach(chk => {
+      // Attach change event listener
+      chk.addEventListener('change', () => {
+        // Find parent label element
+        const parentLabel = chk.closest('.day-chip');
+        // If parent label found
+        if (parentLabel) {
+          // If checkbox is checked
+          if (chk.checked) {
+            // Add active class
+            parentLabel.classList.add('active');
+          // If checkbox is unchecked
+          } else {
+            // Remove active class
+            parentLabel.classList.remove('active');
+          // End checked check
+          }
+        // End parentLabel check
+        }
+      // End change listener
+      });
+    // End day chips iteration
+    });
 
     // Quick Routine Preset buttons handler
     document.querySelectorAll('.btn-routine-preset').forEach(btn => {

@@ -2018,40 +2018,53 @@
     /**
      * Adds a new daily routine with scheduled reminder time.
      */
-    addRoutine({ title, time, category = 'General' }) {
+    /**
+     * Adds a new daily routine or timetable schedule item with reminder time.
+     */
+    addRoutine({ title, time, endTime = '', days = ['everyday'], category = 'General', notes = '' }) {
       // Push current state snapshot for undo support
       this.pushState();
       // Record timestamp of local routines update to prevent stale cloud sync overwrite
       this._lastLocalRoutinesUpdate = Date.now();
-      // Ensure routines array exists
+      // Ensure routines array exists in data model
       if (!this.data.routines) this.data.routines = [];
-      // Construct new routine object
+      // Normalize days list or fallback to everyday
+      const selectedDays = Array.isArray(days) && days.length > 0 ? days : ['everyday'];
+      // Construct new routine or timetable entry object
       const newRoutine = {
-        // Unique routine identifier
+        // Unique routine identifier string
         id: 'routine_' + Date.now() + '_' + Math.random().toString(36).substr(2, 7),
-        // Title or habit description
+        // Routine or timetable task title
         title: title.trim(),
-        // 24-hour time string in HH:MM format
+        // 24-hour start or reminder time string in HH:MM format
         time: time.trim(),
-        // Routine category tag
+        // Optional 24-hour end time string in HH:MM format for timetable block
+        endTime: (endTime || '').trim(),
+        // Array of scheduled days of the week e.g. ['Mon', 'Tue'] or ['everyday']
+        days: selectedDays,
+        // Routine category tag name
         category: category.trim() || 'General',
+        // Optional descriptive notes or instructions
+        notes: (notes || '').trim(),
         // Whether routine reminder alerts are enabled
         enabled: true,
-        // Also support active alias
+        // Also support active alias boolean
         active: true,
         // Daily completion flag for today
         completedToday: false,
         // Timestamp string of last completed date
         lastCompletedDate: null,
-        // ISO timestamp of creation
+        // ISO timestamp of creation date
         createdAt: new Date().toISOString()
+      // End routine object definition
       };
-      // Append new routine to data list
+      // Append new routine to data routines list
       this.data.routines.push(newRoutine);
       // Save data changes locally and sync to cloud
       this.save();
       // Return created routine object
       return newRoutine;
+    // End addRoutine method
     },
 
     /**

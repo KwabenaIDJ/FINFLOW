@@ -2633,3 +2633,313 @@ header {
   animation: slideInDown 0.3s ease-out;
 /* End routine alarm banner */
 }
+
+/* ==================== TIMETABLE & ROUTINES STYLES ==================== */
+
+/* View Switcher Toggle Buttons */
+.btn-routine-view {
+  /* Inherit system font */
+  font-family: inherit;
+  /* Transparent background by default */
+  background: transparent;
+  /* Muted text color for inactive state */
+  color: var(--text-muted);
+  /* Smooth color transition */
+  transition: all var(--transition-fast);
+/* End btn-routine-view */
+}
+
+/* Hover state for view switcher buttons */
+.btn-routine-view:hover {
+  /* Lighter text color on hover */
+  color: var(--text-main);
+  /* Subtle background tint */
+  background: rgba(255, 255, 255, 0.05);
+/* End btn-routine-view hover */
+}
+
+/* Active state for view switcher buttons */
+.btn-routine-view.active {
+  /* Brand primary gradient background */
+  background: var(--color-primary);
+  /* White text for contrast */
+  color: #ffffff;
+  /* Soft colored glow shadow */
+  box-shadow: 0 2px 8px var(--color-primary-glow);
+/* End btn-routine-view active */
+}
+
+/* Day Selector Chips */
+.day-chip {
+  /* Transition on toggle */
+  transition: all var(--transition-fast);
+  /* Inline flex centering */
+  display: inline-flex;
+  /* Align items center */
+  align-items: center;
+  /* Center justify */
+  justify-content: center;
+/* End day-chip */
+}
+
+/* Inactive day chip styling */
+.day-chip:not(.active) {
+  /* Muted border */
+  border-color: var(--color-border) !important;
+  /* Neutral background */
+  background: var(--bg-primary) !important;
+  /* Muted text color */
+  color: var(--text-muted) !important;
+  /* Lower opacity */
+  opacity: 0.7;
+/* End day-chip inactive */
+}
+
+/* Day chip hover state */
+.day-chip:hover {
+  /* Increase brightness */
+  opacity: 1;
+  /* Border color shift */
+  border-color: var(--color-primary) !important;
+/* End day-chip hover */
+}
+
+/* Timetable Day Tabs Bar Buttons */
+.timetable-day-tab {
+  /* Flex alignment */
+  display: inline-flex;
+  /* Center items */
+  align-items: center;
+  /* Spacing padding */
+  padding: 8px 16px;
+  /* Pill rounded corners */
+  border-radius: 20px;
+  /* Border styling */
+  border: 1px solid var(--color-border);
+  /* Secondary background */
+  background: var(--bg-primary);
+  /* Main text color */
+  color: var(--text-muted);
+  /* Font size */
+  font-size: 0.82rem;
+  /* Semi bold text */
+  font-weight: 600;
+  /* Pointer cursor */
+  cursor: pointer;
+  /* Prevent text wrapping */
+  white-space: nowrap;
+  /* Inherit typography */
+  font-family: inherit;
+  /* Fast transition */
+  transition: all var(--transition-fast);
+/* End timetable-day-tab */
+}
+
+/* Timetable Day Tab Hover */
+.timetable-day-tab:hover {
+  /* Brighter text */
+  color: var(--text-main);
+  /* Subtle border hover */
+  border-color: var(--color-primary);
+/* End timetable-day-tab hover */
+}
+
+/* Timetable Day Tab Active */
+.timetable-day-tab.active {
+  /* Primary background */
+  background: var(--color-primary);
+  /* White text */
+  color: #ffffff;
+  /* Primary border */
+  border-color: var(--color-primary);
+  /* Active drop shadow */
+  box-shadow: 0 2px 10px var(--color-primary-glow);
+  /* Extra bold font */
+  font-weight: 700;
+/* End timetable-day-tab active */
+}
+
+/* Timetable Schedule Activity Card */
+.timetable-card {
+  /* Relative positioning */
+  position: relative;
+  /* Secondary card background */
+  background: var(--bg-secondary);
+  /* Subtle perimeter border */
+  border: 1px solid var(--color-border);
+  /* Rounded corners */
+  border-radius: var(--border-radius-md);
+  /* Inner padding */
+  padding: 16px 18px;
+  /* Flex layout */
+  display: flex;
+  /* Space between columns */
+  justify-content: space-between;
+  /* Center align */
+  align-items: center;
+  /* Responsive wrap */
+  flex-wrap: wrap;
+  /* Element gap */
+  gap: 14px;
+  /* Smooth hover animation */
+  transition: all var(--transition-fast);
+/* End timetable-card */
+}
+
+/* Timetable Card Left Time Column */
+.timetable-time-col {
+  /* Flex layout */
+  display: flex;
+  /* Column orientation */
+  flex-direction: column;
+  /* Gap between start and end times */
+  gap: 4px;
+  /* Fixed width to align timetable slots nicely */
+  min-width: 110px;
+  /* Flex shrink prevent */
+  flex-shrink: 0;
+/* End timetable-time-col */
+}
+
+/* Timetable Start Time Badge */
+.timetable-start-time {
+  /* Bold font */
+  font-weight: 800;
+  /* Monospace digits */
+  font-family: monospace, inherit;
+  /* Size */
+  font-size: 1.05rem;
+  /* Main text color */
+  color: var(--text-main);
+/* End timetable-start-time */
+}
+
+/* Timetable End Time or Duration Text */
+.timetable-duration-text {
+  /* Small muted font */
+  font-size: 0.72rem;
+  /* Muted text color */
+  color: var(--text-muted);
+  /* Bold weight */
+  font-weight: 600;
+/* End timetable-duration-text */
+}
+
+/* Timetable Card Ongoing Active Highlight */
+.timetable-card.ongoing {
+  /* Glowing primary border */
+  border-color: var(--color-primary);
+  /* Glowing background tint */
+  background: linear-gradient(135deg, rgba(2, 132, 199, 0.12), var(--bg-secondary));
+  /* Box shadow glow */
+  box-shadow: 0 0 16px var(--color-primary-glow);
+/* End timetable-card ongoing */
+}
+
+/* Timetable Card Completed State */
+.timetable-card.completed {
+  /* Subtle green border */
+  border-color: rgba(16, 185, 129, 0.4);
+  /* Subtle green background */
+  background: linear-gradient(135deg, rgba(16, 185, 129, 0.06), var(--bg-secondary));
+/* End timetable-card completed */
+}
+
+/* Timetable Card Paused State */
+.timetable-card.paused {
+  /* Dimmed opacity */
+  opacity: 0.65;
+/* End timetable-card paused */
+}
+
+/* Ongoing Pulse Dot Badge */
+.timetable-ongoing-pill {
+  /* Inline flex alignment */
+  display: inline-flex;
+  /* Center items */
+  align-items: center;
+  /* Gap */
+  gap: 6px;
+  /* Small font */
+  font-size: 0.72rem;
+  /* Extra bold */
+  font-weight: 800;
+  /* Green success text */
+  color: #10b981;
+  /* Green background glow */
+  background: rgba(16, 185, 129, 0.15);
+  /* Border */
+  border: 1px solid rgba(16, 185, 129, 0.3);
+  /* Padding */
+  padding: 2px 8px;
+  /* Rounded badge corners */
+  border-radius: 12px;
+/* End timetable-ongoing-pill */
+}
+
+/* Pulsing Green Dot */
+.pulsing-dot {
+  /* Circle dimensions */
+  width: 7px;
+  /* Height */
+  height: 7px;
+  /* Green background */
+  background: #10b981;
+  /* Full circle */
+  border-radius: 50%;
+  /* Pulse animation */
+  animation: pulseDot 1.5s infinite;
+/* End pulsing-dot */
+}
+
+/* Pulse Keyframes */
+@keyframes pulseDot {
+  /* Start frame */
+  0% {
+    /* Standard opacity */
+    opacity: 1;
+    /* Normal scale */
+    transform: scale(1);
+  /* End start frame */
+  }
+  /* Midpoint frame */
+  50% {
+    /* Faded opacity */
+    opacity: 0.4;
+    /* Expanded scale */
+    transform: scale(1.3);
+  /* End midpoint frame */
+  }
+  /* Final frame */
+  100% {
+    /* Reset opacity */
+    opacity: 1;
+    /* Reset scale */
+    transform: scale(1);
+  /* End final frame */
+  }
+/* End pulseDot animation */
+}
+
+/* Responsive queries for Routine form rows */
+@media (max-width: 768px) {
+  /* Routine top row stacked on mobile */
+  .routine-top-row {
+    /* Single column */
+    grid-template-columns: 1fr !important;
+  /* End routine-top-row query */
+  }
+  /* Routine time row stacked on mobile */
+  .routine-time-row {
+    /* 2 columns on mobile */
+    grid-template-columns: 1fr 1fr !important;
+  /* End routine-time-row query */
+  }
+  /* Notes field spans both columns on mobile */
+  .routine-time-row > div:last-child {
+    /* Span across both columns */
+    grid-column: 1 / -1;
+  /* End last child span */
+  }
+/* End responsive media query */
+}
