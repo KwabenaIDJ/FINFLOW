@@ -1888,8 +1888,8 @@
         this.data.settings.isPremium = true;
         // Record active subscription plan type or default to monthly
         this.data.settings.premiumPlanType = planType || 'monthly';
-        // Calculate subscription validity days (30 days for monthly, 365 for annual)
-        const durationDays = (planType === 'monthly') ? 30 : 365;
+        // Calculate subscription validity days (30 days for monthly or early access trial, 365 for annual)
+        const durationDays = (planType === 'monthly' || planType === 'early_access' || planType === 'trial') ? 30 : 365;
         // Compute and store future expiration timestamp (30 days from now)
         const expiryDate = Date.now() + (durationDays * 24 * 60 * 60 * 1000);
         // Persist expiration timestamp in settings

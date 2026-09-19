@@ -901,14 +901,14 @@
       // Reference footer disclaimer element
       const footerEl = document.getElementById('upgradeModalFooterText');
 
-      // Update pricing title for Google Play testing mode
-      if (titleEl) titleEl.textContent = 'Google Play Early Access VIP';
-      // Update pricing banner amount for free beta access
-      if (amountEl) amountEl.innerHTML = 'FREE <span style="font-size: 0.82rem; font-weight: 600; color: var(--text-muted);">/ Beta Testers</span>';
+      // Update pricing title for Google Play 30-day trial mode
+      if (titleEl) titleEl.textContent = 'Google Play 30-Day Free VIP Trial';
+      // Update pricing banner amount for free 30-day access
+      if (amountEl) amountEl.innerHTML = 'FREE <span style="font-size: 0.82rem; font-weight: 600; color: var(--text-muted);">/ First 30 Days</span>';
       // Adapt action button for instant free activation
       if (btnEl) {
-        // Set celebratory button label
-        btnEl.textContent = '✨ Activate Free Early Access VIP';
+        // Set celebratory button label for 30-day trial
+        btnEl.textContent = '✨ Start 30-Day Free VIP Trial';
         // Apply Emerald Green VIP gradient
         btnEl.style.background = 'linear-gradient(135deg, #10b981, #059669)';
         // Set white text color
@@ -920,7 +920,7 @@
       // Adapt footer text to highlight Google Play compliance
       if (footerEl) {
         // Set Google Play review compliance text
-        footerEl.innerHTML = '<span>🛡️ Google Play Verified</span> • <span>All VIP Features Unlocked for Testing</span>';
+        footerEl.innerHTML = '<span>🛡️ Google Play Verified</span> • <span>Full VIP Perks Free for 30 Days</span>';
       // End footerEl check
       }
     // If running in standard Web browser
@@ -992,7 +992,7 @@
       // Synchronize entire UI to unlock all premium features
       if (typeof syncUI === 'function') syncUI();
       // Inform user with celebratory alert
-      alert('🎉 Early Access VIP Activated!\nAll Premium features, VIP themes, AI Coach, and PDF reports are unlocked for your Google Play trial.');
+      alert('🎉 30-Day Free VIP Trial Activated!\nAll Premium features, VIP themes, AI Coach, and PDF reports are unlocked for your 30-day trial.');
       // Exit function to avoid launching Paystack in Android app
       return;
     // End native Android check
