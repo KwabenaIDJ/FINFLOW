@@ -330,39 +330,73 @@
 
       // Check if authenticated user session is active in registry
       if (currentUser && registry[currentUser]) {
-        // Multi-Account Workspace Migration: ensure accounts structure exists
+        // Extract user display name for personal profile label
+        const uName = (registry[currentUser].data && registry[currentUser].data.settings && registry[currentUser].data.settings.userName) || registry[currentUser].username || 'Personal';
+        // Construct primary personal account descriptor
+        const personalAccountDescriptor = {
+          // Unique personal account identifier
+          id: 'personal',
+          // User personalized account display name
+          name: `${uName} (Personal)`,
+          // Explicit personal classification
+          type: 'personal',
+          // Visual emoji avatar icon
+          icon: '👤',
+          // Creation timestamp
+          createdAt: registry[currentUser].createdAt || new Date().toISOString()
+        // End personalAccountDescriptor
+        };
+        // Flag to track whether registry needs saving
+        let registryNeedsSave = false;
+        // Verify if accounts array is missing or invalid
         if (!registry[currentUser].accounts || !Array.isArray(registry[currentUser].accounts)) {
-          // Extract user display name for personal profile label
-          const uName = registry[currentUser].data?.settings?.userName || 'Personal';
-          // Initialize primary personal account (no demo business accounts per user requirement)
-          registry[currentUser].accounts = [
-            // Personal workspace descriptor
-            {
-              // Unique account identifier
-              id: 'personal',
-              // Account display name
-              name: `${uName} (Personal)`,
-              // Account type classification
-              type: 'personal',
-              // Visual icon representation
-              icon: '👤',
-              // Account creation ISO timestamp
-              createdAt: new Date().toISOString()
-            // End personal account descriptor
-            }
-          // End accounts list
-          ];
-          // Default active workspace set to personal
+          // Initialize accounts array with primary personal profile
+          registry[currentUser].accounts = [personalAccountDescriptor];
+          // Mark registry update needed
+          registryNeedsSave = true;
+        // If accounts array exists, verify personal account is present
+        } else {
+          // Search for existing personal account entry
+          const hasPersonalAcc = registry[currentUser].accounts.some(a => a.id === 'personal' || a.type === 'personal');
+          // If personal account entry is missing
+          if (!hasPersonalAcc) {
+            // Auto-heal by prepending personal profile to front of accounts list
+            registry[currentUser].accounts.unshift(personalAccountDescriptor);
+            // Mark registry update needed
+            registryNeedsSave = true;
+          // End personal check
+          }
+        // End accounts validation
+        }
+        // Ensure accountDatasets dictionary exists
+        if (!registry[currentUser].accountDatasets) {
+          // Initialize accountDatasets container
+          registry[currentUser].accountDatasets = {};
+          // Mark registry update needed
+          registryNeedsSave = true;
+        // End accountDatasets container check
+        }
+        // Ensure personal dataset slot exists
+        if (!registry[currentUser].accountDatasets['personal']) {
+          // Populate personal dataset from user data or seed template
+          registry[currentUser].accountDatasets['personal'] = registry[currentUser].data || getSeedData();
+          // Mark registry update needed
+          registryNeedsSave = true;
+        // End personal dataset check
+        }
+        // Ensure active account ID pointer is valid
+        if (!registry[currentUser].activeAccountId) {
+          // Default active account to personal
           registry[currentUser].activeAccountId = 'personal';
-          // Initialize isolated datasets map
-          registry[currentUser].accountDatasets = {
-            // Personal account maps directly to existing user ledger data
-            'personal': registry[currentUser].data || getSeedData()
-          // End accountDatasets
-          };
-          // Persist upgraded registry structure to localStorage
+          // Mark registry update needed
+          registryNeedsSave = true;
+        // End activeAccountId check
+        }
+        // Persist healed registry structure to localStorage if updated
+        if (registryNeedsSave) {
+          // Save updated registry JSON to local storage
           localStorage.setItem(USERS_REGISTRY_KEY, JSON.stringify(registry));
-        // End accounts migration check
+        // End save check
         }
 
         // Retrieve active account identifier
@@ -487,16 +521,111 @@
         if (!registry[activeKey]) {
           // User signed up on another device! Create local workspace for this authenticated cloud user
           const userData = getSeedData();
+          // Set user name
           userData.settings.userName = rawUsername;
-          registry[activeKey] = {
-            username: rawUsername,
-            password: password,
-            supabaseId: cloudUser ? cloudUser.id : null,
-            data: userData
+          // Construct primary personal account descriptor
+          const personalAccount = {
+            // Unique account id
+            id: 'personal',
+            // Display name
+            name: `${rawUsername} (Personal)`,
+            // Account type
+            type: 'personal',
+            // Personal emoji avatar
+            icon: '👤',
+            // Timestamp
+            createdAt: new Date().toISOString()
+          // End personalAccount
           };
+          // Initialize registry entry with multi-workspace structures
+          registry[activeKey] = {
+            // Username string
+            username: rawUsername,
+            // Password string
+            password: password,
+            // Cloud user ID
+            supabaseId: cloudUser ? cloudUser.id : null,
+            // Ledger data
+            data: userData,
+            // Workspaces list
+            accounts: [personalAccount],
+            // Default active workspace
+            activeAccountId: 'personal',
+            // Isolated datasets map
+            accountDatasets: {
+              // Personal workspace dataset
+              'personal': userData
+            // End accountDatasets
+            }
+          // End registry[activeKey]
+          };
+          // Persist to local storage
           localStorage.setItem(USERS_REGISTRY_KEY, JSON.stringify(registry));
         } else if (!cloudUser && registry[activeKey].password !== password) {
+          // Return password error
           return { success: false, message: 'Invalid password. Please try again.' };
+        } else {
+          // Check if existing user account requires workspace structure repair
+          let signinNeedsSave = false;
+          // Extract display name
+          const uName = (registry[activeKey].data && registry[activeKey].data.settings && registry[activeKey].data.settings.userName) || rawUsername;
+          // Construct personal descriptor
+          const personalDescriptor = {
+            // Unique identifier
+            id: 'personal',
+            // Display name
+            name: `${uName} (Personal)`,
+            // Personal type
+            type: 'personal',
+            // Avatar
+            icon: '👤',
+            // Creation date
+            createdAt: new Date().toISOString()
+          // End personalDescriptor
+          };
+          // Ensure accounts array exists
+          if (!registry[activeKey].accounts || !Array.isArray(registry[activeKey].accounts)) {
+            // Initialize with personal profile
+            registry[activeKey].accounts = [personalDescriptor];
+            // Flag save
+            signinNeedsSave = true;
+          // Ensure personal account is present
+          } else if (!registry[activeKey].accounts.some(a => a.id === 'personal' || a.type === 'personal')) {
+            // Prepend personal account
+            registry[activeKey].accounts.unshift(personalDescriptor);
+            // Flag save
+            signinNeedsSave = true;
+          // End accounts check
+          }
+          // Ensure datasets map exists
+          if (!registry[activeKey].accountDatasets) {
+            // Initialize datasets map
+            registry[activeKey].accountDatasets = { 'personal': registry[activeKey].data || getSeedData() };
+            // Flag save
+            signinNeedsSave = true;
+          // Ensure personal dataset exists
+          } else if (!registry[activeKey].accountDatasets['personal']) {
+            // Assign personal dataset
+            registry[activeKey].accountDatasets['personal'] = registry[activeKey].data || getSeedData();
+            // Flag save
+            signinNeedsSave = true;
+          // End datasets check
+          }
+          // Ensure active account ID exists
+          if (!registry[activeKey].activeAccountId) {
+            // Default to personal
+            registry[activeKey].activeAccountId = 'personal';
+            // Flag save
+            signinNeedsSave = true;
+          // End activeId check
+          }
+          // Persist registry changes if needed
+          if (signinNeedsSave) {
+            // Save updated registry JSON
+            localStorage.setItem(USERS_REGISTRY_KEY, JSON.stringify(registry));
+          // End save
+          }
+        // End existing user check
         }
 
         // Establish active local session
@@ -587,19 +716,54 @@
 
       // Seed a clean blueprint for the new user
       const userData = getSeedData();
+      // Set full name in settings
       userData.settings.userName = fullName.trim();
+      // Set currency in settings
       userData.settings.currency = currency || 'GH₵';
 
-      // Add to accounts database with recovery questions & supabaseId
-      registry[userKey] = {
-        username: rawUsername,
-        password: password,
-        securityQuestion: secQuestion,
-        securityAnswer: secAnswer,
-        supabaseId: supabaseUser ? supabaseUser.id : null,
-        data: userData
+      // Construct primary personal account descriptor for newly registered user
+      const personalAccount = {
+        // Unique personal account ID
+        id: 'personal',
+        // Personalized account display label
+        name: `${fullName.trim()} (Personal)`,
+        // Account classification
+        type: 'personal',
+        // Visual emoji icon
+        icon: '👤',
+        // Registration timestamp
+        createdAt: new Date().toISOString()
+      // End personalAccount descriptor
       };
 
+      // Add to accounts database with recovery questions, multi-account structures & supabaseId
+      registry[userKey] = {
+        // Registered username
+        username: rawUsername,
+        // Password
+        password: password,
+        // Security question
+        securityQuestion: secQuestion,
+        // Security answer
+        securityAnswer: secAnswer,
+        // Cloud Supabase User ID
+        supabaseId: supabaseUser ? supabaseUser.id : null,
+        // Active data payload
+        data: userData,
+        // Workspaces list containing personal account
+        accounts: [personalAccount],
+        // Default active account pointer
+        activeAccountId: 'personal',
+        // Isolated workspace datasets map
+        accountDatasets: {
+          // Personal dataset mapped to initial user data
+          'personal': userData
+        // End accountDatasets
+        }
+      // End registry entry
+      };
+
+      // Save updated registry JSON to local storage
       localStorage.setItem(USERS_REGISTRY_KEY, JSON.stringify(registry));
       
       // Automatically log the user in
@@ -2552,20 +2716,79 @@
       const currentUser = localStorage.getItem(SESSION_KEY);
       // Retrieve registered users database from storage
       const registry = JSON.parse(localStorage.getItem(USERS_REGISTRY_KEY) || '{}');
-      // If user session exists and has accounts list
-      if (currentUser && registry[currentUser] && Array.isArray(registry[currentUser].accounts)) {
+      // Resolve user display name for personal profile label
+      const uName = (currentUser && registry[currentUser] && registry[currentUser].data && registry[currentUser].data.settings && registry[currentUser].data.settings.userName) || (currentUser && registry[currentUser] && registry[currentUser].username) || (this.data && this.data.settings && this.data.settings.userName) || 'Personal';
+      // Construct canonical personal account descriptor
+      const personalAcc = {
+        // Unique personal account identifier
+        id: 'personal',
+        // Personalized account label
+        name: `${uName} (Personal)`,
+        // Account classification
+        type: 'personal',
+        // Visual emoji icon
+        icon: '👤',
+        // Registration timestamp
+        createdAt: (currentUser && registry[currentUser] && registry[currentUser].createdAt) || new Date().toISOString()
+      // End personalAcc descriptor
+      };
+
+      // If user session exists and registered in database
+      if (currentUser && registry[currentUser]) {
+        // Track whether registry needs repair persistence
+        let repaired = false;
+        // Verify if accounts array is missing or invalid
+        if (!registry[currentUser].accounts || !Array.isArray(registry[currentUser].accounts)) {
+          // Initialize accounts array with primary personal profile
+          registry[currentUser].accounts = [personalAcc];
+          // Mark repair required
+          repaired = true;
+        // If accounts array exists, verify personal account is present
+        } else {
+          // Check if personal account exists in accounts list
+          const hasPersonal = registry[currentUser].accounts.some(a => a.id === 'personal' || a.type === 'personal');
+          // If personal account is missing from list
+          if (!hasPersonal) {
+            // Auto-heal by prepending personal profile to front of accounts list
+            registry[currentUser].accounts.unshift(personalAcc);
+            // Mark repair required
+            repaired = true;
+          // End hasPersonal check
+          }
+        // End accounts check
+        }
+
+        // Ensure accountDatasets dictionary exists
+        if (!registry[currentUser].accountDatasets) {
+          // Initialize datasets map
+          registry[currentUser].accountDatasets = {};
+          // Mark repair required
+          repaired = true;
+        // End accountDatasets check
+        }
+        // Ensure personal dataset slot exists
+        if (!registry[currentUser].accountDatasets['personal']) {
+          // Populate personal dataset from user data or active data
+          registry[currentUser].accountDatasets['personal'] = registry[currentUser].data || this.data || getSeedData();
+          // Mark repair required
+          repaired = true;
+        // End personal dataset check
+        }
+
+        // If repairs occurred, persist to storage
+        if (repaired) {
+          // Save healed registry to localStorage
+          localStorage.setItem(USERS_REGISTRY_KEY, JSON.stringify(registry));
+        // End repaired check
+        }
+
         // Return shallow clone of accounts array
         return [...registry[currentUser].accounts];
       // End registry check
       }
+
       // Fallback for demo or non-registered sessions: return personal workspace only
-      const uName = this.data?.settings?.userName || 'Personal';
-      // Return single personal profile
-      return [
-        // Personal profile descriptor
-        { id: 'personal', name: `${uName} (Personal)`, type: 'personal', icon: '👤', createdAt: new Date().toISOString() }
-      // End return
-      ];
+      return [personalAcc];
     // End getAccounts
     },
 
@@ -2583,8 +2806,10 @@
       const activeId = (currentUser && registry[currentUser] && registry[currentUser].activeAccountId) || 'personal';
       // Find matching account descriptor in list
       const matched = accounts.find(a => a.id === activeId);
-      // Return matched account or fallback to first account
-      return matched || accounts[0] || { id: 'personal', name: 'Personal Profile', type: 'personal', icon: '👤' };
+      // Fallback to personal account if matched not found
+      const personalFallback = accounts.find(a => a.id === 'personal' || a.type === 'personal');
+      // Return matched account, personal fallback, or first account
+      return matched || personalFallback || accounts[0] || { id: 'personal', name: 'Personal Profile', type: 'personal', icon: '👤' };
     // End getActiveAccount
     },
 
@@ -2747,7 +2972,13 @@
       // Retrieve all available accounts
       const accounts = this.getAccounts();
       // Find target account in registry
-      const targetAccount = accounts.find(a => a.id === targetAccountId);
+      let targetAccount = accounts.find(a => a.id === targetAccountId);
+      // Fallback if target account is personal and not matched by ID
+      if (!targetAccount && (targetAccountId === 'personal' || targetAccountId === 'Personal')) {
+        // Match by type or supply default personal descriptor
+        targetAccount = accounts.find(a => a.type === 'personal') || { id: 'personal', name: 'Personal Profile', type: 'personal', icon: '👤' };
+      // End personal fallback check
+      }
       // If target account does not exist
       if (!targetAccount) {
         // Return failure notification
@@ -2822,8 +3053,8 @@
         registry[currentUser].accountDatasets[currentActive.id] = this.data;
         // Update active account ID pointer
         registry[currentUser].activeAccountId = targetAccountId;
-        // Load target account dataset or initialize seed
-        const targetData = registry[currentUser].accountDatasets[targetAccountId] || getSeedData();
+        // Load target account dataset or initialize seed (fallback to user's personal ledger data if switching to personal)
+        const targetData = registry[currentUser].accountDatasets[targetAccountId] || (targetAccountId === 'personal' ? (registry[currentUser].data || getSeedData()) : getSeedData());
         // Synchronize user-level businessSwitchesUsed into target settings
         if (registry[currentUser].businessSwitchesUsed !== undefined) {
           // Ensure settings container exists
@@ -2948,16 +3179,48 @@
 
       // If user session exists
       if (currentUser && registry[currentUser]) {
-        // Ensure accounts array exists
-        if (!registry[currentUser].accounts) registry[currentUser].accounts = [];
+        // Ensure accounts array exists and is valid
+        if (!registry[currentUser].accounts || !Array.isArray(registry[currentUser].accounts)) {
+          // Initialize empty accounts list
+          registry[currentUser].accounts = [];
+        // End array check
+        }
+        // Verify if personal account already exists in accounts list
+        const hasPersonalAcc = registry[currentUser].accounts.some(a => a.id === 'personal' || a.type === 'personal');
+        // If personal account is not in the list
+        if (!hasPersonalAcc) {
+          // Resolve user personal display name
+          const persName = (registry[currentUser].data && registry[currentUser].data.settings && registry[currentUser].data.settings.userName) || registry[currentUser].username || 'Personal';
+          // Prepend personal account descriptor so personal account is never lost
+          registry[currentUser].accounts.unshift({
+            // Personal account identifier
+            id: 'personal',
+            // Display label
+            name: `${persName} (Personal)`,
+            // Account classification
+            type: 'personal',
+            // Visual emoji icon
+            icon: '👤',
+            // Timestamp
+            createdAt: new Date().toISOString()
+          // End personal descriptor
+          });
+        // End personal missing check
+        }
         // Append new business account
         registry[currentUser].accounts.push(newAccount);
         // Ensure datasets map exists
         if (!registry[currentUser].accountDatasets) registry[currentUser].accountDatasets = {};
         // Save current active data
         const currentActiveId = registry[currentUser].activeAccountId || 'personal';
-        // Persist current active
+        // Persist current active dataset
         registry[currentUser].accountDatasets[currentActiveId] = this.data;
+        // Ensure personal dataset slot exists in accountDatasets
+        if (!registry[currentUser].accountDatasets['personal']) {
+          // Populate personal dataset slot
+          registry[currentUser].accountDatasets['personal'] = registry[currentUser].data || this.data || getSeedData();
+        // End personal dataset check
+        }
         // Store new business dataset
         registry[currentUser].accountDatasets[newAccountId] = newDataset;
         // Update active pointer to new business account
@@ -3043,6 +3306,26 @@
       if (currentUser && registry[currentUser]) {
         // Filter out account from accounts list
         registry[currentUser].accounts = (registry[currentUser].accounts || []).filter(a => a.id !== accountId);
+        // Verify personal account is still present in accounts list
+        if (!registry[currentUser].accounts.some(a => a.id === 'personal' || a.type === 'personal')) {
+          // Resolve user display name
+          const uName = (registry[currentUser].data && registry[currentUser].data.settings && registry[currentUser].data.settings.userName) || registry[currentUser].username || 'Personal';
+          // Prepend personal account descriptor
+          registry[currentUser].accounts.unshift({
+            // Personal ID
+            id: 'personal',
+            // Display label
+            name: `${uName} (Personal)`,
+            // Personal type
+            type: 'personal',
+            // Emoji icon
+            icon: '👤',
+            // Timestamp
+            createdAt: new Date().toISOString()
+          // End personal descriptor
+          });
+        // End personal presence check
+        }
         // Delete account dataset
         if (registry[currentUser].accountDatasets) {
           // Delete dataset key
