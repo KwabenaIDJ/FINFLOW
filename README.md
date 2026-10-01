@@ -1,13 +1,15 @@
 # FinFlow 💸 — Intelligent Personal Finance Dashboard & Mobile App
 
-**FinFlow** is a modern, cross-platform personal finance management app built with high-performance Web technologies and Capacitor for Android. It features real-time cloud synchronization, multi-currency conversion, automated AI money coaching, and PDF statement generation.
+<!-- Core project summary and capabilities -->
+**FinFlow** is a modern, cross-platform personal finance management app built with high-performance Web technologies and Capacitor for Android. It features real-time cloud synchronization, multi-currency conversion, proactive financial diagnostics, and PDF statement generation.
 
 ---
 
 ## 🌟 Key Features
 
 * **📊 Interactive Financial Dashboard**: Real-time spending visualizations, income vs. expense breakdowns, and category progress bars powered by Chart.js.
-* **🤖 Gemini AI Money Coach**: Integrated AI financial assistant that analyzes spending patterns, provides Ghana/global contextual money advice, and suggests budget optimizations.
+<!-- Proactive financial diagnostics engine -->
+* **⚡ Smart Financial Diagnostics**: Proactive diagnostics system that analyzes spending patterns, provides contextual financial insights, and detects budget leaks.
 * **🌍 Multi-Currency Conversion**: Seamlessly switch between GHS (GH₵), USD ($), EUR (€), GBP (£), NGN (₦), and custom currencies with live rate calculations.
 * **📱 Cross-Platform Cloud Sync**: Multi-device synchronization across Web browsers and Android devices via Supabase Cloud Auth & PostgreSQL database.
 * **🎯 Savings Goals & Budget Limits**: Define monthly limits per category and set goal deadlines with visual progress meters.
@@ -22,7 +24,8 @@
 * **Frontend**: HTML5, Modern CSS3 (CSS Variables, Flexbox/Grid, Dark Theme Glassmorphism), Vanilla JavaScript (ES6+ Modules)
 * **Mobile Runtime**: Capacitor 6 (Android SDK 34 / Java 17)
 * **Cloud Infrastructure**: Supabase (PostgreSQL Database, Supabase Auth, Row-Level Security)
-* **AI Engine**: Google Gemini AI API
+<!-- Client-side analytics and data engine -->
+* **Data Engine**: High-Performance Client-Side Analytics Engine
 * **Libraries**: Chart.js, jsPDF, FontAwesome
 
 ---

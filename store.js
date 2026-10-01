@@ -299,8 +299,10 @@
         monthlySavingsGoal: 0,   // Monthly savings target
         paystackKey: '',         // Empty Paystack secret key placeholder
         geminiApiKey: '',        // Optional Gemini AI API key override
-        aiQueriesCount: 0,       // Free AI Coach queries used counter
-        isPremium: false,        // Default membership tier (Standard)
+        // Counter tracking queries processed for user account
+        aiQueriesCount: 0,
+        // Active membership tier boolean flag indicating premium status
+        isPremium: false,
         exchangeRates: {...DEFAULT_GHS_RATES}
       }
     };
