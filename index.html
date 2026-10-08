@@ -2591,13 +2591,26 @@
         </button>
       </div>
 
-      <!-- Large Circular Avatar Display Container -->
-      <div style="position: relative; width: 190px; height: 190px; margin: 0 auto 20px auto;">
+      <!-- Large Circular Avatar Display Container with interactive tap-to-change feature -->
+      <div style="position: relative; width: 230px; height: 230px; margin: 0 auto 16px auto;">
         <!-- Large Avatar Image / Initial preview circle -->
-        <div id="profileViewerAvatarBig" style="width: 100%; height: 100%; border-radius: 50%; border: 4px solid var(--color-primary); box-shadow: 0 10px 30px var(--color-primary-glow); display: flex; align-items: center; justify-content: center; font-size: 4.5rem; font-weight: 800; color: #ffffff; background: linear-gradient(135deg, #0284c7, #6366f1); overflow: hidden; background-size: cover; background-position: center; transition: all 0.25s ease;">
+        <div id="profileViewerAvatarBig" onclick="window.triggerChangeProfilePic && window.triggerChangeProfilePic()" title="Tap to change photo" style="position: relative; width: 100%; height: 100%; border-radius: 50%; border: 4px solid var(--color-primary); box-shadow: 0 12px 35px var(--color-primary-glow); display: flex; align-items: center; justify-content: center; font-size: 5rem; font-weight: 800; color: #ffffff; background: linear-gradient(135deg, #0284c7, #6366f1); overflow: hidden; cursor: pointer; transition: transform 0.2s ease, box-shadow 0.2s ease;">
           <!-- Default initials placeholder -->
-          <span id="profileViewerAvatarInitials">U</span>
+          <span id="profileViewerAvatarInitials" style="z-index: 1;">U</span>
+          <!-- Dedicated high-definition image element with hardware acceleration -->
+          <img id="profileViewerImg" src="" alt="Profile Photo" style="display: none; position: absolute; top: 0; left: 0; width: 100%; height: 100%; object-fit: cover; border-radius: 50%; image-rendering: -webkit-optimize-contrast; image-rendering: high-quality; transform: translateZ(0); -webkit-backface-visibility: hidden; z-index: 2;">
+          <!-- Floating camera action badge on hover/tap -->
+          <div style="position: absolute; bottom: 8px; right: 8px; width: 40px; height: 40px; border-radius: 50%; background: var(--color-primary); color: #ffffff; display: flex; align-items: center; justify-content: center; box-shadow: 0 4px 12px rgba(0,0,0,0.3); border: 2px solid #ffffff; z-index: 3;" title="Change Photo">
+            <!-- Camera SVG icon -->
+            <svg style="width: 18px; height: 18px; fill: none; stroke: currentColor; stroke-width: 2.2;"><use href="#icon-camera"></use></svg>
+          </div>
         </div>
+      </div>
+
+      <!-- Helpful notice shown when current photo in storage is low-resolution thumbnail -->
+      <div id="profileViewerBlurNotice" style="display: none; margin: 0 auto 16px auto; max-width: 380px; padding: 10px 14px; background: rgba(245, 158, 11, 0.12); border: 1px solid rgba(245, 158, 11, 0.35); border-radius: 12px; font-size: 0.82rem; color: #d97706; text-align: center; line-height: 1.45;">
+        <!-- Notification text explaining how to upgrade to HD -->
+        <span>🔍 <strong>Low-resolution photo detected.</strong> This picture was saved in low quality. Tap <strong>Change Photo</strong> below to upload in razor-sharp HD.</span>
       </div>
 
       <!-- User Information Display -->

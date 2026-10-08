@@ -272,16 +272,38 @@ nav {
 }
 
 .profile-avatar {
+  /* Set fixed avatar container width */
   width: 42px;
+  /* Set fixed avatar container height */
   height: 42px;
+  /* Clip container edges to create perfect circle */
   border-radius: 50%;
+  /* Fallback vibrant gradient background */
   background: linear-gradient(135deg, #f472b6, var(--color-primary));
+  /* Flex layout to center content */
   display: flex;
+  /* Center horizontally */
   align-items: center;
+  /* Center vertically */
   justify-content: center;
+  /* White text color for initials */
   color: #fff;
+  /* Bold weight for initials */
   font-weight: 700;
+  /* Subtle drop shadow */
   box-shadow: var(--shadow-card);
+  /* Prevent background image repeating */
+  background-repeat: no-repeat;
+  /* Ensure image covers circular frame */
+  background-size: cover;
+  /* Center background image alignment */
+  background-position: center;
+  /* Maximize contrast and sharpness on high-DPI displays */
+  image-rendering: -webkit-optimize-contrast;
+  /* Enable crisp edge rendering */
+  image-rendering: crisp-edges;
+  /* Hardware accelerate rasterization to prevent mobile blur */
+  transform: translateZ(0);
 }
 
 .profile-info {

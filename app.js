@@ -438,51 +438,94 @@
   window.escapeHTML = escapeHTML;
 
   /**
-   * Resizes an image file to a crisp, high-definition 360x360px square JPEG while keeping Base64 compact.
-   * Ensures crystal-clear rendering in both small circular avatars and enlarged full-screen image viewer.
+   * Resizes an image file to a crystal-clear, high-definition 1024x1024px square JPEG using stepped downsampling.
+   * Multi-pass halving eliminates canvas downsampling blur and aliasing, ensuring razor sharpness on retina displays.
    */
   function compressImage(file, callback) {
-    // Instantiate file reader
+    // Instantiate file reader instance
     const reader = new FileReader();
     // Read selected image file as data URL
     reader.readAsDataURL(file);
-    // On file read completion
+    // On file read completion event
     reader.onload = (event) => {
       // Create new HTML image instance
       const img = new Image();
       // Assign data URL source
       img.src = event.target.result;
-      // When image finishes loading
+      // When image finishes loading into memory
       img.onload = () => {
-        // Create off-screen canvas element
-        const canvas = document.createElement('canvas');
-        // Obtain 2d rendering context
-        const ctx = canvas.getContext('2d');
-        // Set target ultra-clear dimensions (512x512 provides flawless retina sharpness in profile viewer)
-        const size = 512;
-        // Configure canvas width
-        canvas.width = size;
-        // Configure canvas height
-        canvas.height = size;
-        
-        // Enable high-quality image smoothing algorithms
-        ctx.imageSmoothingEnabled = true;
-        // Set smoothing quality to highest tier
-        ctx.imageSmoothingQuality = 'high';
-
-        // Calculate square cropping coordinates from original image aspect ratio
+        // High-definition target size: 1024x1024 px for crystal-clear retina/FHD sharpness
+        const targetSize = 1024;
+        // Determine square crop dimensions based on the smaller side
         const minSide = Math.min(img.width, img.height);
-        // Compute horizontal crop offset
+        // Calculate horizontal centering crop offset
         const sx = (img.width - minSide) / 2;
-        // Compute vertical crop offset
+        // Calculate vertical centering crop offset
         const sy = (img.height - minSide) / 2;
-        
-        // Draw centered square cropped image onto canvas
-        ctx.drawImage(img, sx, sy, minSide, minSide, 0, 0, size, size);
-        // Export crisp high-quality JPEG with 0.92 quality
-        callback(canvas.toDataURL('image/jpeg', 0.92));
+
+        // Create first scratch canvas to perform exact square crop of the original photo
+        let curCanvas = document.createElement('canvas');
+        // Set scratch canvas width to square dimension
+        curCanvas.width = minSide;
+        // Set scratch canvas height to square dimension
+        curCanvas.height = minSide;
+        // Obtain 2d rendering context of scratch canvas
+        let curCtx = curCanvas.getContext('2d');
+        // Enable high quality image smoothing algorithm
+        curCtx.imageSmoothingEnabled = true;
+        // Set smoothing quality to highest tier
+        curCtx.imageSmoothingQuality = 'high';
+        // Draw cropped square region of the source image onto scratch canvas
+        curCtx.drawImage(img, sx, sy, minSide, minSide, 0, 0, minSide, minSide);
+
+        // Track current canvas width during stepped downsampling
+        let curWidth = minSide;
+        // Step down by half iteratively if image is much larger than target to avoid canvas blur
+        while (curWidth > targetSize * 1.5) {
+          // Halve current width for smooth stepped downsampling
+          const nextWidth = Math.round(curWidth / 2);
+          // Create step canvas for intermediate resolution
+          const nextCanvas = document.createElement('canvas');
+          // Set intermediate canvas width
+          nextCanvas.width = nextWidth;
+          // Set intermediate canvas height
+          nextCanvas.height = nextWidth;
+          // Obtain context for intermediate canvas
+          const nextCtx = nextCanvas.getContext('2d');
+          // Enable image smoothing on intermediate step
+          nextCtx.imageSmoothingEnabled = true;
+          // Set smoothing quality to high
+          nextCtx.imageSmoothingQuality = 'high';
+          // Draw previous step canvas scaled down by 50%
+          nextCtx.drawImage(curCanvas, 0, 0, curWidth, curWidth, 0, 0, nextWidth, nextWidth);
+          // Update current canvas reference to intermediate canvas
+          curCanvas = nextCanvas;
+          // Update current width tracker
+          curWidth = nextWidth;
+        // End stepped downsampling loop
+        }
+
+        // Create final canvas rendered precisely at target ultra-clear dimensions
+        const finalCanvas = document.createElement('canvas');
+        // Set final canvas width
+        finalCanvas.width = targetSize;
+        // Set final canvas height
+        finalCanvas.height = targetSize;
+        // Obtain final canvas 2d rendering context
+        const finalCtx = finalCanvas.getContext('2d');
+        // Enable high-quality image smoothing
+        finalCtx.imageSmoothingEnabled = true;
+        // Set smoothing quality to high
+        finalCtx.imageSmoothingQuality = 'high';
+        // Draw scaled canvas into final 1024x1024 dimensions
+        finalCtx.drawImage(curCanvas, 0, 0, curWidth, curWidth, 0, 0, targetSize, targetSize);
+        // Export razor-sharp high-quality JPEG at 0.92 compression
+        callback(finalCanvas.toDataURL('image/jpeg', 0.92));
+      // End img.onload handler
       };
+    // End reader.onload handler
     };
+  // End compressImage function
   }
 
   /**
@@ -907,7 +950,11 @@
    * Triggers the file chooser dialog to change profile photo directly from viewer lightbox.
    */
   window.triggerChangeProfilePic = function() {
-    // Close profile image viewer lightbox
+    // Record that avatar change was initiated from within profile image viewer
+    window._openedFromProfileViewer = true;
+    // Set guard flag to prevent window focus from triggering stale cloud fetch
+    isSelectingAvatar = true;
+    // Close profile image viewer lightbox temporarily while system file picker is open
     window.closeProfileImageViewer();
     // Reference settings profile pic file input element
     const input = document.getElementById('settingsProfilePicInput');
@@ -915,9 +962,17 @@
     if (input) {
       // Clear value so re-picking fires change event
       input.value = '';
+      // Safety timeout to reset selection guard if user dismisses file dialog without picking
+      setTimeout(() => {
+        // Reset guard flag after timeout
+        isSelectingAvatar = false;
+      // End timeout
+      }, 15000);
       // Trigger native click on file input
       input.click();
+    // End input check
     }
+  // End triggerChangeProfilePic
   };
 
   /**
@@ -1768,8 +1823,12 @@
 
     // Update enlarged profile viewer modal preview elements
     const viewerAvatarBig = document.getElementById('profileViewerAvatarBig');
+    // Reference dedicated HD image element inside large avatar preview
+    const viewerImg = document.getElementById('profileViewerImg');
     // Reference initials element inside large avatar preview
     const viewerInitials = document.getElementById('profileViewerAvatarInitials');
+    // Reference low-resolution notice element
+    const blurNotice = document.getElementById('profileViewerBlurNotice');
     // Reference name display inside viewer
     const viewerName = document.getElementById('profileViewerName');
     // Reference role/workspace badge inside viewer
@@ -1779,20 +1838,56 @@
     if (viewerAvatarBig) {
       // If photo uploaded
       if (activeProfilePic) {
-        // Hide initials
+        // Hide initials placeholder
         if (viewerInitials) viewerInitials.style.display = 'none';
-        // Show picture
-        viewerAvatarBig.style.backgroundImage = `url(${activeProfilePic})`;
-        // Center and cover image
-        viewerAvatarBig.style.backgroundSize = 'cover';
-        viewerAvatarBig.style.backgroundPosition = 'center';
+        // Clear background image on container to prioritize dedicated hardware-accelerated img tag
+        viewerAvatarBig.style.backgroundImage = 'none';
+        // Check if dedicated img tag exists
+        if (viewerImg) {
+          // Set image source to active profile picture
+          viewerImg.src = activeProfilePic;
+          // Display image element
+          viewerImg.style.display = 'block';
+          // Attach onload listener to inspect natural resolution of loaded image
+          viewerImg.onload = () => {
+            // Check if blur notice element is available
+            if (blurNotice) {
+              // If natural resolution is low (e.g., old 72px thumbnail from legacy storage)
+              if (viewerImg.naturalWidth > 0 && viewerImg.naturalWidth < 400) {
+                // Show prompt alerting user to upgrade photo
+                blurNotice.style.display = 'block';
+              // If natural resolution is HD
+              } else {
+                // Hide prompt for crisp HD image
+                blurNotice.style.display = 'none';
+              // End resolution check
+              }
+            // End blurNotice check
+            }
+          // End onload handler
+          };
+        // End viewerImg check
+        }
       // If no photo uploaded
       } else {
-        // Show initials
-        if (viewerInitials) {
-          viewerInitials.textContent = initials;
-          viewerInitials.style.display = 'block';
+        // Hide img element
+        if (viewerImg) {
+          // Hide image element
+          viewerImg.style.display = 'none';
+          // Clear image src
+          viewerImg.src = '';
+        // End viewerImg check
         }
+        // Show initials placeholder
+        if (viewerInitials) {
+          // Set initials text
+          viewerInitials.textContent = initials;
+          // Show initials element
+          viewerInitials.style.display = 'block';
+        // End viewerInitials check
+        }
+        // Hide blur notice banner
+        if (blurNotice) blurNotice.style.display = 'none';
         // Remove background image
         viewerAvatarBig.style.backgroundImage = 'none';
       // End photo check
@@ -9133,6 +9228,18 @@
               window.syncUI();
             // End syncUI check
             }
+            // Check if file upload was initiated from inside profile image viewer lightbox
+            if (window._openedFromProfileViewer) {
+              // Reset trigger flag
+              window._openedFromProfileViewer = false;
+              // Re-open profile viewer lightbox so user sees their new crystal-clear photo immediately
+              if (typeof window.openProfileImageViewer === 'function') {
+                // Re-open image viewer modal
+                window.openProfileImageViewer();
+              // End openProfileImageViewer check
+              }
+            // End _openedFromProfileViewer check
+            }
             // Reset file input value so same file can be re-selected if needed
             if (elements.settingsProfilePicInput) {
               // Clear file input value
@@ -9151,6 +9258,18 @@
         } else {
           // Release avatar selection guard
           isSelectingAvatar = false;
+          // Check if file upload was initiated from profile image viewer
+          if (window._openedFromProfileViewer) {
+            // Reset trigger flag
+            window._openedFromProfileViewer = false;
+            // Re-open profile viewer lightbox
+            if (typeof window.openProfileImageViewer === 'function') {
+              // Re-open image viewer modal
+              window.openProfileImageViewer();
+            // End openProfileImageViewer check
+            }
+          // End _openedFromProfileViewer check
+          }
         // End file check
         }
       // End change event listener
@@ -9159,6 +9278,18 @@
       elements.settingsProfilePicInput.addEventListener('cancel', () => {
         // Immediately release guard flag on cancel
         isSelectingAvatar = false;
+        // Check if file upload was initiated from profile image viewer
+        if (window._openedFromProfileViewer) {
+          // Reset trigger flag
+          window._openedFromProfileViewer = false;
+          // Re-open profile viewer lightbox
+          if (typeof window.openProfileImageViewer === 'function') {
+            // Re-open image viewer modal
+            window.openProfileImageViewer();
+          // End openProfileImageViewer check
+          }
+        // End _openedFromProfileViewer check
+        }
       // End cancel event listener
       });
     // End settingsProfilePicInput check
