@@ -4638,32 +4638,36 @@
     .kpi-summary-grid {
       display: grid;
       grid-template-columns: repeat(5, 1fr);
-      gap: 10px;
-      margin-bottom: 24px;
+      gap: 8px;
+      margin-bottom: 22px;
     }
     .kpi-tile {
       background: #f8fafc;
       border: 1px solid #e2e8f0;
-      border-radius: 8px;
-      padding: 12px 8px;
+      border-radius: 6px;
+      padding: 10px 5px;
       text-align: center;
       transition: all 0.15s ease;
+      box-sizing: border-box;
+      min-width: 0;
     }
     .kpi-tile.highlight {
       background: #f0f9ff;
       border-color: #7dd3fc;
     }
     .kpi-label {
-      font-size: 8.5px;
+      font-size: 8px;
       text-transform: uppercase;
       font-weight: 800;
       color: #64748b;
-      margin-bottom: 6px;
-      letter-spacing: 0.5px;
+      margin-bottom: 5px;
+      letter-spacing: 0.3px;
       white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
     }
     .kpi-amount {
-      font-size: 13px;
+      font-size: 11.5px;
       font-weight: 800;
       color: #0f172a;
       white-space: nowrap;
@@ -4672,15 +4676,15 @@
     .kpi-amount.expense { color: #dc2626; }
     /* Section Headings */
     .section-heading {
-      font-size: 12px;
+      font-size: 11.5px;
       font-weight: 800;
       color: #0f172a;
-      margin: 22px 0 10px 0;
+      margin: 20px 0 10px 0;
       display: flex;
       justify-content: space-between;
       align-items: center;
       border-bottom: 1.5px solid #cbd5e1;
-      padding-bottom: 6px;
+      padding-bottom: 5px;
       text-transform: uppercase;
       letter-spacing: 0.5px;
     }
@@ -4689,17 +4693,17 @@
       width: 100%;
       border-collapse: collapse;
       table-layout: auto;
-      font-size: 10.5px;
+      font-size: 10px;
       margin-bottom: 18px;
     }
     th {
       background: #0f172a;
       color: #ffffff;
       text-align: left;
-      padding: 10px 12px;
+      padding: 9px 8px;
       font-weight: 800;
-      font-size: 10px;
-      letter-spacing: 0.5px;
+      font-size: 9.5px;
+      letter-spacing: 0.4px;
       text-transform: uppercase;
       white-space: nowrap;
       border: none;
@@ -4707,10 +4711,11 @@
     th:first-child { border-top-left-radius: 6px; }
     th:last-child { border-top-right-radius: 6px; }
     td {
-      padding: 9px 12px;
+      padding: 8px 8px;
       border-bottom: 1px solid #e2e8f0;
       color: #1e293b;
       vertical-align: middle;
+      font-size: 10px;
       word-break: break-word;
     }
     tr:nth-child(even) td {
@@ -4863,18 +4868,18 @@
     <table>
       <thead>
         <tr>
-          <!-- Date column header -->
-          <th style="width: 85px;">Date</th>
-          <!-- Description column header with flexible expansion -->
-          <th style="min-width: 170px;">Description</th>
-          <!-- Category column header -->
-          <th style="width: 125px;">Category</th>
-          <!-- Type badge column header -->
-          <th class="text-center" style="width: 70px;">Type</th>
-          <!-- Amount column header -->
-          <th class="text-right" style="width: 110px;">Amount</th>
-          <!-- Running balance column header -->
-          <th class="text-right" style="width: 115px;">Balance</th>
+          <!-- Date column header sized for standard ISO date format -->
+          <th style="width: 72px;">Date</th>
+          <!-- Description column header with flexible expansion to fit narrations cleanly -->
+          <th style="min-width: 150px;">Description</th>
+          <!-- Category column header sized compactly for badge text -->
+          <th style="width: 105px;">Category</th>
+          <!-- Type badge column header centered for income/expense badges -->
+          <th class="text-center" style="width: 58px;">Type</th>
+          <!-- Amount column header right-aligned for monetary values -->
+          <th class="text-right" style="width: 95px;">Amount</th>
+          <!-- Running balance column header right-aligned for balance ledger totals -->
+          <th class="text-right" style="width: 95px;">Balance</th>
         </tr>
       </thead>
       <tbody>
@@ -5128,15 +5133,15 @@
       // End html2pdf undefined check
       }
 
-      // Configure high-resolution PDF rendering options with forced 800px A4 window
+      // Configure high-resolution PDF rendering options with 700px bounds to fit A4 perfectly without clipping
       const opt = {
-        // Standard clean A4 margins
-        margin: [8, 8, 8, 8],
+        // Balanced 6mm page margins ensuring maximum printable width without overflow
+        margin: [6, 6, 6, 6],
         // Target file name
         filename: filename,
         // Image format and highest quality
         image: { type: 'jpeg', quality: 0.98 },
-        // High scale canvas with 800px window width for pristine bank-grade typography
+        // High scale canvas matching 700px sheet width for pristine typography
         html2canvas: {
           // Double pixel density for retina crispness
           scale: 2,
@@ -5146,8 +5151,10 @@
           logging: false,
           // Clean white page background
           backgroundColor: '#ffffff',
-          // Force layout engine to render at true 800px A4 page width
-          windowWidth: 800
+          // Force layout engine to render at true 700px document width
+          windowWidth: 700,
+          // Explicit width constraint to prevent canvas viewport cutoff
+          width: 700
         },
         // Standard portrait A4 PDF configuration
         jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' }
