@@ -853,6 +853,53 @@
   };
 
   /**
+   * Opens the interactive profile photo viewer lightbox modal.
+   */
+  window.openProfileImageViewer = function() {
+    // Reference profile image viewer modal element
+    const viewerModal = document.getElementById('profileImageViewerModal');
+    // Verify modal element existence
+    if (viewerModal) {
+      // Refresh current photo and name data before displaying
+      if (typeof window.syncUI === 'function') {
+        window.syncUI();
+      }
+      // Open viewer modal
+      openModal(viewerModal);
+    }
+  };
+
+  /**
+   * Closes the profile photo viewer lightbox modal.
+   */
+  window.closeProfileImageViewer = function() {
+    // Reference profile image viewer modal element
+    const viewerModal = document.getElementById('profileImageViewerModal');
+    // Verify modal element existence
+    if (viewerModal) {
+      // Close viewer modal
+      closeModal(viewerModal);
+    }
+  };
+
+  /**
+   * Triggers the file chooser dialog to change profile photo directly from viewer lightbox.
+   */
+  window.triggerChangeProfilePic = function() {
+    // Close profile image viewer lightbox
+    window.closeProfileImageViewer();
+    // Reference settings profile pic file input element
+    const input = document.getElementById('settingsProfilePicInput');
+    // If input element exists
+    if (input) {
+      // Clear value so re-picking fires change event
+      input.value = '';
+      // Trigger native click on file input
+      input.click();
+    }
+  };
+
+  /**
    * Helper function to detect if running natively inside Android app environment.
    */
   function isNativeAndroidPlatform() {
@@ -1666,22 +1713,82 @@
 
     // Update circular profile avatars text contents or backgrounds
     const avatars = document.querySelectorAll('.profile-avatar');
+    // Compute user initials for fallback avatar display
     const initials = settings.userName ? settings.userName.split(' ').map(n => n[0]).join('').toUpperCase().slice(0,2) : 'U';
+    // Active profile picture base64 data URL
     const activeProfilePic = settings.profilePic || '';
     
+    // Iterate over all avatar container elements to sync photo or initials
     avatars.forEach(avatar => {
+      // Guard against null elements
       if (avatar) {
+        // If avatar has uploaded custom picture
         if (activeProfilePic) {
+          // Clear initial letter
           avatar.textContent = '';
+          // Set background photo
           avatar.style.backgroundImage = `url(${activeProfilePic})`;
+          // Cover full element bounds
           avatar.style.backgroundSize = 'cover';
+          // Center background position
           avatar.style.backgroundPosition = 'center';
+        // Otherwise use initials
         } else {
+          // Set initials text
           avatar.textContent = initials;
+          // Remove background image
           avatar.style.backgroundImage = 'none';
+        // End photo check
         }
+      // End avatar null check
       }
+    // End avatar loop
     });
+
+    // Update enlarged profile viewer modal preview elements
+    const viewerAvatarBig = document.getElementById('profileViewerAvatarBig');
+    // Reference initials element inside large avatar preview
+    const viewerInitials = document.getElementById('profileViewerAvatarInitials');
+    // Reference name display inside viewer
+    const viewerName = document.getElementById('profileViewerName');
+    // Reference role/workspace badge inside viewer
+    const viewerRole = document.getElementById('profileViewerRole');
+
+    // Update large preview avatar
+    if (viewerAvatarBig) {
+      // If photo uploaded
+      if (activeProfilePic) {
+        // Hide initials
+        if (viewerInitials) viewerInitials.style.display = 'none';
+        // Show picture
+        viewerAvatarBig.style.backgroundImage = `url(${activeProfilePic})`;
+        // Center and cover image
+        viewerAvatarBig.style.backgroundSize = 'cover';
+        viewerAvatarBig.style.backgroundPosition = 'center';
+      // If no photo uploaded
+      } else {
+        // Show initials
+        if (viewerInitials) {
+          viewerInitials.textContent = initials;
+          viewerInitials.style.display = 'block';
+        }
+        // Remove background image
+        viewerAvatarBig.style.backgroundImage = 'none';
+      // End photo check
+      }
+    // End viewerAvatarBig check
+    }
+
+    // Update name inside profile viewer
+    if (viewerName) {
+      viewerName.textContent = settings.userName || 'User';
+    }
+
+    // Update role / workspace text inside profile viewer
+    if (viewerRole) {
+      const isPremium = !!(settings.isPremium || (typeof localStorage !== 'undefined' && localStorage.getItem('FINFLOW_PREMIUM_ACTIVE') === 'true'));
+      viewerRole.textContent = isPremium ? 'Premium Member' : 'Standard Member';
+    }
 
     // Control Settings panel Remove button visibility
     if (elements.removeAvatarBtn) {
@@ -4266,14 +4373,10 @@
     // Formatted issue timestamp string
     const issueDateStr = now.toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' });
 
-    // Open print preview browser window with fallback to current window
-    let printWin = window.open('', '_blank', 'width=960,height=900');
-    // Guard against popup blocker or mobile webview restrictions
-    if (!printWin) {
-      // Fallback: open in current window frame so user is never blocked
-      printWin = window.open('', '_self');
-    // End popup check
-    }
+    // Check if in-app statement viewer modal elements exist
+    const viewerModal = document.getElementById('statementViewerModal');
+    // Reference paper sheet container element for statement injection
+    const paperSheet = document.getElementById('statementPaperSheet');
 
     // Build certified bank-grade statement HTML template
     const htmlContent = `
@@ -4725,12 +4828,171 @@
 </html>
     `;
 
-    // Write rendered HTML into print window
-    printWin.document.write(htmlContent);
-    // Close document stream to trigger onload
-    printWin.document.close();
+    // Store current active statement filename for direct download handler
+    window._activeStatementFilename = `FinFlow_Statement_${periodTitle.replace(/[^a-zA-Z0-9]/g, '_')}.pdf`;
+
+    // Check if in-app statement viewer modal is available
+    if (viewerModal && paperSheet) {
+      // Inject rendered statement content directly into paper sheet container
+      paperSheet.innerHTML = htmlContent.substring(
+        htmlContent.indexOf('<div id="statementContent">'),
+        htmlContent.indexOf('<!-- Closing statement content printable wrapper -->') + '<!-- Closing statement content printable wrapper -->'.length + 6
+      );
+      // Reset scroll position to top
+      const scrollContainer = document.getElementById('statementViewerScrollContainer');
+      // Scroll to top if container exists
+      if (scrollContainer) scrollContainer.scrollTop = 0;
+      // Show in-app statement modal with instantaneous response
+      viewerModal.style.setProperty('display', 'flex', 'important');
+      viewerModal.style.setProperty('pointer-events', 'auto', 'important');
+      viewerModal.classList.add('active');
+      // Prevent background scrolling while viewing statement
+      document.body.classList.add('no-scroll');
+      return;
+    }
+
+    // Fallback: If in-app modal elements not found, open popup window
+    let printWin = window.open('', '_blank', 'width=960,height=900');
+    // Guard against popup blocker
+    if (!printWin) {
+      printWin = window.open('', '_self');
+    }
+    // Check if printWin document is available
+    if (printWin && printWin.document) {
+      // Write rendered HTML into print window
+      printWin.document.write(htmlContent);
+      // Close document stream to trigger onload
+      printWin.document.close();
+    }
   // End generateBankGradeStatement
   }
+
+  /**
+   * Closes the in-app statement viewer modal immediately.
+   */
+  window.closeStatementViewer = function() {
+    // Reference statement viewer modal element
+    const viewerModal = document.getElementById('statementViewerModal');
+    // Check if modal exists
+    if (viewerModal) {
+      // Remove active class
+      viewerModal.classList.remove('active');
+      // Hide modal display
+      viewerModal.style.setProperty('display', 'none', 'important');
+      // Disable pointer events
+      viewerModal.style.setProperty('pointer-events', 'none', 'important');
+      // Re-enable body scroll
+      document.body.classList.remove('no-scroll');
+    }
+  };
+
+  /**
+   * Robust PDF generator and downloader for FinFlow statements.
+   * Works across desktop web browsers and native Android Capacitor WebViews.
+   */
+  window.downloadActiveStatementPdf = async function() {
+    // Reference download button element
+    const btn = document.getElementById('btnStatementDownloadPdf');
+    // Reference button text label
+    const textSpan = document.getElementById('btnStatementDownloadText');
+    // Target statement element container
+    const element = document.getElementById('statementPaperSheet');
+
+    // Compute target filename
+    const filename = window._activeStatementFilename || 'FinFlow_Statement.pdf';
+
+    // Verify element existence
+    if (!element) {
+      // Alert user if statement element is not found
+      alert('Statement content not found to export.');
+      return;
+    }
+
+    // Update button UI state to show active generation
+    if (btn && textSpan) {
+      // Set text to generating
+      textSpan.textContent = 'Generating PDF...';
+      // Disable button during processing
+      btn.disabled = true;
+    }
+
+    try {
+      // Verify html2pdf availability
+      if (typeof html2pdf === 'undefined') {
+        // Fallback: Trigger browser print dialog
+        window.print();
+        if (btn && textSpan) {
+          textSpan.textContent = 'Download PDF Report';
+          btn.disabled = false;
+        }
+        return;
+      }
+
+      // Configure high-resolution PDF rendering options
+      const opt = {
+        margin: [10, 10, 10, 10],
+        filename: filename,
+        image: { type: 'jpeg', quality: 0.98 },
+        html2canvas: { scale: 2, useCORS: true, logging: false },
+        jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' }
+      };
+
+      // Check if running natively inside Android Capacitor WebView
+      const cap = window.Capacitor;
+      const isNative = !!(cap && typeof cap.isNativePlatform === 'function' && cap.isNativePlatform());
+
+      // If running inside Capacitor Android app, use Filesystem + Share for 100% reliable saving
+      if (isNative && cap.Plugins && (cap.Plugins.Filesystem || cap.Plugins.Share)) {
+        // Generate PDF as base64 data URI string
+        const pdfBase64DataUrl = await html2pdf().set(opt).from(element).outputPdf('datauristring');
+        // Extract raw base64 data without URI prefix
+        const base64Data = pdfBase64DataUrl.split(',')[1] || pdfBase64DataUrl;
+
+        // Try writing file via Capacitor Filesystem plugin
+        if (cap.Plugins.Filesystem) {
+          const { Filesystem } = cap.Plugins;
+          // Save file to Cache directory
+          const savedFile = await Filesystem.writeFile({
+            path: filename,
+            data: base64Data,
+            directory: 'CACHE',
+            recursive: true
+          });
+
+          // Check if Capacitor Share plugin is available to trigger system share/save intent
+          if (cap.Plugins.Share && savedFile && savedFile.uri) {
+            const { Share } = cap.Plugins;
+            // Trigger native share sheet allowing user to Save to Files, Google Drive, or send
+            await Share.share({
+              title: 'FinFlow Statement',
+              text: 'Here is your official FinFlow Financial Statement',
+              url: savedFile.uri,
+              dialogTitle: 'Save or Share PDF Report'
+            });
+            // Show alert
+            alert('✅ PDF Statement generated and ready to save or share!');
+          } else {
+            // Alert user that file is saved
+            alert(`✅ Statement PDF saved successfully: ${filename}`);
+          }
+        }
+      } else {
+        // Standard Web Browser environment: Use standard html2pdf file download
+        await html2pdf().set(opt).from(element).save();
+      }
+    } catch (err) {
+      // Log PDF generation failure details
+      console.error('Error generating PDF report:', err);
+      // Fallback: Trigger browser print
+      window.print();
+    } finally {
+      // Restore download button state
+      if (btn && textSpan) {
+        textSpan.textContent = 'Download PDF Report';
+        btn.disabled = false;
+      }
+    }
+  };
 
   /**
    * PDF Statement entry point. Prompts premium upgrade for unpaid members or opens period configuration modal.

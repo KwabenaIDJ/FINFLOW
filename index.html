@@ -401,7 +401,8 @@
 
       <div class="profile-card" style="display: flex; align-items: center; justify-content: space-between; width: 100%;">
         <div style="display: flex; align-items: center; gap: 12px;">
-          <div class="profile-avatar">U</div>
+          <!-- Sidebar user avatar bubble with lightbox viewer trigger -->
+          <div class="profile-avatar" id="sidebarProfileAvatar" onclick="window.openProfileImageViewer && window.openProfileImageViewer()" title="Click to view profile picture" role="button" tabindex="0" style="cursor: pointer; transition: transform 0.15s ease;">U</div>
           <div class="profile-info">
             <span class="profile-name">User</span>
             <span class="profile-role">Standard Member</span>
@@ -425,8 +426,8 @@
           <svg style="width: 18px; height: 18px; fill: none; stroke: currentColor; stroke-width: 2.5;"><use href="#icon-menu"></use></svg>
         </button>
         <div style="display: flex; align-items: center; gap: 14px; flex-grow: 1; flex-wrap: wrap;">
-          <!-- User avatar bubble -->
-          <div class="profile-avatar" style="width: 46px; height: 46px; font-size: 1.1rem; flex-shrink: 0; border: 2px solid var(--color-primary); box-shadow: 0 4px 12px var(--color-primary-glow);">U</div>
+          <!-- User avatar bubble with interactive lightbox view trigger -->
+          <div class="profile-avatar" id="headerProfileAvatar" onclick="window.openProfileImageViewer && window.openProfileImageViewer()" title="Click to view profile picture" role="button" tabindex="0" style="width: 46px; height: 46px; font-size: 1.1rem; flex-shrink: 0; border: 2px solid var(--color-primary); box-shadow: 0 4px 12px var(--color-primary-glow); cursor: pointer; transition: transform 0.15s ease;">U</div>
           <!-- Title and workspace switcher row -->
           <div class="header-title">
             <!-- Greeting title and workspace pill wrapper -->
@@ -2569,6 +2570,100 @@
   <!-- End statementModal -->
   </div>
 
+  <!-- ==================== MODAL: PROFILE IMAGE VIEWER / LIGHTBOX ==================== -->
+  <!-- Fullscreen interactive lightbox modal to view, inspect, and update user profile avatar -->
+  <div class="modal-overlay" id="profileImageViewerModal" style="display: none; z-index: 10005;" onclick="if(event.target === this) window.closeProfileImageViewer && window.closeProfileImageViewer()">
+    <!-- Profile lightbox dialog container -->
+    <div class="modal-content" style="max-width: 440px; text-align: center; padding: 28px 24px; position: relative;">
+      <!-- Header bar with modal title and close button -->
+      <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; width: 100%;">
+        <!-- Lightbox modal title -->
+        <h3 style="margin: 0; font-size: 1.15rem; font-weight: 800; display: flex; align-items: center; gap: 8px; color: var(--text-main);">
+          <!-- User circle SVG icon -->
+          <svg style="width: 22px; height: 22px; stroke: var(--color-primary); fill: none; stroke-width: 2;"><use href="#icon-user"></use></svg>
+          <!-- Title text -->
+          <span>Profile Photo</span>
+        </h3>
+        <!-- Close button triggering modal dismissal -->
+        <button type="button" class="modal-close-btn" onclick="window.closeProfileImageViewer && window.closeProfileImageViewer()" aria-label="Close profile picture viewer" style="background: none; border: none; cursor: pointer; color: var(--text-muted); padding: 4px;">
+          <!-- Close SVG icon -->
+          <svg style="width: 20px; height: 20px; stroke: currentColor; fill: none; stroke-width: 2.5;"><use href="#icon-close"></use></svg>
+        </button>
+      </div>
+
+      <!-- Large Circular Avatar Display Container -->
+      <div style="position: relative; width: 190px; height: 190px; margin: 0 auto 20px auto;">
+        <!-- Large Avatar Image / Initial preview circle -->
+        <div id="profileViewerAvatarBig" style="width: 100%; height: 100%; border-radius: 50%; border: 4px solid var(--color-primary); box-shadow: 0 10px 30px var(--color-primary-glow); display: flex; align-items: center; justify-content: center; font-size: 4.5rem; font-weight: 800; color: #ffffff; background: linear-gradient(135deg, #0284c7, #6366f1); overflow: hidden; background-size: cover; background-position: center; transition: all 0.25s ease;">
+          <!-- Default initials placeholder -->
+          <span id="profileViewerAvatarInitials">U</span>
+        </div>
+      </div>
+
+      <!-- User Information Display -->
+      <div style="margin-bottom: 22px;">
+        <!-- Displayed user profile name -->
+        <h4 id="profileViewerName" style="font-size: 1.25rem; font-weight: 800; margin: 0 0 4px 0; color: var(--text-main);">User</h4>
+        <!-- Displayed user membership / role pill badge -->
+        <span id="profileViewerRole" class="badge" style="font-size: 0.78rem; padding: 4px 12px; background: rgba(2, 132, 199, 0.15); color: var(--color-primary); font-weight: 700; border-radius: 20px;">Standard Member</span>
+      </div>
+
+      <!-- Action buttons row: Change Image and Close -->
+      <div style="display: flex; gap: 12px; justify-content: center; flex-wrap: wrap;">
+        <!-- Trigger button to pick and change profile photo -->
+        <button type="button" class="btn btn-primary" id="profileViewerChangeBtn" onclick="window.triggerChangeProfilePic && window.triggerChangeProfilePic()" style="display: inline-flex; align-items: center; gap: 8px; padding: 10px 20px; font-weight: 700;">
+          <!-- Camera/upload SVG icon -->
+          <svg style="width: 16px; height: 16px; fill: none; stroke: currentColor; stroke-width: 2.2;"><use href="#icon-camera"></use></svg>
+          <!-- Action label -->
+          <span>Change Photo</span>
+        </button>
+        <!-- Close button to dismiss viewer lightbox -->
+        <button type="button" class="btn btn-secondary" onclick="window.closeProfileImageViewer && window.closeProfileImageViewer()" style="padding: 10px 20px; font-weight: 700;">
+          <!-- Close label -->
+          <span>Close</span>
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ==================== MODAL: FULL-SCREEN IN-APP STATEMENT VIEWER ==================== -->
+  <!-- Dedicated in-app bank-grade statement viewer modal with sticky action bar, instantaneous back, and reliable PDF download -->
+  <div class="modal-overlay" id="statementViewerModal" style="display: none; z-index: 10006; background: rgba(15, 23, 42, 0.85); backdrop-filter: blur(8px); padding: 0;">
+    <!-- Full-screen scrollable viewport container -->
+    <div style="position: relative; width: 100%; height: 100%; max-width: 100%; display: flex; flex-direction: column; background: #f8fafc; overflow: hidden;">
+      
+      <!-- Sticky Action Bar at the top of statement viewer -->
+      <div style="background: #0f172a; color: #ffffff; padding: 12px 20px; box-shadow: 0 4px 16px rgba(0,0,0,0.25); z-index: 20; flex-shrink: 0; display: flex; align-items: center; justify-content: space-between; gap: 12px; flex-wrap: wrap;">
+        <!-- Left Side: Instant Back Navigation button to return to FinFlow -->
+        <button type="button" id="btnStatementBack" onclick="window.closeStatementViewer && window.closeStatementViewer()" class="btn" style="display: inline-flex; align-items: center; gap: 8px; background: #334155; color: #f8fafc; border: 1px solid #475569; padding: 10px 18px; border-radius: 8px; font-size: 13px; font-weight: 700; cursor: pointer; transition: background 0.15s ease;">
+          <!-- Back arrow SVG icon -->
+          <svg style="width: 16px; height: 16px; fill: none; stroke: currentColor; stroke-width: 2.5;"><path d="M19 12H5M12 19l-7-7 7-7" stroke-linecap="round" stroke-linejoin="round"/></svg>
+          <!-- Back button text label -->
+          <span>← Back to FinFlow</span>
+        </button>
+
+        <!-- Right Side Actions: Download PDF Report button -->
+        <div style="display: flex; align-items: center; gap: 10px;">
+          <!-- Primary PDF Download action button -->
+          <button type="button" id="btnStatementDownloadPdf" onclick="window.downloadActiveStatementPdf && window.downloadActiveStatementPdf()" class="btn btn-primary" style="display: inline-flex; align-items: center; gap: 8px; background: linear-gradient(135deg, #0284c7, #2563eb); color: #ffffff; border: none; padding: 10px 22px; border-radius: 8px; font-size: 13px; font-weight: 700; cursor: pointer; box-shadow: 0 4px 12px rgba(37, 99, 235, 0.4);">
+            <!-- Download arrow SVG icon -->
+            <svg style="width: 16px; height: 16px; fill: none; stroke: currentColor; stroke-width: 2.2;"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4M7 10l5 5 5-5M12 15V3" stroke-linecap="round" stroke-linejoin="round"/></svg>
+            <!-- Download PDF text label -->
+            <span id="btnStatementDownloadText">Download PDF Report</span>
+          </button>
+        </div>
+      </div>
+
+      <!-- Scrollable statement document preview canvas container -->
+      <div id="statementViewerScrollContainer" style="flex: 1 1 auto; overflow-y: auto; overflow-x: auto; padding: 24px 16px; display: flex; justify-content: center; background: #e2e8f0; -webkit-overflow-scrolling: touch;">
+        <!-- Clean white paper sheet wrapper containing formatted bank-grade statement -->
+        <div id="statementPaperSheet" style="background: #ffffff; color: #0f172a; width: 100%; max-width: 860px; min-height: 1000px; padding: 36px 40px; box-shadow: 0 10px 30px rgba(0,0,0,0.12); border-radius: 8px; margin: 0 auto; box-sizing: border-box; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;">
+          <!-- Dynamic Statement HTML will be injected here -->
+        </div>
+      </div>
+    </div>
+  </div>
+
   <!-- ==================== POPOVER: GLOBAL WORKSPACE DROPDOWN ==================== -->
   <div id="workspaceDropdownMenu" style="display: none; position: fixed; z-index: 10000; background: var(--bg-card); border: 1px solid var(--color-border); border-radius: var(--border-radius-md); box-shadow: 0 12px 32px rgba(0,0,0,0.45); min-width: 270px; max-width: 320px; overflow: hidden; animation: fadeIn 0.15s ease;">
     <!-- Popover header -->
@@ -3830,8 +3925,13 @@
   <!-- ==================== CHART JS, PAYSTACK SDK & SCRIPTS ==================== -->
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
   <script src="https://js.paystack.co/v1/inline.js"></script>
+  <!-- Standalone client-side PDF generation engine -->
+  <script src="html2pdf.bundle.min.js"></script>
+  <!-- Main application state store script -->
   <script src="store.js?v=999.0"></script>
+  <!-- Chart visual analytics library -->
   <script src="charts.js?v=999.0"></script>
+  <!-- Primary application controller logic -->
   <script src="app.js?v=999.0"></script>
   <!-- CONFETTI CANVAS FOR SAVINGS CELEBRATIONS -->
   <canvas id="confettiCanvas" style="position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; pointer-events: none; z-index: 10010; display: none;"></canvas>
