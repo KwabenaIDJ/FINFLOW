@@ -3500,7 +3500,7 @@
     // --- Summaries & Calculations ---
 
     /**
-     * Summarizes transactions to determine net worth and cash balances.
+     * Summarizes transactions to determine cash balance and liquid funds.
      */
     getBalance() {
       let balance = 0; // Initialize total net cash tracker

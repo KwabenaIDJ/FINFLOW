@@ -1148,17 +1148,21 @@
   // --- Render Functions ---
 
   /**
-   * 1. Redraws key performance indicator cards (Net Worth, Cash balance, Inflow/Outflow).
+   * 1. Redraws key performance indicator cards (Cash balance, Inflow/Outflow).
    */
   function renderKPIs() {
+    // Reference global AppStore instance
     const store = window.AppStore;
+    // Retrieve active app settings
     const settings = store.getSettings();
+    // Active currency code
     const currency = settings.currency;
+    // Retrieve aggregated balance metrics
     const balance = store.getBalance();
     
-    // Update main net worth value card if mounted in DOM
+    // Update main cash balance value card if mounted in DOM
     if (elements.netWorthValue) {
-      // Format net worth money amount
+      // Format cash balance money amount
       elements.netWorthValue.textContent = formatMoney(balance.total, currency);
       // Set tooltip title
       elements.netWorthValue.title = elements.netWorthValue.textContent;
@@ -1254,10 +1258,10 @@
       if (titleExpense) titleExpense.textContent = `${labelStr} Operating Expenses (COGS)`;
     // Standard Personal profile view
     } else {
-      // Standard personal Net Worth title
-      if (titleNetWorth) titleNetWorth.textContent = 'Net Worth';
-      // Personal footer
-      if (footerNetWorth) footerNetWorth.textContent = 'Total Wealth';
+      // Standard personal Cash Balance title
+      if (titleNetWorth) titleNetWorth.textContent = 'Cash Balance';
+      // Personal savings footer
+      if (footerNetWorth) footerNetWorth.textContent = 'Liquid savings';
       // Personal cash balance title
       if (titleCash) titleCash.textContent = 'Cash Balance';
       // Personal liquid savings footer
@@ -4262,14 +4266,12 @@
     // Formatted issue timestamp string
     const issueDateStr = now.toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' });
 
-    // Open print preview browser window
-    const printWin = window.open('', '_blank', 'width=960,height=900');
-    // Guard against popup blocker
+    // Open print preview browser window with fallback to current window
+    let printWin = window.open('', '_blank', 'width=960,height=900');
+    // Guard against popup blocker or mobile webview restrictions
     if (!printWin) {
-      // Alert user to enable popups
-      alert('Please allow popups to generate and print your official PDF statement.');
-      // Exit function
-      return;
+      // Fallback: open in current window frame so user is never blocked
+      printWin = window.open('', '_self');
     // End popup check
     }
 
@@ -4279,7 +4281,10 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>FinFlow Financial Statement - ${escapeHTML(settings.userName || 'Account')} (${periodTitle})</title>
+  <!-- Client-side html2pdf bundle for direct PDF downloading -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
   <style>
     @page { size: A4; margin: 15mm; }
     body {
@@ -4290,6 +4295,75 @@
       padding: 24px;
       font-size: 12px;
       line-height: 1.4;
+    }
+    /* Action Bar Styles (screen only) */
+    .action-bar-wrapper {
+      position: sticky;
+      top: 0;
+      left: 0;
+      right: 0;
+      background: #0f172a;
+      color: #ffffff;
+      padding: 12px 20px;
+      margin: -24px -24px 24px -24px;
+      box-shadow: 0 4px 16px rgba(0, 0, 0, 0.2);
+      z-index: 9999;
+    }
+    .action-bar-container {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      max-width: 900px;
+      margin: 0 auto;
+      gap: 12px;
+      flex-wrap: wrap;
+    }
+    .action-bar-right {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      flex-wrap: wrap;
+    }
+    .action-btn {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      padding: 10px 18px;
+      border-radius: 8px;
+      font-size: 13px;
+      font-weight: 700;
+      cursor: pointer;
+      border: none;
+      transition: all 0.2s ease;
+      font-family: inherit;
+      text-decoration: none;
+    }
+    .action-btn:active {
+      transform: scale(0.97);
+    }
+    .back-btn {
+      background: #334155;
+      color: #f8fafc;
+    }
+    .back-btn:hover {
+      background: #475569;
+    }
+    .download-btn {
+      background: linear-gradient(135deg, #0284c7, #2563eb);
+      color: #ffffff;
+      box-shadow: 0 2px 6px rgba(37, 99, 235, 0.3);
+    }
+    .download-btn:hover {
+      background: linear-gradient(135deg, #0369a1, #1d4ed8);
+    }
+    .print-btn {
+      background: #1e293b;
+      color: #e2e8f0;
+      border: 1px solid #475569;
+    }
+    .print-btn:hover {
+      background: #334155;
+      color: #ffffff;
     }
     .statement-header {
       display: flex;
@@ -4421,12 +4495,34 @@
       color: #94a3b8;
     }
     @media print {
-      body { padding: 0; }
-      .no-print { display: none; }
+      body { padding: 0 !important; margin: 0 !important; }
+      .no-print { display: none !important; }
     }
   </style>
 </head>
 <body>
+  <!-- Top sticky navigation and action bar for downloading PDF and returning to FinFlow -->
+  <div class="no-print action-bar-wrapper">
+    <div class="action-bar-container">
+      <button type="button" class="action-btn back-btn" onclick="handleGoBack()" title="Return to FinFlow Dashboard">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M19 12H5M12 19l-7-7 7-7"/></svg>
+        <span>&larr; Back to FinFlow</span>
+      </button>
+      <div class="action-bar-right">
+        <button type="button" class="action-btn download-btn" id="btnDownloadPdf" onclick="handleDownloadPdf()" title="Download PDF document directly to your device">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+          <span id="btnDownloadPdfText">Download PDF Report</span>
+        </button>
+        <button type="button" class="action-btn print-btn" onclick="window.print()" title="Open printer / system save dialogue">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="6 9 6 2 18 2 18 9"/><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"/><rect x="6" y="14" width="12" height="8"/></svg>
+          <span>Print Statement</span>
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Document printable container wrapper -->
+  <div id="statementContent">
   <div class="statement-header">
     <div>
       <div class="brand-title">Fin<span>Flow</span></div>
@@ -4547,13 +4643,107 @@
     <div>FinFlow Personal Financial Management Platform</div>
     <div>Support & Inquiries: finflow64@gmail.com • Confidential</div>
   </div>
+  <!-- Closing statement content printable wrapper -->
+  </div>
 
   <script>
-    window.onload = function() {
-      setTimeout(function() {
+    // Navigation handler to safely return to FinFlow dashboard without getting stuck
+    function handleGoBack() {
+      // Check if document was opened as popup window with active opener
+      if (window.opener && !window.opener.closed) {
+        // Close popup window
+        window.close();
+      // Check if session has previous history entries
+      } else if (window.history && window.history.length > 1) {
+        // Navigate backwards in history stack
+        window.history.back();
+      // Fallback redirection to root application page
+      } else {
+        // Redirect browser location to index.html
+        window.location.href = 'index.html';
+      // End window history check
+      }
+    // End handleGoBack function
+    }
+
+    // Direct PDF document generator and downloader handler
+    function handleDownloadPdf() {
+      // Reference download button element
+      var btn = document.getElementById('btnDownloadPdf');
+      // Reference button text label element
+      var textSpan = document.getElementById('btnDownloadPdfText');
+      // Update button UI state to show active generation progress
+      if (btn && textSpan) {
+        // Set generating progress message
+        textSpan.textContent = 'Generating PDF...';
+        // Temporarily disable button to prevent duplicate triggers
+        btn.disabled = true;
+      // End button UI check
+      }
+
+      // Compute sanitary filename for downloaded PDF statement
+      var filename = 'FinFlow_Statement_${periodTitle.replace(/[^a-zA-Z0-9]/g, '_')}.pdf';
+      // Target document element containing statement content
+      var element = document.getElementById('statementContent');
+
+      // Verify if html2pdf client library is available
+      if (typeof html2pdf !== 'undefined' && element) {
+        // Configure PDF layout, scaling, and canvas options
+        var opt = {
+          // Page margins [top, left, bottom, right] in millimeters
+          margin: [8, 8, 8, 8],
+          // Output file name
+          filename: filename,
+          // Image render quality options
+          image: { type: 'jpeg', quality: 0.98 },
+          // High-resolution canvas rendering parameters
+          html2canvas: { scale: 2, useCORS: true, logging: false },
+          // PDF document sizing format
+          jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' }
+        // End options
+        };
+        // Generate PDF and trigger browser file download
+        html2pdf().set(opt).from(element).save().then(function() {
+          // Reset button state on success
+          if (btn && textSpan) {
+            // Restore default button label
+            textSpan.textContent = 'Download PDF Report';
+            // Enable button
+            btn.disabled = false;
+          // End button reset
+          }
+        // Catch and handle generation exceptions
+        }).catch(function(err) {
+          // Log fallback warning
+          console.warn('html2pdf generation error, falling back to window.print():', err);
+          // Reset button state
+          if (btn && textSpan) {
+            // Restore button label
+            textSpan.textContent = 'Download PDF Report';
+            // Enable button
+            btn.disabled = false;
+          // End button reset
+          }
+          // Fallback to native window print dialog
+          window.print();
+        // End catch block
+        });
+      // Fallback if html2pdf library is unavailable or offline
+      } else {
+        // Reset button state
+        if (btn && textSpan) {
+          // Restore button label
+          textSpan.textContent = 'Download PDF Report';
+          // Enable button
+          btn.disabled = false;
+        // End button reset
+        }
+        // Trigger browser native print / save as PDF dialog
         window.print();
-      }, 300);
-    };
+      // End html2pdf check
+      }
+    // End handleDownloadPdf function
+    }
   </script>
 </body>
 </html>
@@ -8040,12 +8230,18 @@
         else expenses += tx.amount;
       });
 
-      const summaryText = `📊 Financial Dashboard Summary for ${settings.userName}
-💰 Net Worth: ${formatMoney(balance.total, settings.currency)}
+      // Check if current workspace is operating as a commercial business account
+      const isBusiness = store && typeof store.isBusinessAccount === 'function' && store.isBusinessAccount();
+      // Resolve appropriate balance label avoiding removed net worth option
+      const balanceLabel = isBusiness ? 'Working Capital' : 'Cash Balance';
+      // Assemble dashboard summary text with current cash balance and cash flow
+      const summaryText = `📊 Financial Dashboard Summary for ${settings.userName || 'Account'}
+💰 ${balanceLabel}: ${formatMoney(balance.total, settings.currency)}
 📈 Monthly Inflow: ${formatMoney(income, settings.currency)}
 📉 Monthly Outflow: ${formatMoney(expenses, settings.currency)}
 🔗 Generated on ${new Date().toLocaleDateString()}`;
 
+      // Assign summary text to share modal textarea
       elements.shareTextSummary.value = summaryText;
       openModal(elements.shareModal);
     });
@@ -8951,22 +9147,37 @@
       tab: 'dashboard'
     },
     {
+      // Target ID for PDF Report export button
       targetId: 'exportPdfBtn',
+      // Title for PDF Report step
       title: 'PDF Report 📄',
-      text: 'Generate and download a clean, high-fidelity PDF financial statement report summarizing your net worth, cash flow, and categories.',
+      // Description outlining clean statement generation and download
+      text: 'Generate and download a clean, high-fidelity PDF financial statement report summarizing your cash balance, cash flow, and categories.',
+      // View tab location
       tab: 'dashboard'
+    // End PDF report step
     },
     {
+      // Target ID for Undo/Redo button group
       targetId: 'undoBtn',
+      // Title for Undo & Redo step
       title: 'Undo & Redo Actions ↩️',
+      // Text explaining reversible transaction entries
       text: 'Accidentally added the wrong transaction or deleted a goal? Simply click these buttons to instantly revert or restore your changes!',
+      // View tab location
       tab: 'dashboard'
+    // End Undo step
     },
     {
+      // Target class for top scorecard summary grid
       targetClass: 'kpi-grid',
+      // Title for KPI Scorecard step
       title: 'KPI Scorecard Summary 💳',
-      text: 'Get an instant pulse on your finances: Net Worth (Total wealth), Income (Cash inflow), and Expenses (Cash outflow).',
+      // Text summarizing cash balance, income, and expense metrics
+      text: 'Get an instant pulse on your finances: Cash Balance (Available funds), Income (Cash inflow), and Expenses (Cash outflow).',
+      // View tab location
       tab: 'dashboard'
+    // End KPI grid step
     },
     {
       targetClass: 'charts-grid',
@@ -10288,14 +10499,12 @@
     // Document title
     const docTitle = `Customer_Receipt_${receiptCode}`;
 
-    // Open clean print window
-    const printWin = window.open('', '_blank', 'width=780,height=900');
-    // Check if popup was permitted
+    // Open clean print window with fallback
+    let printWin = window.open('', '_blank', 'width=780,height=900');
+    // Check if popup was permitted or running on mobile webview
     if (!printWin) {
-      // Fallback to direct window.print()
-      window.printCustomerReceipt();
-      // Exit method
-      return;
+      // Fallback: open in current window frame so user is never blocked
+      printWin = window.open('', '_self');
     // End printWin check
     }
 
@@ -10305,7 +10514,10 @@
       <html lang="en">
       <head>
         <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
         <title>${escapeHTML(docTitle)}</title>
+        <!-- Client-side html2pdf bundle for direct receipt PDF downloading -->
+        <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
         <style>
           @page {
             size: auto;
@@ -10313,7 +10525,7 @@
           }
           body {
             font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
-            background: #ffffff;
+            background: #f1f5f9;
             color: #0f172a;
             margin: 0;
             padding: 20px;
@@ -10321,21 +10533,168 @@
           * {
             box-sizing: border-box;
           }
+          /* Action Bar Styles (screen only) */
+          .action-bar-wrapper {
+            position: sticky;
+            top: 0;
+            left: 0;
+            right: 0;
+            background: #0f172a;
+            color: #ffffff;
+            padding: 12px 20px;
+            margin: -20px -20px 20px -20px;
+            box-shadow: 0 4px 16px rgba(0, 0, 0, 0.2);
+            z-index: 9999;
+          }
+          .action-bar-container {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            max-width: 780px;
+            margin: 0 auto;
+            gap: 12px;
+            flex-wrap: wrap;
+          }
+          .action-bar-right {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            flex-wrap: wrap;
+          }
+          .action-btn {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            padding: 10px 18px;
+            border-radius: 8px;
+            font-size: 13px;
+            font-weight: 700;
+            cursor: pointer;
+            border: none;
+            transition: all 0.2s ease;
+            font-family: inherit;
+            text-decoration: none;
+          }
+          .action-btn:active {
+            transform: scale(0.97);
+          }
+          .back-btn {
+            background: #334155;
+            color: #f8fafc;
+          }
+          .back-btn:hover {
+            background: #475569;
+          }
+          .download-btn {
+            background: linear-gradient(135deg, #0284c7, #2563eb);
+            color: #ffffff;
+            box-shadow: 0 2px 6px rgba(37, 99, 235, 0.3);
+          }
+          .download-btn:hover {
+            background: linear-gradient(135deg, #0369a1, #1d4ed8);
+          }
+          .print-btn {
+            background: #1e293b;
+            color: #e2e8f0;
+            border: 1px solid #475569;
+          }
+          .print-btn:hover {
+            background: #334155;
+            color: #ffffff;
+          }
+          .receipt-center-container {
+            max-width: 780px;
+            margin: 0 auto;
+          }
           @media print {
             body {
-              padding: 0;
+              padding: 0 !important;
+              background: #ffffff !important;
+            }
+            .no-print {
+              display: none !important;
             }
           }
         </style>
       </head>
       <body>
-        ${paperElement.outerHTML}
+        <!-- Top sticky navigation and action bar -->
+        <div class="no-print action-bar-wrapper">
+          <div class="action-bar-container">
+            <button type="button" class="action-btn back-btn" onclick="handleGoBack()" title="Return to FinFlow App">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M19 12H5M12 19l-7-7 7-7"/></svg>
+              <span>&larr; Back to FinFlow</span>
+            </button>
+            <div class="action-bar-right">
+              <button type="button" class="action-btn download-btn" id="btnDownloadReceiptPdf" onclick="handleDownloadReceiptPdf()" title="Download receipt PDF directly">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+                <span id="btnDownloadReceiptText">Download PDF Receipt</span>
+              </button>
+              <button type="button" class="action-btn print-btn" onclick="window.print()" title="Print receipt">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="6 9 6 2 18 2 18 9"/><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"/><rect x="6" y="14" width="12" height="8"/></svg>
+                <span>Print Receipt</span>
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <div id="receiptContent" class="receipt-center-container">
+          ${paperElement.outerHTML}
+        </div>
+
         <script>
-          window.onload = function() {
-            setTimeout(function() {
+          // Safe navigation handler to return back to FinFlow without getting stuck
+          function handleGoBack() {
+            if (window.opener && !window.opener.closed) {
+              window.close();
+            } else if (window.history && window.history.length > 1) {
+              window.history.back();
+            } else {
+              window.location.href = 'index.html';
+            }
+          }
+
+          // Direct receipt PDF download handler
+          function handleDownloadReceiptPdf() {
+            var btn = document.getElementById('btnDownloadReceiptPdf');
+            var textSpan = document.getElementById('btnDownloadReceiptText');
+            if (btn && textSpan) {
+              textSpan.textContent = 'Generating PDF...';
+              btn.disabled = true;
+            }
+
+            var filename = '${escapeHTML(docTitle)}.pdf';
+            var element = document.getElementById('receiptContent');
+
+            if (typeof html2pdf !== 'undefined' && element) {
+              var opt = {
+                margin: [6, 6, 6, 6],
+                filename: filename,
+                image: { type: 'jpeg', quality: 0.98 },
+                html2canvas: { scale: 2, useCORS: true, logging: false },
+                jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' }
+              };
+              html2pdf().set(opt).from(element).save().then(function() {
+                if (btn && textSpan) {
+                  textSpan.textContent = 'Download PDF Receipt';
+                  btn.disabled = false;
+                }
+              }).catch(function(err) {
+                console.warn('html2pdf generation error, falling back to window.print():', err);
+                if (btn && textSpan) {
+                  textSpan.textContent = 'Download PDF Receipt';
+                  btn.disabled = false;
+                }
+                window.print();
+              });
+            } else {
+              if (btn && textSpan) {
+                textSpan.textContent = 'Download PDF Receipt';
+                btn.disabled = false;
+              }
               window.print();
-            }, 350);
-          };
+            }
+          }
         <\/script>
       </body>
       </html>
