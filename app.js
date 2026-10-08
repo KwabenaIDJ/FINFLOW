@@ -438,28 +438,49 @@
   window.escapeHTML = escapeHTML;
 
   /**
-   * Resizes an image file to a 128x128px square JPEG and converts to Base64.
-   * Optimizes storage to prevent localStorage exhaustion.
+   * Resizes an image file to a crisp, high-definition 360x360px square JPEG while keeping Base64 compact.
+   * Ensures crystal-clear rendering in both small circular avatars and enlarged full-screen image viewer.
    */
   function compressImage(file, callback) {
+    // Instantiate file reader
     const reader = new FileReader();
+    // Read selected image file as data URL
     reader.readAsDataURL(file);
+    // On file read completion
     reader.onload = (event) => {
+      // Create new HTML image instance
       const img = new Image();
+      // Assign data URL source
       img.src = event.target.result;
+      // When image finishes loading
       img.onload = () => {
+        // Create off-screen canvas element
         const canvas = document.createElement('canvas');
+        // Obtain 2d rendering context
         const ctx = canvas.getContext('2d');
-        const size = 72;
+        // Set target ultra-clear dimensions (512x512 provides flawless retina sharpness in profile viewer)
+        const size = 512;
+        // Configure canvas width
         canvas.width = size;
+        // Configure canvas height
         canvas.height = size;
         
+        // Enable high-quality image smoothing algorithms
+        ctx.imageSmoothingEnabled = true;
+        // Set smoothing quality to highest tier
+        ctx.imageSmoothingQuality = 'high';
+
+        // Calculate square cropping coordinates from original image aspect ratio
         const minSide = Math.min(img.width, img.height);
+        // Compute horizontal crop offset
         const sx = (img.width - minSide) / 2;
+        // Compute vertical crop offset
         const sy = (img.height - minSide) / 2;
         
+        // Draw centered square cropped image onto canvas
         ctx.drawImage(img, sx, sy, minSide, minSide, 0, 0, size, size);
-        callback(canvas.toDataURL('image/jpeg', 0.45));
+        // Export crisp high-quality JPEG with 0.92 quality
+        callback(canvas.toDataURL('image/jpeg', 0.92));
       };
     };
   }
@@ -4389,15 +4410,17 @@
   <!-- Client-side html2pdf bundle for direct PDF downloading -->
   <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
   <style>
-    @page { size: A4; margin: 15mm; }
+    @page { size: A4 portrait; margin: 12mm; }
+    * { box-sizing: border-box; }
     body {
-      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
       color: #0f172a;
-      background: #ffffff;
+      background: #f1f5f9;
       margin: 0;
       padding: 24px;
-      font-size: 12px;
-      line-height: 1.4;
+      font-size: 11px;
+      line-height: 1.45;
+      -webkit-font-smoothing: antialiased;
     }
     /* Action Bar Styles (screen only) */
     .action-bar-wrapper {
@@ -4409,7 +4432,7 @@
       color: #ffffff;
       padding: 12px 20px;
       margin: -24px -24px 24px -24px;
-      box-shadow: 0 4px 16px rgba(0, 0, 0, 0.2);
+      box-shadow: 0 4px 16px rgba(0, 0, 0, 0.25);
       z-index: 99999;
     }
     .action-bar-container {
@@ -4463,38 +4486,62 @@
     .download-btn:hover {
       background: linear-gradient(135deg, #0369a1, #1d4ed8);
     }
+    /* Executive Bank Statement Container */
+    #statementContent {
+      background: #ffffff;
+      color: #0f172a;
+      padding: 36px 40px;
+      border-radius: 8px;
+      box-shadow: 0 4px 20px rgba(0, 0, 0, 0.06);
+      max-width: 860px;
+      margin: 0 auto;
+      border: 1px solid #e2e8f0;
+    }
     .statement-header {
       display: flex;
       justify-content: space-between;
       align-items: flex-start;
-      border-bottom: 2px solid #0284c7;
-      padding-bottom: 16px;
-      margin-bottom: 20px;
+      border-bottom: 2.5px solid #0284c7;
+      padding-bottom: 18px;
+      margin-bottom: 22px;
+      gap: 20px;
     }
     .brand-title {
-      font-size: 26px;
+      font-size: 28px;
       font-weight: 900;
       color: #0f172a;
       letter-spacing: -0.5px;
+      line-height: 1.1;
     }
     .brand-title span { color: #0284c7; }
+    .doc-subtitle {
+      font-size: 11px;
+      color: #64748b;
+      margin-top: 4px;
+      font-weight: 500;
+      letter-spacing: 0.2px;
+    }
     .doc-badge {
       display: inline-block;
       background: #e0f2fe;
-      color: #0369a1;
-      padding: 3px 8px;
+      color: #0284c7;
+      padding: 4px 9px;
       border-radius: 4px;
-      font-size: 10px;
-      font-weight: 700;
+      font-size: 9.5px;
+      font-weight: 800;
       text-transform: uppercase;
-      margin-top: 4px;
+      letter-spacing: 0.5px;
+      margin-top: 8px;
+      border: 1px solid #bae6fd;
     }
     .meta-box {
       text-align: right;
       font-size: 11px;
       color: #475569;
+      line-height: 1.7;
     }
     .meta-box strong { color: #0f172a; }
+    /* KPI Summary Tiles */
     .kpi-summary-grid {
       display: grid;
       grid-template-columns: repeat(5, 1fr);
@@ -4504,96 +4551,118 @@
     .kpi-tile {
       background: #f8fafc;
       border: 1px solid #e2e8f0;
-      border-radius: 6px;
-      padding: 10px;
+      border-radius: 8px;
+      padding: 12px 8px;
       text-align: center;
+      transition: all 0.15s ease;
     }
     .kpi-tile.highlight {
       background: #f0f9ff;
-      border-color: #bae6fd;
+      border-color: #7dd3fc;
     }
     .kpi-label {
-      font-size: 9px;
+      font-size: 8.5px;
       text-transform: uppercase;
-      font-weight: 700;
+      font-weight: 800;
       color: #64748b;
-      margin-bottom: 4px;
+      margin-bottom: 6px;
+      letter-spacing: 0.5px;
     }
     .kpi-amount {
-      font-size: 14px;
+      font-size: 13px;
       font-weight: 800;
       color: #0f172a;
+      white-space: nowrap;
     }
     .kpi-amount.income { color: #059669; }
     .kpi-amount.expense { color: #dc2626; }
+    /* Section Headings */
     .section-heading {
-      font-size: 13px;
+      font-size: 12px;
       font-weight: 800;
-      color: #1e293b;
-      margin: 20px 0 8px 0;
+      color: #0f172a;
+      margin: 22px 0 10px 0;
       display: flex;
       justify-content: space-between;
       align-items: center;
-      border-bottom: 1px solid #cbd5e1;
-      padding-bottom: 4px;
+      border-bottom: 1.5px solid #cbd5e1;
+      padding-bottom: 6px;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
     }
+    /* Bank-Standard Itemized Ledger Table */
     table {
       width: 100%;
       border-collapse: collapse;
-      font-size: 11px;
-      margin-bottom: 16px;
+      table-layout: fixed;
+      font-size: 10.5px;
+      margin-bottom: 18px;
     }
     th {
-      background: #f1f5f9;
+      background: #0f172a;
+      color: #ffffff;
       text-align: left;
-      padding: 8px 10px;
-      font-weight: 700;
-      color: #475569;
-      border-bottom: 1.5px solid #cbd5e1;
+      padding: 9px 10px;
+      font-weight: 800;
+      font-size: 10px;
+      letter-spacing: 0.5px;
+      text-transform: uppercase;
+      border: none;
     }
+    th:first-child { border-top-left-radius: 6px; }
+    th:last-child { border-top-right-radius: 6px; }
     td {
-      padding: 7px 10px;
-      border-bottom: 1px solid #f1f5f9;
+      padding: 8px 10px;
+      border-bottom: 1px solid #e2e8f0;
       color: #1e293b;
+      vertical-align: middle;
+      word-break: break-word;
     }
     tr:nth-child(even) td {
-      background: #fafafa;
+      background: #f8fafc;
     }
     .text-right { text-align: right; }
-    .text-income { color: #059669; font-weight: 700; }
-    .text-expense { color: #dc2626; font-weight: 700; }
+    .text-center { text-align: center; }
+    .text-income { color: #059669; font-weight: 800; }
+    .text-expense { color: #dc2626; font-weight: 800; }
+    /* Audit Stamp Box */
     .audit-stamp {
-      margin-top: 30px;
-      padding: 12px 16px;
+      margin-top: 26px;
+      padding: 14px 18px;
       background: #f8fafc;
-      border: 1px dashed #94a3b8;
-      border-radius: 6px;
+      border: 1px dashed #0284c7;
+      border-radius: 8px;
       display: flex;
       justify-content: space-between;
       align-items: center;
       font-size: 10px;
-      color: #64748b;
+      color: #475569;
+      gap: 14px;
     }
     .stamp-seal {
       font-weight: 800;
       color: #0284c7;
       border: 1.5px solid #0284c7;
-      padding: 4px 8px;
-      border-radius: 4px;
+      padding: 6px 12px;
+      border-radius: 5px;
       letter-spacing: 0.5px;
       text-transform: uppercase;
+      font-size: 9.5px;
+      background: #f0f9ff;
+      white-space: nowrap;
     }
     .footer {
-      margin-top: 30px;
-      padding-top: 10px;
+      margin-top: 24px;
+      padding-top: 12px;
       border-top: 1px solid #e2e8f0;
       display: flex;
       justify-content: space-between;
-      font-size: 10px;
+      font-size: 9.5px;
       color: #94a3b8;
     }
     @media print {
-      body { padding: 0 !important; margin: 0 !important; }
+      body { padding: 0 !important; margin: 0 !important; background: #ffffff !important; }
+      #statementContent { box-shadow: none !important; border: none !important; padding: 0 !important; }
       .no-print { display: none !important; }
     }
   </style>
@@ -4620,7 +4689,7 @@
   <div class="statement-header">
     <div>
       <div class="brand-title">Fin<span>Flow</span></div>
-      <div style="font-size: 11px; color: #64748b; margin-top: 2px;">Official Certified Financial Statement & Audit Ledger</div>
+      <div class="doc-subtitle">Official Certified Financial Statement & Audit Ledger</div>
       <span class="doc-badge">Verified Client Record</span>
     </div>
     <div class="meta-box">
@@ -4660,14 +4729,14 @@
     <!-- Category Expenditure Breakdown -->
     <div class="section-heading">
       <span>Category Expense Distribution</span>
-      <span style="font-size: 10px; font-weight: 500; color: #64748b;">${Object.keys(categoryTotals).length} active categories</span>
+      <span style="font-size: 9.5px; font-weight: 600; color: #64748b; text-transform: none;">${Object.keys(categoryTotals).length} active categories</span>
     </div>
     <table>
       <thead>
         <tr>
           <th>Category Name</th>
-          <th class="text-right">Total Spent</th>
-          <th class="text-right">Share of Outflows</th>
+          <th class="text-right" style="width: 140px;">Total Spent</th>
+          <th class="text-right" style="width: 120px;">Share of Outflows</th>
         </tr>
       </thead>
       <tbody>
@@ -4678,7 +4747,7 @@
             <tr>
               <td><strong>${escapeHTML(cat)}</strong></td>
               <td class="text-right text-expense">${activeCurrency} ${catConverted.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</td>
-              <td class="text-right">${share}%</td>
+              <td class="text-right"><strong>${share}%</strong></td>
             </tr>
           `;
         }).join('')}
@@ -4689,33 +4758,33 @@
   <!-- Chronological Transaction Ledger with Running Balance -->
   <div class="section-heading">
     <span>Itemized Transaction Ledger (${ledgerRows.length} Entries)</span>
-    <span style="font-size: 10px; font-weight: 500; color: #64748b;">All figures in ${activeCurrency}</span>
+    <span style="font-size: 9.5px; font-weight: 600; color: #64748b; text-transform: none;">All figures in ${activeCurrency}</span>
   </div>
   ${ledgerRows.length === 0 ? `
-    <div style="padding: 24px; text-align: center; color: #64748b; background: #f8fafc; border-radius: 6px;">
+    <div style="padding: 24px; text-align: center; color: #64748b; background: #f8fafc; border-radius: 6px; border: 1px solid #e2e8f0; margin-bottom: 18px;">
       No transactions recorded for the selected statement period.
     </div>
   ` : `
     <table>
       <thead>
         <tr>
-          <th style="width: 85px;">Date</th>
+          <th style="width: 80px;">Date</th>
           <th>Description</th>
           <th style="width: 120px;">Category</th>
-          <th style="width: 70px;">Type</th>
+          <th class="text-center" style="width: 65px;">Type</th>
           <th class="text-right" style="width: 110px;">Amount</th>
-          <th class="text-right" style="width: 110px;">Running Balance</th>
+          <th class="text-right" style="width: 115px;">Balance</th>
         </tr>
       </thead>
       <tbody>
         ${ledgerRows.map(row => `
           <tr>
-            <td>${row.date}</td>
+            <td style="color: #64748b; font-size: 10px;">${row.date}</td>
             <td><strong>${escapeHTML(row.description)}</strong></td>
-            <td>${escapeHTML(row.category)}</td>
-            <td style="text-transform: uppercase; font-size: 9px; font-weight: 700; color: ${row.type === 'income' ? '#059669' : '#dc2626'};">${row.type}</td>
+            <td><span style="display: inline-block; background: #f1f5f9; padding: 2px 7px; border-radius: 4px; font-size: 9.5px; color: #475569;">${escapeHTML(row.category)}</span></td>
+            <td class="text-center"><span style="text-transform: uppercase; font-size: 8.5px; font-weight: 800; padding: 2px 6px; border-radius: 4px; background: ${row.type === 'income' ? '#ecfdf5' : '#fef2f2'}; color: ${row.type === 'income' ? '#059669' : '#dc2626'};">${row.type}</span></td>
             <td class="text-right ${row.type === 'income' ? 'text-income' : 'text-expense'}">${row.amountFormatted}</td>
-            <td class="text-right" style="font-weight: 700;">${row.runningBalanceFormatted}</td>
+            <td class="text-right" style="font-weight: 800; color: #0f172a;">${row.runningBalanceFormatted}</td>
           </tr>
         `).join('')}
       </tbody>
@@ -4726,16 +4795,16 @@
     <!-- Certified Official Statement Audit Stamp -->
     <div class="audit-stamp">
       <div>
-        <div style="font-weight: 700; color: #0f172a; margin-bottom: 2px;">AUDIT TRAIL & ENCRYPTION VERIFICATION</div>
-        <div>Generated from client encrypted ledger database • Zero watermark • FinFlow Cloud Systems</div>
+        <div style="font-weight: 800; color: #0f172a; margin-bottom: 2px; text-transform: uppercase; letter-spacing: 0.3px;">AUDIT TRAIL & ENCRYPTION VERIFICATION</div>
+        <div style="font-size: 9.5px; color: #64748b;">Generated from certified client ledger database • Verified zero-watermark release • FinFlow Core Systems</div>
       </div>
       <div class="stamp-seal">Official Verified Statement</div>
     </div>
   ` : ''}
 
   <div class="footer">
-    <div>FinFlow Personal Financial Management Platform</div>
-    <div>Support & Inquiries: finflow64@gmail.com • Confidential</div>
+    <div>FinFlow Certified Personal & Commercial Financial Platform</div>
+    <div>Support & Inquiries: finflow64@gmail.com • Confidential & Protected</div>
   </div>
   <!-- Closing statement content printable wrapper -->
   </div>
@@ -4831,13 +4900,26 @@
     // Store current active statement filename for direct download handler
     window._activeStatementFilename = `FinFlow_Statement_${periodTitle.replace(/[^a-zA-Z0-9]/g, '_')}.pdf`;
 
+    // Extract embedded stylesheet block from template so styling is fully preserved
+    const styleBlock = htmlContent.substring(
+      // Locate opening style tag
+      htmlContent.indexOf('<style>'),
+      // Locate closing style tag
+      htmlContent.indexOf('</style>') + 8
+    );
+
+    // Extract printable statement markup from template
+    const docBlock = htmlContent.substring(
+      // Locate opening statementContent container tag
+      htmlContent.indexOf('<div id="statementContent">'),
+      // Locate closing statement wrapper marker
+      htmlContent.indexOf('<!-- Closing statement content printable wrapper -->') + '<!-- Closing statement content printable wrapper -->'.length + 6
+    );
+
     // Check if in-app statement viewer modal is available
     if (viewerModal && paperSheet) {
-      // Inject rendered statement content directly into paper sheet container
-      paperSheet.innerHTML = htmlContent.substring(
-        htmlContent.indexOf('<div id="statementContent">'),
-        htmlContent.indexOf('<!-- Closing statement content printable wrapper -->') + '<!-- Closing statement content printable wrapper -->'.length + 6
-      );
+      // Inject self-contained styling and structured content directly into paper sheet
+      paperSheet.innerHTML = `${styleBlock}\n${docBlock}`;
       // Reset scroll position to top
       const scrollContainer = document.getElementById('statementViewerScrollContainer');
       // Scroll to top if container exists
@@ -4851,17 +4933,13 @@
       return;
     }
 
-    // Fallback: If in-app modal elements not found, open popup window
-    let printWin = window.open('', '_blank', 'width=960,height=900');
-    // Guard against popup blocker
-    if (!printWin) {
-      printWin = window.open('', '_self');
-    }
-    // Check if printWin document is available
+    // Web Fallback: If in-app modal elements not found, open in new tab
+    const printWin = window.open('', '_blank');
+    // If window successfully opened
     if (printWin && printWin.document) {
-      // Write rendered HTML into print window
+      // Write full rendered HTML document into window
       printWin.document.write(htmlContent);
-      // Close document stream to trigger onload
+      // Close document write stream
       printWin.document.close();
     }
   // End generateBankGradeStatement
@@ -4930,15 +5008,21 @@
 
       // Configure high-resolution PDF rendering options
       const opt = {
+        // Standard A4 margins
         margin: [10, 10, 10, 10],
+        // Target file name
         filename: filename,
+        // Image format and high quality
         image: { type: 'jpeg', quality: 0.98 },
-        html2canvas: { scale: 2, useCORS: true, logging: false },
+        // High scale canvas for sharp typography
+        html2canvas: { scale: 2, useCORS: true, logging: false, backgroundColor: '#ffffff' },
+        // Standard portrait A4 PDF configuration
         jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' }
       };
 
       // Check if running natively inside Android Capacitor WebView
       const cap = window.Capacitor;
+      // Evaluate native platform
       const isNative = !!(cap && typeof cap.isNativePlatform === 'function' && cap.isNativePlatform());
 
       // If running inside Capacitor Android app, use Filesystem + Share for 100% reliable saving
@@ -4950,6 +5034,7 @@
 
         // Try writing file via Capacitor Filesystem plugin
         if (cap.Plugins.Filesystem) {
+          // Destructure Filesystem plugin
           const { Filesystem } = cap.Plugins;
           // Save file to Cache directory
           const savedFile = await Filesystem.writeFile({
@@ -4961,6 +5046,7 @@
 
           // Check if Capacitor Share plugin is available to trigger system share/save intent
           if (cap.Plugins.Share && savedFile && savedFile.uri) {
+            // Destructure Share plugin
             const { Share } = cap.Plugins;
             // Trigger native share sheet allowing user to Save to Files, Google Drive, or send
             await Share.share({
@@ -4969,15 +5055,55 @@
               url: savedFile.uri,
               dialogTitle: 'Save or Share PDF Report'
             });
-            // Show alert
-            alert('✅ PDF Statement generated and ready to save or share!');
+            // Show confirmation toast
+            if (typeof window.showNotification === 'function') {
+              window.showNotification('PDF Statement generated and ready to save or share!', 'success');
+            } else {
+              alert('✅ PDF Statement generated and ready to save or share!');
+            }
+            return;
           } else {
             // Alert user that file is saved
             alert(`✅ Statement PDF saved successfully: ${filename}`);
+            return;
           }
         }
-      } else {
-        // Standard Web Browser environment: Use standard html2pdf file download
+      }
+
+      // Standard browser or fallback: generate PDF blob and trigger instant download
+      try {
+        // Generate PDF as blob
+        const pdfBlob = await html2pdf().set(opt).from(element).outputPdf('blob');
+        // Check if Web Share API with files is supported
+        if (navigator.share && navigator.canShare && navigator.canShare({ files: [new File([pdfBlob], filename, { type: 'application/pdf' })] })) {
+          // Share file via mobile system share sheet
+          await navigator.share({
+            files: [new File([pdfBlob], filename, { type: 'application/pdf' })],
+            title: 'FinFlow Financial Statement',
+            text: 'Your official certified FinFlow financial statement'
+          });
+          return;
+        }
+
+        // Trigger direct anchor tag download with blob URL
+        const blobUrl = URL.createObjectURL(pdfBlob);
+        // Create invisible anchor link
+        const downloadAnchor = document.createElement('a');
+        // Set download href
+        downloadAnchor.href = blobUrl;
+        // Assign file name
+        downloadAnchor.download = filename;
+        // Append to DOM
+        document.body.appendChild(downloadAnchor);
+        // Simulate click
+        downloadAnchor.click();
+        // Remove anchor from DOM
+        document.body.removeChild(downloadAnchor);
+        // Release blob URL after brief delay
+        setTimeout(() => URL.revokeObjectURL(blobUrl), 2000);
+      } catch (blobErr) {
+        // Fallback to standard html2pdf.save()
+        console.warn('Blob download fallback, attempting direct save:', blobErr);
         await html2pdf().set(opt).from(element).save();
       }
     } catch (err) {
