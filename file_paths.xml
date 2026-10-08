@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Root paths declaration allowing FileProvider to share generated PDFs from internal cache and storage -->
+<paths xmlns:android="http://schemas.android.com/apk/res/android">
+    <!-- Internal application files path -->
+    <files-path name="my_files" path="." />
+    <!-- Internal application cache path used by PDF generator -->
+    <cache-path name="my_cache" path="." />
+    <!-- External application files path -->
+    <external-files-path name="my_external_files" path="." />
+    <!-- External application cache path -->
+    <external-cache-path name="my_external_cache" path="." />
+    <!-- Root external storage path -->
+    <external-path name="my_external_path" path="." />
+</paths>

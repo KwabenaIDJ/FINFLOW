@@ -1,0 +1,51 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Root Android Application Manifest for FinFlow -->
+<manifest xmlns:android="http://schemas.android.com/apk/res/android">
+    <!-- Internet permission for network operations and Supabase cloud sync -->
+    <uses-permission android:name="android.permission.INTERNET" />
+    <!-- Read external storage permission for Android 12 and below -->
+    <uses-permission android:name="android.permission.READ_EXTERNAL_STORAGE" android:maxSdkVersion="32" />
+    <!-- Write external storage permission for saving PDF reports on Android 9 and below -->
+    <uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE" android:maxSdkVersion="29" />
+    <!-- Application configuration element -->
+    <application
+        android:allowBackup="true"
+        android:icon="@mipmap/ic_launcher"
+        android:label="@string/app_name"
+        android:roundIcon="@mipmap/ic_launcher_round"
+        android:supportsRtl="true"
+        android:theme="@style/AppTheme">
+        <!-- Main activity descriptor -->
+        <activity
+            android:configChanges="orientation|keyboardHidden|keyboard|screenSize|locale|smallestScreenSize|screenLayout|uiMode"
+            android:name="com.finflow.app.MainActivity"
+            android:label="@string/title_activity_main"
+            android:theme="@style/AppTheme.NoActionBar"
+            android:launchMode="singleTask"
+            android:exported="true">
+            <!-- Launcher intent filter -->
+            <intent-filter>
+                <!-- Main launcher action -->
+                <action android:name="android.intent.action.MAIN" />
+                <!-- Launcher category -->
+                <category android:name="android.intent.category.LAUNCHER" />
+            <!-- End intent-filter -->
+            </intent-filter>
+        <!-- End activity -->
+        </activity>
+        <!-- FileProvider required by Capacitor Filesystem & Share plugins to share generated PDF statements -->
+        <provider
+            android:name="androidx.core.content.FileProvider"
+            android:authorities="${applicationId}.fileprovider"
+            android:exported="false"
+            android:grantUriPermissions="true">
+            <!-- Metadata linking to file_paths.xml -->
+            <meta-data
+                android:name="android.support.FILE_PROVIDER_PATHS"
+                android:resource="@xml/file_paths" />
+        <!-- End provider -->
+        </provider>
+    <!-- End application -->
+    </application>
+<!-- End manifest -->
+</manifest>

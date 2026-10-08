@@ -2641,36 +2641,42 @@
 
   <!-- ==================== MODAL: FULL-SCREEN IN-APP STATEMENT VIEWER ==================== -->
   <!-- Dedicated in-app bank-grade statement viewer modal with sticky action bar, instantaneous back, and reliable PDF download -->
-  <div class="modal-overlay" id="statementViewerModal" style="display: none; z-index: 10006; background: rgba(15, 23, 42, 0.85); backdrop-filter: blur(8px); padding: 0;">
+  <div class="modal-overlay" id="statementViewerModal" style="display: none; z-index: 10006; background: rgba(15, 23, 42, 0.92); backdrop-filter: blur(8px); padding: 0;">
     <!-- Full-screen scrollable viewport container -->
-    <div style="position: relative; width: 100%; height: 100%; max-width: 100%; display: flex; flex-direction: column; background: #f8fafc; overflow: hidden;">
+    <div style="position: relative; width: 100%; height: 100%; max-width: 100%; display: flex; flex-direction: column; background: #1e293b; overflow: hidden;">
       
-      <!-- Sticky Action Bar at the top of statement viewer -->
-      <div style="background: #0f172a; color: #ffffff; padding: 12px 20px; box-shadow: 0 4px 16px rgba(0,0,0,0.25); z-index: 20; flex-shrink: 0; display: flex; align-items: center; justify-content: space-between; gap: 12px; flex-wrap: wrap;">
+      <!-- Sticky Action Bar at the top of statement viewer with safe-area spacing -->
+      <div style="background: #0f172a; color: #ffffff; padding: max(14px, env(safe-area-inset-top)) 16px 12px 16px; box-shadow: 0 4px 16px rgba(0,0,0,0.35); z-index: 20; flex-shrink: 0; display: flex; align-items: center; justify-content: space-between; gap: 10px;">
         <!-- Left Side: Instant Back Navigation button to return to FinFlow -->
-        <button type="button" id="btnStatementBack" onclick="window.closeStatementViewer && window.closeStatementViewer()" class="btn" style="display: inline-flex; align-items: center; gap: 8px; background: #334155; color: #f8fafc; border: 1px solid #475569; padding: 10px 18px; border-radius: 8px; font-size: 13px; font-weight: 700; cursor: pointer; transition: background 0.15s ease;">
+        <button type="button" id="btnStatementBack" onclick="window.closeStatementViewer && window.closeStatementViewer()" class="btn" style="display: inline-flex; align-items: center; gap: 6px; background: #334155; color: #f8fafc; border: 1px solid #475569; padding: 9px 14px; border-radius: 8px; font-size: 13px; font-weight: 700; cursor: pointer; transition: background 0.15s ease; flex-shrink: 0;">
           <!-- Back arrow SVG icon -->
-          <svg style="width: 16px; height: 16px; fill: none; stroke: currentColor; stroke-width: 2.5;"><path d="M19 12H5M12 19l-7-7 7-7" stroke-linecap="round" stroke-linejoin="round"/></svg>
+          <svg style="width: 15px; height: 15px; fill: none; stroke: currentColor; stroke-width: 2.5;"><path d="M19 12H5M12 19l-7-7 7-7" stroke-linecap="round" stroke-linejoin="round"/></svg>
           <!-- Back button text label -->
-          <span>← Back to FinFlow</span>
+          <span>← Back</span>
         </button>
 
         <!-- Right Side Actions: Download PDF Report button -->
-        <div style="display: flex; align-items: center; gap: 10px;">
+        <div style="display: flex; align-items: center; gap: 8px; flex-shrink: 0;">
           <!-- Primary PDF Download action button -->
-          <button type="button" id="btnStatementDownloadPdf" onclick="window.downloadActiveStatementPdf && window.downloadActiveStatementPdf()" class="btn btn-primary" style="display: inline-flex; align-items: center; gap: 8px; background: linear-gradient(135deg, #0284c7, #2563eb); color: #ffffff; border: none; padding: 10px 22px; border-radius: 8px; font-size: 13px; font-weight: 700; cursor: pointer; box-shadow: 0 4px 12px rgba(37, 99, 235, 0.4);">
+          <button type="button" id="btnStatementDownloadPdf" onclick="window.downloadActiveStatementPdf && window.downloadActiveStatementPdf()" class="btn btn-primary" style="display: inline-flex; align-items: center; gap: 8px; background: linear-gradient(135deg, #0284c7, #2563eb); color: #ffffff; border: none; padding: 9px 18px; border-radius: 8px; font-size: 13px; font-weight: 700; cursor: pointer; box-shadow: 0 4px 12px rgba(37, 99, 235, 0.4);">
             <!-- Download arrow SVG icon -->
-            <svg style="width: 16px; height: 16px; fill: none; stroke: currentColor; stroke-width: 2.2;"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4M7 10l5 5 5-5M12 15V3" stroke-linecap="round" stroke-linejoin="round"/></svg>
+            <svg style="width: 15px; height: 15px; fill: none; stroke: currentColor; stroke-width: 2.2;"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4M7 10l5 5 5-5M12 15V3" stroke-linecap="round" stroke-linejoin="round"/></svg>
             <!-- Download PDF text label -->
             <span id="btnStatementDownloadText">Download PDF Report</span>
           </button>
         </div>
       </div>
 
-      <!-- Scrollable statement document preview canvas container -->
-      <div id="statementViewerScrollContainer" style="flex: 1 1 auto; overflow-y: auto; overflow-x: auto; padding: 24px 16px; display: flex; justify-content: center; background: #e2e8f0; -webkit-overflow-scrolling: touch;">
-        <!-- Clean white paper sheet wrapper containing formatted bank-grade statement -->
-        <div id="statementPaperSheet" style="background: #ffffff; color: #0f172a; width: 100%; max-width: 860px; min-height: 1000px; padding: 36px 40px; box-shadow: 0 10px 30px rgba(0,0,0,0.12); border-radius: 8px; margin: 0 auto; box-sizing: border-box; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;">
+      <!-- Mobile document guidance strip -->
+      <div style="background: #1e293b; color: #94a3b8; font-size: 11px; padding: 6px 14px; text-align: center; border-bottom: 1px solid #334155; flex-shrink: 0;">
+        <!-- Guidance text explaining A4 format and horizontal exploration -->
+        <span>📄 <strong>Certified Bank-Grade Statement (A4)</strong> • Swipe sideways if needed to explore full ledger</span>
+      </div>
+
+      <!-- Scrollable statement document preview canvas container with smooth horizontal touch scroll -->
+      <div id="statementViewerScrollContainer" style="flex: 1 1 auto; overflow-y: auto; overflow-x: auto; padding: 20px 12px; display: block; background: #334155; -webkit-overflow-scrolling: touch;">
+        <!-- Clean white paper sheet wrapper containing formatted bank-grade statement at authentic A4 800px width -->
+        <div id="statementPaperSheet" style="background: #ffffff; color: #0f172a; width: 800px; min-width: 800px; min-height: 1040px; padding: 36px 40px; box-shadow: 0 14px 40px rgba(0,0,0,0.4); border-radius: 6px; margin: 0 auto 30px auto; box-sizing: border-box; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;">
           <!-- Dynamic Statement HTML will be injected here -->
         </div>
       </div>

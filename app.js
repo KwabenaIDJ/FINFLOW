@@ -4585,12 +4585,9 @@
     #statementContent {
       background: #ffffff;
       color: #0f172a;
-      padding: 36px 40px;
-      border-radius: 8px;
-      box-shadow: 0 4px 20px rgba(0, 0, 0, 0.06);
-      max-width: 860px;
-      margin: 0 auto;
-      border: 1px solid #e2e8f0;
+      padding: 0;
+      margin: 0;
+      width: 100%;
     }
     .statement-header {
       display: flex;
@@ -4634,6 +4631,7 @@
       font-size: 11px;
       color: #475569;
       line-height: 1.7;
+      white-space: nowrap;
     }
     .meta-box strong { color: #0f172a; }
     /* KPI Summary Tiles */
@@ -4662,6 +4660,7 @@
       color: #64748b;
       margin-bottom: 6px;
       letter-spacing: 0.5px;
+      white-space: nowrap;
     }
     .kpi-amount {
       font-size: 13px;
@@ -4689,7 +4688,7 @@
     table {
       width: 100%;
       border-collapse: collapse;
-      table-layout: fixed;
+      table-layout: auto;
       font-size: 10.5px;
       margin-bottom: 18px;
     }
@@ -4697,17 +4696,18 @@
       background: #0f172a;
       color: #ffffff;
       text-align: left;
-      padding: 9px 10px;
+      padding: 10px 12px;
       font-weight: 800;
       font-size: 10px;
       letter-spacing: 0.5px;
       text-transform: uppercase;
+      white-space: nowrap;
       border: none;
     }
     th:first-child { border-top-left-radius: 6px; }
     th:last-child { border-top-right-radius: 6px; }
     td {
-      padding: 8px 10px;
+      padding: 9px 12px;
       border-bottom: 1px solid #e2e8f0;
       color: #1e293b;
       vertical-align: middle;
@@ -4863,11 +4863,17 @@
     <table>
       <thead>
         <tr>
-          <th style="width: 80px;">Date</th>
-          <th>Description</th>
-          <th style="width: 120px;">Category</th>
-          <th class="text-center" style="width: 65px;">Type</th>
+          <!-- Date column header -->
+          <th style="width: 85px;">Date</th>
+          <!-- Description column header with flexible expansion -->
+          <th style="min-width: 170px;">Description</th>
+          <!-- Category column header -->
+          <th style="width: 125px;">Category</th>
+          <!-- Type badge column header -->
+          <th class="text-center" style="width: 70px;">Type</th>
+          <!-- Amount column header -->
           <th class="text-right" style="width: 110px;">Amount</th>
+          <!-- Running balance column header -->
           <th class="text-right" style="width: 115px;">Balance</th>
         </tr>
       </thead>
@@ -5078,7 +5084,9 @@
     if (!element) {
       // Alert user if statement element is not found
       alert('Statement content not found to export.');
+      // Abort execution
       return;
+    // End element check
     }
 
     // Update button UI state to show active generation
@@ -5087,30 +5095,60 @@
       textSpan.textContent = 'Generating PDF...';
       // Disable button during processing
       btn.disabled = true;
+    // End btn UI check
     }
 
     try {
-      // Verify html2pdf availability
+      // Verify html2pdf library availability, dynamically load if absent
       if (typeof html2pdf === 'undefined') {
-        // Fallback: Trigger browser print dialog
-        window.print();
-        if (btn && textSpan) {
-          textSpan.textContent = 'Download PDF Report';
-          btn.disabled = false;
-        }
-        return;
+        // Attempt dynamic injection of html2pdf bundle
+        await new Promise((resolve, reject) => {
+          // Create script element
+          const script = document.createElement('script');
+          // Point to local bundle
+          script.src = 'html2pdf.bundle.min.js';
+          // On successful script load
+          script.onload = resolve;
+          // On local load error fallback to CDN
+          script.onerror = () => {
+            // Create fallback CDN script
+            const cdnScript = document.createElement('script');
+            // Point to CDN source
+            cdnScript.src = 'https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js';
+            // On CDN load
+            cdnScript.onload = resolve;
+            // On CDN error
+            cdnScript.onerror = reject;
+            // Append CDN script to head
+            document.head.appendChild(cdnScript);
+          };
+          // Append local script to head
+          document.head.appendChild(script);
+        });
+      // End html2pdf undefined check
       }
 
-      // Configure high-resolution PDF rendering options
+      // Configure high-resolution PDF rendering options with forced 800px A4 window
       const opt = {
-        // Standard A4 margins
-        margin: [10, 10, 10, 10],
+        // Standard clean A4 margins
+        margin: [8, 8, 8, 8],
         // Target file name
         filename: filename,
-        // Image format and high quality
+        // Image format and highest quality
         image: { type: 'jpeg', quality: 0.98 },
-        // High scale canvas for sharp typography
-        html2canvas: { scale: 2, useCORS: true, logging: false, backgroundColor: '#ffffff' },
+        // High scale canvas with 800px window width for pristine bank-grade typography
+        html2canvas: {
+          // Double pixel density for retina crispness
+          scale: 2,
+          // Support cross-origin images
+          useCORS: true,
+          // Suppress canvas debug output
+          logging: false,
+          // Clean white page background
+          backgroundColor: '#ffffff',
+          // Force layout engine to render at true 800px A4 page width
+          windowWidth: 800
+        },
         // Standard portrait A4 PDF configuration
         jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' }
       };
@@ -5127,45 +5165,65 @@
         // Extract raw base64 data without URI prefix
         const base64Data = pdfBase64DataUrl.split(',')[1] || pdfBase64DataUrl;
 
+        // Track saved file reference
+        let savedFile = null;
+
         // Try writing file via Capacitor Filesystem plugin
         if (cap.Plugins.Filesystem) {
           // Destructure Filesystem plugin
           const { Filesystem } = cap.Plugins;
-          // Save file to Cache directory
-          const savedFile = await Filesystem.writeFile({
-            path: filename,
-            data: base64Data,
-            directory: 'CACHE',
-            recursive: true
-          });
-
-          // Check if Capacitor Share plugin is available to trigger system share/save intent
-          if (cap.Plugins.Share && savedFile && savedFile.uri) {
-            // Destructure Share plugin
-            const { Share } = cap.Plugins;
-            // Trigger native share sheet allowing user to Save to Files, Google Drive, or send
-            await Share.share({
-              title: 'FinFlow Statement',
-              text: 'Here is your official FinFlow Financial Statement',
-              url: savedFile.uri,
-              dialogTitle: 'Save or Share PDF Report'
+          // Try saving to CACHE directory first
+          try {
+            // Write to Cache directory declared in file_paths.xml
+            savedFile = await Filesystem.writeFile({
+              path: filename,
+              data: base64Data,
+              directory: 'CACHE',
+              recursive: true
             });
-            // Show confirmation toast
-            if (typeof window.showNotification === 'function') {
-              window.showNotification('PDF Statement generated and ready to save or share!', 'success');
-            } else {
-              alert('✅ PDF Statement generated and ready to save or share!');
+          // Catch and fallback to DOCUMENTS directory if needed
+          } catch (cacheErr) {
+            // Write to Documents directory
+            try {
+              savedFile = await Filesystem.writeFile({
+                path: filename,
+                data: base64Data,
+                directory: 'DOCUMENTS',
+                recursive: true
+              });
+            } catch (docErr) {
+              console.error('Filesystem write error:', docErr);
             }
-            return;
-          } else {
-            // Alert user that file is saved
-            alert(`✅ Statement PDF saved successfully: ${filename}`);
-            return;
+          // End catch
           }
+        // End Filesystem check
         }
+
+        // Check if Capacitor Share plugin is available to trigger system share/save intent
+        if (cap.Plugins.Share && savedFile && savedFile.uri) {
+          // Destructure Share plugin
+          const { Share } = cap.Plugins;
+          // Trigger native share sheet allowing user to Save to Files, Google Drive, or send
+          await Share.share({
+            title: 'FinFlow Statement',
+            text: 'Here is your official FinFlow Financial Statement',
+            url: savedFile.uri,
+            dialogTitle: 'Save or Share PDF Report'
+          });
+          // Alert user that document is ready
+          alert('✅ Statement PDF generated! Choose Save to Drive, Files, or open with your PDF viewer.');
+          return;
+        // If file saved without share plugin
+        } else if (savedFile && savedFile.uri) {
+          // Alert user that file is saved
+          alert(`✅ Statement PDF saved successfully: ${filename}`);
+          return;
+        // End Share check
+        }
+      // End native capacitor check
       }
 
-      // Standard browser or fallback: generate PDF blob and trigger instant download
+      // Standard browser or web fallback: generate PDF blob and trigger instant download
       try {
         // Generate PDF as blob
         const pdfBlob = await html2pdf().set(opt).from(element).outputPdf('blob');
@@ -5178,6 +5236,7 @@
             text: 'Your official certified FinFlow financial statement'
           });
           return;
+        // End Web Share check
         }
 
         // Trigger direct anchor tag download with blob URL
@@ -5209,10 +5268,15 @@
     } finally {
       // Restore download button state
       if (btn && textSpan) {
+        // Restore label
         textSpan.textContent = 'Download PDF Report';
+        // Re-enable button
         btn.disabled = false;
+      // End btn check
       }
+    // End finally
     }
+  // End downloadActiveStatementPdf
   };
 
   /**
