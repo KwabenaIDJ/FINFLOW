@@ -33,7 +33,9 @@ const assetsToCopy = [
   // Apple touch home screen icon
   'apple-touch-icon.png',
   // 512x512 PWA and Android application launcher icon
-  'icon-512.png'
+  'icon-512.png',
+  // Standalone offline client-side PDF document generation bundle
+  'html2pdf.bundle.min.js'
 // End assets list
 ];
 

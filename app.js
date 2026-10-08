@@ -4307,7 +4307,7 @@
       padding: 12px 20px;
       margin: -24px -24px 24px -24px;
       box-shadow: 0 4px 16px rgba(0, 0, 0, 0.2);
-      z-index: 9999;
+      z-index: 99999;
     }
     .action-bar-container {
       display: flex;
@@ -4322,28 +4322,32 @@
       display: flex;
       align-items: center;
       gap: 10px;
-      flex-wrap: wrap;
     }
     .action-btn {
       display: inline-flex;
       align-items: center;
+      justify-content: center;
       gap: 8px;
-      padding: 10px 18px;
+      padding: 11px 20px;
       border-radius: 8px;
       font-size: 13px;
       font-weight: 700;
       cursor: pointer;
       border: none;
-      transition: all 0.2s ease;
+      transition: background 0.15s ease, transform 0.1s ease;
       font-family: inherit;
       text-decoration: none;
+      -webkit-tap-highlight-color: transparent;
+      touch-action: manipulation;
+      user-select: none;
     }
     .action-btn:active {
-      transform: scale(0.97);
+      transform: scale(0.96);
     }
     .back-btn {
       background: #334155;
       color: #f8fafc;
+      border: 1px solid #475569;
     }
     .back-btn:hover {
       background: #475569;
@@ -4351,19 +4355,10 @@
     .download-btn {
       background: linear-gradient(135deg, #0284c7, #2563eb);
       color: #ffffff;
-      box-shadow: 0 2px 6px rgba(37, 99, 235, 0.3);
+      box-shadow: 0 2px 8px rgba(37, 99, 235, 0.35);
     }
     .download-btn:hover {
       background: linear-gradient(135deg, #0369a1, #1d4ed8);
-    }
-    .print-btn {
-      background: #1e293b;
-      color: #e2e8f0;
-      border: 1px solid #475569;
-    }
-    .print-btn:hover {
-      background: #334155;
-      color: #ffffff;
     }
     .statement-header {
       display: flex;
@@ -4504,7 +4499,7 @@
   <!-- Top sticky navigation and action bar for downloading PDF and returning to FinFlow -->
   <div class="no-print action-bar-wrapper">
     <div class="action-bar-container">
-      <button type="button" class="action-btn back-btn" onclick="handleGoBack()" title="Return to FinFlow Dashboard">
+      <button type="button" class="action-btn back-btn" id="btnBackToFinFlow" onclick="handleGoBack()" title="Return to FinFlow Dashboard">
         <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M19 12H5M12 19l-7-7 7-7"/></svg>
         <span>&larr; Back to FinFlow</span>
       </button>
@@ -4512,10 +4507,6 @@
         <button type="button" class="action-btn download-btn" id="btnDownloadPdf" onclick="handleDownloadPdf()" title="Download PDF document directly to your device">
           <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
           <span id="btnDownloadPdfText">Download PDF Report</span>
-        </button>
-        <button type="button" class="action-btn print-btn" onclick="window.print()" title="Open printer / system save dialogue">
-          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="6 9 6 2 18 2 18 9"/><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"/><rect x="6" y="14" width="12" height="8"/></svg>
-          <span>Print Statement</span>
         </button>
       </div>
     </div>
@@ -4647,23 +4638,36 @@
   </div>
 
   <script>
-    // Navigation handler to safely return to FinFlow dashboard without getting stuck
+    // Immediate and responsive navigation handler to return to FinFlow
     function handleGoBack() {
-      // Check if document was opened as popup window with active opener
-      if (window.opener && !window.opener.closed) {
-        // Close popup window
+      // 1. Try closing popup window if opened via window.open
+      try {
+        if (window.opener && !window.opener.closed) {
+          window.close();
+          return;
+        }
+      } catch (e) {}
+
+      // 2. Try window.close directly
+      try {
         window.close();
-      // Check if session has previous history entries
-      } else if (window.history && window.history.length > 1) {
-        // Navigate backwards in history stack
+      } catch (e) {}
+
+      // 3. Fallback to navigating back or replacing location immediately
+      if (window.history && window.history.length > 1) {
         window.history.back();
-      // Fallback redirection to root application page
       } else {
-        // Redirect browser location to index.html
-        window.location.href = 'index.html';
-      // End window history check
+        window.location.replace('index.html');
       }
-    // End handleGoBack function
+    }
+
+    // Attach touchstart and pointerdown for instant tap response without mobile tap delay
+    var backBtnEl = document.getElementById('btnBackToFinFlow');
+    if (backBtnEl) {
+      backBtnEl.addEventListener('touchstart', function(e) {
+        e.preventDefault();
+        handleGoBack();
+      }, { passive: false });
     }
 
     // Direct PDF document generator and downloader handler
@@ -4674,11 +4678,8 @@
       var textSpan = document.getElementById('btnDownloadPdfText');
       // Update button UI state to show active generation progress
       if (btn && textSpan) {
-        // Set generating progress message
         textSpan.textContent = 'Generating PDF...';
-        // Temporarily disable button to prevent duplicate triggers
         btn.disabled = true;
-      // End button UI check
       }
 
       // Compute sanitary filename for downloaded PDF statement
@@ -4688,61 +4689,36 @@
 
       // Verify if html2pdf client library is available
       if (typeof html2pdf !== 'undefined' && element) {
-        // Configure PDF layout, scaling, and canvas options
         var opt = {
-          // Page margins [top, left, bottom, right] in millimeters
           margin: [8, 8, 8, 8],
-          // Output file name
           filename: filename,
-          // Image render quality options
           image: { type: 'jpeg', quality: 0.98 },
-          // High-resolution canvas rendering parameters
           html2canvas: { scale: 2, useCORS: true, logging: false },
-          // PDF document sizing format
           jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' }
-        // End options
         };
         // Generate PDF and trigger browser file download
         html2pdf().set(opt).from(element).save().then(function() {
-          // Reset button state on success
           if (btn && textSpan) {
-            // Restore default button label
             textSpan.textContent = 'Download PDF Report';
-            // Enable button
             btn.disabled = false;
-          // End button reset
           }
-        // Catch and handle generation exceptions
         }).catch(function(err) {
-          // Log fallback warning
-          console.warn('html2pdf generation error, falling back to window.print():', err);
-          // Reset button state
+          console.error('html2pdf generation error:', err);
           if (btn && textSpan) {
-            // Restore button label
             textSpan.textContent = 'Download PDF Report';
-            // Enable button
             btn.disabled = false;
-          // End button reset
           }
-          // Fallback to native window print dialog
+          // Fallback to direct print if canvas rendering fails
           window.print();
-        // End catch block
         });
-      // Fallback if html2pdf library is unavailable or offline
       } else {
-        // Reset button state
+        // Fallback: If html2pdf bundle failed to load, open print/save dialog
         if (btn && textSpan) {
-          // Restore button label
           textSpan.textContent = 'Download PDF Report';
-          // Enable button
           btn.disabled = false;
-        // End button reset
         }
-        // Trigger browser native print / save as PDF dialog
         window.print();
-      // End html2pdf check
       }
-    // End handleDownloadPdf function
     }
   </script>
 </body>
@@ -8150,54 +8126,60 @@
     });
 
     // 13. Export ledger history into CSV file
-    elements.exportCsvBtn.addEventListener('click', (e) => {
-      const isPremium = window.AppStore ? window.AppStore.getSettings().isPremium : false;
-      if (!isPremium) {
-        if (e) e.preventDefault();
-        window.openPremiumModal();
-        alert('🔒 CSV Export is a Premium Feature. Upgrade to Premium for GH₵13.99/mo to download your ledger records!');
-        return;
-      }
-      const csvContent = window.AppStore.exportToCSV();
-      const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
-      const url = URL.createObjectURL(blob);
-      const link = document.createElement('a');
-      link.setAttribute('href', url);
-      link.setAttribute('download', `financial_ledger_${new Date().toISOString().split('T')[0]}.csv`);
-      document.body.appendChild(link);
-      link.click();
-      document.body.removeChild(link);
-    });
+    if (elements.exportCsvBtn) {
+      elements.exportCsvBtn.addEventListener('click', (e) => {
+        const isPremium = window.AppStore ? window.AppStore.getSettings().isPremium : false;
+        if (!isPremium) {
+          if (e) e.preventDefault();
+          window.openPremiumModal();
+          alert('🔒 CSV Export is a Premium Feature. Upgrade to Premium for GH₵13.99/mo to download your ledger records!');
+          return;
+        }
+        const csvContent = window.AppStore.exportToCSV();
+        const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+        const url = URL.createObjectURL(blob);
+        const link = document.createElement('a');
+        link.setAttribute('href', url);
+        link.setAttribute('download', `financial_ledger_${new Date().toISOString().split('T')[0]}.csv`);
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+      });
+    }
 
     // 14. Trigger CSV file selector dialogue
-    elements.importCsvBtn.addEventListener('click', (e) => {
-      const isPremium = window.AppStore ? window.AppStore.getSettings().isPremium : false;
-      if (!isPremium) {
-        if (e) e.preventDefault();
-        window.openPremiumModal();
-        alert('🔒 CSV Import is a Premium Feature. Upgrade to Premium for GH₵13.99/mo to import transaction spreadsheets!');
-        return;
-      }
-      elements.csvFileInput.click();
-    });
+    if (elements.importCsvBtn && elements.csvFileInput) {
+      elements.importCsvBtn.addEventListener('click', (e) => {
+        const isPremium = window.AppStore ? window.AppStore.getSettings().isPremium : false;
+        if (!isPremium) {
+          if (e) e.preventDefault();
+          window.openPremiumModal();
+          alert('🔒 CSV Import is a Premium Feature. Upgrade to Premium for GH₵13.99/mo to import transaction spreadsheets!');
+          return;
+        }
+        elements.csvFileInput.click();
+      });
+    }
 
     // 15. Import parse ledger data from CSV file inputs
-    elements.csvFileInput.addEventListener('change', (e) => {
-      const file = e.target.files[0];
-      if (!file) return;
+    if (elements.csvFileInput) {
+      elements.csvFileInput.addEventListener('change', (e) => {
+        const file = e.target.files[0];
+        if (!file) return;
 
-      const reader = new FileReader();
-      reader.onload = (evt) => {
-        const count = window.AppStore.importFromCSV(evt.target.result);
-        if (count > 0) {
-          alert(`Successfully imported ${count} transaction records!`);
-        } else {
-          alert('Failed to parse CSV file. Ensure header mappings match guidelines.');
-        }
-        elements.csvFileInput.value = '';
-      };
-      reader.readAsText(file);
-    });
+        const reader = new FileReader();
+        reader.onload = (evt) => {
+          const count = window.AppStore.importFromCSV(evt.target.result);
+          if (count > 0) {
+            alert(`Successfully imported ${count} transaction records!`);
+          } else {
+            alert('Failed to parse CSV file. Ensure header mappings match guidelines.');
+          }
+          elements.csvFileInput.value = '';
+        };
+        reader.readAsText(file);
+      });
+    }
 
     // Year & Month filter dropdown change triggers updates
     if (elements.yearSelector) {
@@ -10621,7 +10603,7 @@
         <!-- Top sticky navigation and action bar -->
         <div class="no-print action-bar-wrapper">
           <div class="action-bar-container">
-            <button type="button" class="action-btn back-btn" onclick="handleGoBack()" title="Return to FinFlow App">
+            <button type="button" class="action-btn back-btn" id="btnBackToFinFlowReceipt" onclick="handleGoBack()" title="Return to FinFlow App">
               <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M19 12H5M12 19l-7-7 7-7"/></svg>
               <span>&larr; Back to FinFlow</span>
             </button>
@@ -10629,10 +10611,6 @@
               <button type="button" class="action-btn download-btn" id="btnDownloadReceiptPdf" onclick="handleDownloadReceiptPdf()" title="Download receipt PDF directly">
                 <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
                 <span id="btnDownloadReceiptText">Download PDF Receipt</span>
-              </button>
-              <button type="button" class="action-btn print-btn" onclick="window.print()" title="Print receipt">
-                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="6 9 6 2 18 2 18 9"/><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"/><rect x="6" y="14" width="12" height="8"/></svg>
-                <span>Print Receipt</span>
               </button>
             </div>
           </div>
@@ -10643,15 +10621,33 @@
         </div>
 
         <script>
-          // Safe navigation handler to return back to FinFlow without getting stuck
+          // Immediate navigation handler to return back to FinFlow without delay
           function handleGoBack() {
-            if (window.opener && !window.opener.closed) {
+            try {
+              if (window.opener && !window.opener.closed) {
+                window.close();
+                return;
+              }
+            } catch (e) {}
+
+            try {
               window.close();
-            } else if (window.history && window.history.length > 1) {
+            } catch (e) {}
+
+            if (window.history && window.history.length > 1) {
               window.history.back();
             } else {
-              window.location.href = 'index.html';
+              window.location.replace('index.html');
             }
+          }
+
+          // Attach touchstart listener for immediate response on mobile devices
+          var receiptBackBtn = document.getElementById('btnBackToFinFlowReceipt');
+          if (receiptBackBtn) {
+            receiptBackBtn.addEventListener('touchstart', function(e) {
+              e.preventDefault();
+              handleGoBack();
+            }, { passive: false });
           }
 
           // Direct receipt PDF download handler
@@ -10680,7 +10676,7 @@
                   btn.disabled = false;
                 }
               }).catch(function(err) {
-                console.warn('html2pdf generation error, falling back to window.print():', err);
+                console.error('html2pdf generation error:', err);
                 if (btn && textSpan) {
                   textSpan.textContent = 'Download PDF Receipt';
                   btn.disabled = false;
